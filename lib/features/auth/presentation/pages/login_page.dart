@@ -1,28 +1,85 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/route/app_route.dart';
+import '../../../../core/widgets/rive_login_character.dart';
+import '../../../../core/widgets/rive_progress_indicator.dart';
 import '../bloc/auth_bloc.dart';
 import '../bloc/auth_event.dart';
 import '../bloc/auth_state.dart';
 import '../../../../core/utils/error_dialog_handler.dart';
 
-class LoginPage extends StatelessWidget {
+class LoginPage extends StatefulWidget {
+  const LoginPage({super.key});
+
+  @override
+  State<LoginPage> createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+  final FocusNode _emailFocusNode = FocusNode();
+  final FocusNode _passwordFocusNode = FocusNode();
+  final GlobalKey<RiveLoginCharacterState> _riveKey = GlobalKey();
+  bool _obscurePassword = true;
 
-  LoginPage({super.key});
+  @override
+  void initState() {
+    super.initState();
+
+    _emailFocusNode.addListener(_onEmailFocusChange);
+    _passwordFocusNode.addListener(_onPasswordFocusChange);
+    emailController.addListener(_onEmailChanged);
+  }
+
+  void _onEmailFocusChange() {
+    if (_emailFocusNode.hasFocus) {
+      _riveKey.currentState?.startChecking();
+    } else {
+      _riveKey.currentState?.stopChecking();
+    }
+  }
+
+  void _onPasswordFocusChange() {
+    if (_passwordFocusNode.hasFocus) {
+      _riveKey.currentState?.handsUp();
+    } else {
+      _riveKey.currentState?.handsDown();
+    }
+  }
+
+  void _onEmailChanged() {
+    final text = emailController.text;
+    final direction = (text.length * 2.0).clamp(0.0, 100.0);
+    _riveKey.currentState?.setLookDirection(direction);
+  }
+
+  @override
+  void dispose() {
+    emailController.removeListener(_onEmailChanged);
+    _emailFocusNode.removeListener(_onEmailFocusChange);
+    _passwordFocusNode.removeListener(_onPasswordFocusChange);
+    emailController.dispose();
+    passwordController.dispose();
+    _emailFocusNode.dispose();
+    _passwordFocusNode.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text("Đăng Nhập")),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            RiveLoginCharacter(key: _riveKey, height: 200),
+            const SizedBox(height: 16),
+
             TextField(
               controller: emailController,
+              focusNode: _emailFocusNode,
               decoration: const InputDecoration(
                 labelText: "Email",
                 border: OutlineInputBorder(),
@@ -31,14 +88,31 @@ class LoginPage extends StatelessWidget {
               keyboardType: TextInputType.emailAddress,
             ),
             const SizedBox(height: 10),
+
             TextField(
               controller: passwordController,
-              decoration: const InputDecoration(
+              focusNode: _passwordFocusNode,
+              decoration: InputDecoration(
                 labelText: "Mật khẩu",
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.lock),
+                border: const OutlineInputBorder(),
+                prefixIcon: const Icon(Icons.lock),
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _obscurePassword = !_obscurePassword;
+                    });
+                    if (!_obscurePassword) {
+                      _riveKey.currentState?.handsDown();
+                    } else if (_passwordFocusNode.hasFocus) {
+                      _riveKey.currentState?.handsUp();
+                    }
+                  },
+                ),
               ),
-              obscureText: true,
+              obscureText: _obscurePassword,
             ),
             Align(
               alignment: Alignment.centerRight,
@@ -50,11 +124,14 @@ class LoginPage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 20),
+
             BlocConsumer<AuthBloc, AuthState>(
               listener: (context, state) {
                 if (state is AuthFailure) {
+                  _riveKey.currentState?.fail();
                   ErrorDialogHandler.showError(context, state.failure);
                 } else if (state is AuthSuccess) {
+                  _riveKey.currentState?.success();
                   FocusScope.of(context).unfocus();
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
@@ -63,18 +140,28 @@ class LoginPage extends StatelessWidget {
                     ),
                   );
 
-                  if (state.user?.role == 1) {
-                    Navigator.of(context).pushReplacementNamed('/teacher_home');
-                  } else {
-                    Navigator.of(
-                      context,
-                    ).pushReplacementNamed(AppRoutes.schedule);
-                  }
+                  Future.delayed(const Duration(milliseconds: 1500), () {
+                    if (!mounted) return;
+                    final role = state.user?.role ?? 0;
+                    if (role == 2) {
+                      Navigator.of(
+                        context,
+                      ).pushReplacementNamed(AppRoutes.adminHome);
+                    } else if (role == 1) {
+                      Navigator.of(
+                        context,
+                      ).pushReplacementNamed(AppRoutes.teacherHome);
+                    } else {
+                      Navigator.of(
+                        context,
+                      ).pushReplacementNamed(AppRoutes.schedule);
+                    }
+                  });
                 }
               },
               builder: (context, state) {
                 if (state is AuthLoading) {
-                  return const CircularProgressIndicator();
+                  return const RiveProgressIndicator(height: 50, width: 200);
                 }
                 return SizedBox(
                   width: double.infinity,
@@ -104,19 +191,6 @@ class LoginPage extends StatelessWidget {
                   ),
                 );
               },
-            ),
-            const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text("Chưa có tài khoản?"),
-                TextButton(
-                  onPressed: () {
-                    Navigator.pushNamed(context, AppRoutes.signUp);
-                  },
-                  child: const Text("Đăng ký ngay"),
-                ),
-              ],
             ),
           ],
         ),
