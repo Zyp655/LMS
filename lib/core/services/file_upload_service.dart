@@ -72,7 +72,6 @@ class FileUploadService {
     }
   }
 
-  /// Get allowed extensions for a file type
   List<String> getAllowedExtensions(String fileType) {
     if (fileType == 'video') {
       return ['mp4', 'mov', 'avi', 'webm'];
@@ -82,7 +81,6 @@ class FileUploadService {
   }
 }
 
-/// Result of a file upload operation
 class FileUploadResult {
   final bool isSuccess;
   final String? uploadUrl;

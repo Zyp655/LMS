@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../core/theme/app_colors.dart';
 enum ButtonState { idle, loading, success, error }
 
 class StateButton extends StatefulWidget {
@@ -138,11 +139,11 @@ class _StateButtonState extends State<StateButton>
         break;
 
       case ButtonState.success:
-        bgColor = widget.successColor ?? const Color(0xFF4CAF50);
+        bgColor = widget.successColor ?? AppColors.success;
         child = Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.check_circle, color: Colors.white, size: 22),
+            Icon(Icons.check_circle, color: Colors.white, size: 22),
             if (widget.successText != null) ...[
               const SizedBox(width: 8),
               Text(
@@ -163,7 +164,7 @@ class _StateButtonState extends State<StateButton>
         child = Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.error_outline, color: Colors.white, size: 22),
+            Icon(Icons.error_outline, color: Colors.white, size: 22),
             if (widget.errorText != null) ...[
               const SizedBox(width: 8),
               Text(
@@ -202,7 +203,7 @@ class _StateButtonState extends State<StateButton>
                   borderRadius: BorderRadius.circular(widget.height / 2),
                   boxShadow: [
                     BoxShadow(
-                      color: bgColor.withOpacity(0.4),
+                      color: bgColor.withValues(alpha: 0.4),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),

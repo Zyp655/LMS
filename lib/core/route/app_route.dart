@@ -1,13 +1,13 @@
 class AppRoutes {
   static const String login = '/';
-  static const String forgotPassword = '/forgot_password';
-  static const String adminHome = '/admin_home';
+  static const String forgotPassword = '/forgot-password';
+  static const String adminHome = '/admin';
   static const String schedule = '/schedule';
-  static const String teacherHome = '/teacher_home';
-  static const String studentHome = '/student_home';
+  static const String teacherHome = '/teacher';
+  static const String studentHome = '/home';
 
   static const String courseCatalog = '/courses';
-  static const String courseDetail = '/courses/detail';
+  static const String courseDetail = '/courses/:courseId';
   static const String lessonPlayer = '/lessons/player';
   static const String myCourses = '/my-courses';
   static const String pathDetail = '/learning-paths/detail';
@@ -30,4 +30,5 @@ class AppRoutes {
   static const String offlineManagement = '/offline';
   static const String teacherApplications = '/admin/teacher-applications';
   static const String academicStructure = '/admin/academic-structure';
+  static const String enrollmentImport = '/admin/enrollment-import';
 }

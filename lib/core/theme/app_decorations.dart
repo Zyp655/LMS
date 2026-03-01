@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'app_colors.dart';
+import '../../core/theme/app_colors.dart';
 import 'app_spacing.dart';
 
 abstract class AppDecorations {
@@ -70,7 +70,7 @@ abstract class AppDecorations {
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
-      borderSide: const BorderSide(color: AppColors.primary, width: 2),
+      borderSide: BorderSide(color: AppColors.primary, width: 2),
     ),
   );
 

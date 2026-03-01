@@ -110,7 +110,6 @@ class _AnimatedButtonState extends State<AnimatedButton> {
   }
 }
 
-/// Shimmer loading placeholder
 class ShimmerLoading extends StatelessWidget {
   final double width;
   final double height;

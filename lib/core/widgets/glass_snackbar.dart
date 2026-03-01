@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import '../../core/theme/app_colors.dart';
 
 
 class GlassSnackbar {
@@ -13,7 +14,7 @@ class GlassSnackbar {
       context,
       message: message,
       icon: Icons.check_circle_rounded,
-      iconColor: const Color(0xFF4CAF50),
+      iconColor: AppColors.success,
       duration: duration,
       position: position,
     );
@@ -29,7 +30,7 @@ class GlassSnackbar {
       context,
       message: message,
       icon: Icons.info_rounded,
-      iconColor: const Color(0xFF2196F3),
+      iconColor: AppColors.info,
       duration: duration,
       position: position,
     );
@@ -45,7 +46,7 @@ class GlassSnackbar {
       context,
       message: message,
       icon: Icons.warning_rounded,
-      iconColor: const Color(0xFFFF9800),
+      iconColor: AppColors.warning,
       duration: duration,
       position: position,
     );
@@ -188,15 +189,15 @@ class _GlassSnackbarWidgetState extends State<_GlassSnackbarWidget>
                   vertical: 14,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.85),
+                  color: Colors.white.withValues(alpha: 0.85),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: Colors.white.withOpacity(0.3),
+                    color: Colors.white.withValues(alpha: 0.3),
                     width: 1,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
+                      color: Colors.black.withValues(alpha: 0.1),
                       blurRadius: 20,
                       offset: const Offset(0, 8),
                     ),
@@ -207,7 +208,7 @@ class _GlassSnackbarWidgetState extends State<_GlassSnackbarWidget>
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: widget.iconColor.withOpacity(0.15),
+                        color: widget.iconColor.withValues(alpha: 0.15),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(

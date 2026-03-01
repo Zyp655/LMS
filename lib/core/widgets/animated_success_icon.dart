@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../core/theme/app_colors.dart';
 
 
 class AnimatedSuccessIcon extends StatefulWidget {
@@ -13,7 +14,7 @@ class AnimatedSuccessIcon extends StatefulWidget {
   const AnimatedSuccessIcon({
     super.key,
     this.size = 80,
-    this.color = const Color(0xFF4CAF50),
+    this.color = AppColors.success,
     this.duration = const Duration(milliseconds: 600),
     this.autoHideDuration = const Duration(milliseconds: 1800),
     this.onComplete,
@@ -97,11 +98,11 @@ class _AnimatedSuccessIconState extends State<AnimatedSuccessIcon>
           width: widget.size,
           height: widget.size,
           decoration: BoxDecoration(
-            color: widget.color.withOpacity(0.15),
+            color: widget.color.withValues(alpha: 0.15),
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
-                color: widget.color.withOpacity(0.3),
+                color: widget.color.withValues(alpha: 0.3),
                 blurRadius: 20,
                 spreadRadius: 2,
               ),

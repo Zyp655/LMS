@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../error/failures.dart';
+import '../../core/theme/app_colors.dart';
 
 class ErrorDialogHandler {
   static void showError(BuildContext context, Failure failure) {
@@ -31,7 +32,7 @@ class ErrorDialogHandler {
         child: Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: const Color(0xFF1E293B).withValues(alpha: 0.95), 
+            color: AppColors.darkSurface.withValues(alpha: 0.95), 
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
             boxShadow: [

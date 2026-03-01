@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/app_colors.dart';
 
 class InlineFeedback extends StatefulWidget {
   final FeedbackType type;
@@ -142,7 +143,7 @@ class _InlineFeedbackState extends State<InlineFeedback>
                   },
                   child: Icon(
                     Icons.close,
-                    color: config.iconColor.withOpacity(0.7),
+                    color: config.iconColor.withValues(alpha: 0.7),
                     size: 18,
                   ),
                 ),
@@ -157,10 +158,10 @@ class _InlineFeedbackState extends State<InlineFeedback>
     switch (type) {
       case FeedbackType.success:
         return _FeedbackConfig(
-          backgroundColor: const Color(0xFFE8F5E9),
+          backgroundColor: AppColors.success.withValues(alpha: 0.1),
           borderColor: const Color(0xFFA5D6A7),
-          iconColor: const Color(0xFF4CAF50),
-          textColor: const Color(0xFF2E7D32),
+          iconColor: AppColors.success,
+          textColor: AppColors.successDark,
           icon: Icons.check_circle_rounded,
         );
       case FeedbackType.error:
@@ -175,16 +176,16 @@ class _InlineFeedbackState extends State<InlineFeedback>
         return _FeedbackConfig(
           backgroundColor: const Color(0xFFE3F2FD),
           borderColor: const Color(0xFF90CAF9),
-          iconColor: const Color(0xFF2196F3),
+          iconColor: AppColors.info,
           textColor: const Color(0xFF1565C0),
           icon: Icons.info_rounded,
         );
       case FeedbackType.warning:
         return _FeedbackConfig(
-          backgroundColor: const Color(0xFFFFF3E0),
+          backgroundColor: AppColors.warning.withValues(alpha: 0.1),
           borderColor: const Color(0xFFFFCC80),
-          iconColor: const Color(0xFFFF9800),
-          textColor: const Color(0xFFE65100),
+          iconColor: AppColors.warning,
+          textColor: AppColors.accent,
           icon: Icons.warning_rounded,
         );
     }
