@@ -23,6 +23,7 @@ void initAdminModule(GetIt sl) {
   sl.registerLazySingleton(() => admin_uc.AssignRoadmapTeacherUseCase(sl()));
   sl.registerLazySingleton(() => admin_uc.ImportStudentsUseCase(sl()));
   sl.registerLazySingleton(() => admin_uc.ImportTeachersUseCase(sl()));
+  sl.registerLazySingleton(() => admin_uc.ImportSubjectsUseCase(sl()));
   sl.registerLazySingleton(() => admin_uc.GetAcademicDataUseCase(sl()));
   sl.registerLazySingleton(
     () => admin_uc.GetAcademicCoursesWithTeachersUseCase(sl()),
@@ -47,6 +48,7 @@ void initAdminModule(GetIt sl) {
       assignRoadmapTeacher: sl(),
       importStudents: sl(),
       importTeachers: sl(),
+      importSubjects: sl(),
       getAcademicData: sl(),
       getAcademicCoursesWithTeachers: sl(),
       createCourseClassUseCase: sl(),

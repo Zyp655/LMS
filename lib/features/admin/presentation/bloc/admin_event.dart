@@ -97,4 +97,56 @@ class ImportTeachers extends AdminEvent {
   List<Object?> get props => [payload];
 }
 
+class ImportSubjects extends AdminEvent {
+  final Map<String, dynamic> payload;
+  const ImportSubjects(this.payload);
+  @override
+  List<Object?> get props => [payload];
+}
+
 class LoadAcademicData extends AdminEvent {}
+
+class LoadAcademicCoursesWithTeachers extends AdminEvent {}
+
+class CreateCourseClassEvent extends AdminEvent {
+  final int academicCourseId;
+  final String classCode;
+  final String? room;
+  final String? schedule;
+  final int? maxStudents;
+  const CreateCourseClassEvent({
+    required this.academicCourseId,
+    required this.classCode,
+    this.room,
+    this.schedule,
+    this.maxStudents,
+  });
+  @override
+  List<Object?> get props => [
+    academicCourseId,
+    classCode,
+    room,
+    schedule,
+    maxStudents,
+  ];
+}
+
+class AssignCourseTeacherEvent extends AdminEvent {
+  final int courseClassId;
+  final int teacherId;
+  final bool force;
+  const AssignCourseTeacherEvent({
+    required this.courseClassId,
+    required this.teacherId,
+    this.force = false,
+  });
+  @override
+  List<Object?> get props => [courseClassId, teacherId, force];
+}
+
+class UnassignCourseTeacherEvent extends AdminEvent {
+  final int courseClassId;
+  const UnassignCourseTeacherEvent({required this.courseClassId});
+  @override
+  List<Object?> get props => [courseClassId];
+}

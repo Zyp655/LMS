@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/route/app_route.dart';
 
@@ -153,8 +154,7 @@ class AcademicTab extends StatelessWidget {
 
   Widget _buildCta(BuildContext context, ColorScheme cs, bool isDark) {
     return GestureDetector(
-      onTap: () => Navigator.pushNamed(
-        context,
+      onTap: () => context.push(
         AppRoutes.academicStructure,
       ).then((_) => onRefresh()),
       child: Container(

@@ -71,6 +71,7 @@ void initTeachingModule(GetIt sl) {
       markAttendance: sl(),
       getAttendanceRecords: sl(),
       getAttendanceStatistics: sl(),
+      teacherRepository: sl(),
     ),
   );
 }

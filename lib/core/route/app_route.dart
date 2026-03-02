@@ -31,4 +31,7 @@ class AppRoutes {
   static const String teacherApplications = '/admin/teacher-applications';
   static const String academicStructure = '/admin/academic-structure';
   static const String enrollmentImport = '/admin/enrollment-import';
+  static const String studentImport = '/admin/student-import';
+  static const String teacherImport = '/admin/teacher-import';
+  static const String subjectImport = '/admin/subject-import';
 }

@@ -1,22 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/route/app_route.dart';
 
 class ToolsTab extends StatelessWidget {
   final bool isLoading;
-  final VoidCallback onSeedUsers;
-  final VoidCallback onSeedAchievements;
   final VoidCallback onSeedRoadmap;
-  final VoidCallback onImportFile;
-  final VoidCallback onAssignRoadmapTeacher;
 
   const ToolsTab({
     super.key,
     required this.isLoading,
-    required this.onSeedUsers,
-    required this.onSeedAchievements,
     required this.onSeedRoadmap,
-    required this.onImportFile,
-    required this.onAssignRoadmapTeacher,
   });
 
   @override
@@ -29,41 +22,41 @@ class ToolsTab extends StatelessWidget {
         children: [
           _toolCard(
             cs: cs,
-            icon: Icons.group_add_rounded,
-            iconColor: cs.onPrimaryContainer,
-            iconBg: cs.primaryContainer,
-            title: 'Tạo Dữ Liệu Mẫu',
-            subtitle: '1 Admin · 2 Giảng viên · 2 Sinh viên',
-            buttonLabel: 'Seed Users',
-            buttonColor: cs.primaryContainer,
-            buttonTextColor: cs.onPrimaryContainer,
-            onPressed: isLoading ? null : onSeedUsers,
-          ),
-          const SizedBox(height: 16),
-          _toolCard(
-            cs: cs,
             icon: Icons.upload_file_rounded,
             iconColor: Colors.teal.shade800,
             iconBg: Colors.teal.shade50,
             title: 'Import Sinh Viên',
-            subtitle: 'CSV hoặc Excel · Mã SV, Họ Tên, Lớp, Khoa',
+            subtitle: 'CSV hoặc Excel · Mã SV, Họ Tên, Email, Khoa',
             buttonLabel: 'Chọn File',
             buttonColor: Colors.teal.shade50,
             buttonTextColor: Colors.teal.shade800,
-            onPressed: isLoading ? null : onImportFile,
+            onPressed: () => context.push(AppRoutes.studentImport),
           ),
           const SizedBox(height: 16),
           _toolCard(
             cs: cs,
-            icon: Icons.emoji_events_rounded,
-            iconColor: Colors.amber.shade800,
-            iconBg: Colors.amber.shade50,
-            title: 'Seed Achievements',
-            subtitle: 'Tạo danh hiệu, huy chương mẫu',
-            buttonLabel: 'Seed',
-            buttonColor: Colors.amber.shade50,
-            buttonTextColor: Colors.amber.shade800,
-            onPressed: isLoading ? null : onSeedAchievements,
+            icon: Icons.school_rounded,
+            iconColor: Colors.indigo.shade800,
+            iconBg: Colors.indigo.shade50,
+            title: 'Import Giảng Viên',
+            subtitle: 'Excel · Mã GV, Họ Tên, Email, Khoa',
+            buttonLabel: 'Chọn File',
+            buttonColor: Colors.indigo.shade50,
+            buttonTextColor: Colors.indigo.shade800,
+            onPressed: () => context.push(AppRoutes.teacherImport),
+          ),
+          const SizedBox(height: 16),
+          _toolCard(
+            cs: cs,
+            icon: Icons.menu_book_rounded,
+            iconColor: Colors.deepOrange.shade800,
+            iconBg: Colors.deepOrange.shade50,
+            title: 'Import Môn Học',
+            subtitle: 'Excel · Mã môn, Tên môn, Khoa, Tín chỉ',
+            buttonLabel: 'Chọn File',
+            buttonColor: Colors.deepOrange.shade50,
+            buttonTextColor: Colors.deepOrange.shade800,
+            onPressed: () => context.push(AppRoutes.subjectImport),
           ),
           const SizedBox(height: 16),
           _toolCard(
@@ -81,33 +74,6 @@ class ToolsTab extends StatelessWidget {
           const SizedBox(height: 16),
           _toolCard(
             cs: cs,
-            icon: Icons.how_to_reg_rounded,
-            iconColor: Colors.green.shade800,
-            iconBg: Colors.green.shade50,
-            title: 'Duyệt đơn Giảng viên',
-            subtitle: 'Xem & duyệt đơn đăng ký làm giảng viên',
-            buttonLabel: 'Duyệt',
-            buttonColor: Colors.green.shade50,
-            buttonTextColor: Colors.green.shade800,
-            onPressed: () =>
-                Navigator.pushNamed(context, AppRoutes.teacherApplications),
-          ),
-          const SizedBox(height: 16),
-          _toolCard(
-            cs: cs,
-            icon: Icons.person_pin_rounded,
-            iconColor: Colors.deepPurple.shade800,
-            iconBg: Colors.deepPurple.shade50,
-            title: 'Gán Roadmap cho GV',
-            subtitle: 'Assign tất cả khóa roadmap cho 1 giảng viên',
-            buttonLabel: 'Gán',
-            buttonColor: Colors.deepPurple.shade50,
-            buttonTextColor: Colors.deepPurple.shade800,
-            onPressed: isLoading ? null : onAssignRoadmapTeacher,
-          ),
-          const SizedBox(height: 16),
-          _toolCard(
-            cs: cs,
             icon: Icons.assignment_ind_rounded,
             iconColor: Colors.blue.shade800,
             iconBg: Colors.blue.shade50,
@@ -116,8 +82,7 @@ class ToolsTab extends StatelessWidget {
             buttonLabel: 'Import',
             buttonColor: Colors.blue.shade50,
             buttonTextColor: Colors.blue.shade800,
-            onPressed: () =>
-                Navigator.pushNamed(context, AppRoutes.enrollmentImport),
+            onPressed: () => context.push(AppRoutes.enrollmentImport),
           ),
           if (isLoading) ...[
             const SizedBox(height: 24),

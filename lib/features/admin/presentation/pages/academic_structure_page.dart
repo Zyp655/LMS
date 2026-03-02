@@ -324,7 +324,6 @@ class _AcademicStructurePageState extends State<AcademicStructurePage>
         subtitle: '${item['courseName']} · GV: ${item['teacherName']}',
         description: [
           if (item['semesterName'] != null) 'HK: ${item['semesterName']}',
-          if (item['room'] != null) 'Phòng: ${item['room']}',
           if (item['schedule'] != null) 'TKB: ${item['schedule']}',
           'SV tối đa: ${item['maxStudents'] ?? 50}',
         ].join(' · '),
@@ -788,7 +787,6 @@ class _AcademicStructurePageState extends State<AcademicStructurePage>
 
   void _showClassSheet(ColorScheme cs, {Map<String, dynamic>? existing}) {
     final codeCtrl = TextEditingController(text: existing?['classCode'] ?? '');
-    final roomCtrl = TextEditingController(text: existing?['room'] ?? '');
     final schedCtrl = TextEditingController(text: existing?['schedule'] ?? '');
     final maxCtrl = TextEditingController(
       text: (existing?['maxStudents'] ?? 50).toString(),
@@ -814,8 +812,7 @@ class _AcademicStructurePageState extends State<AcademicStructurePage>
       cs: cs,
       title: isEdit ? 'Sửa Lớp HP' : 'Thêm Lớp học phần',
       fields: [
-        _sheetField(codeCtrl, 'Mã lớp (VD: INT1234.01)', Icons.tag),
-        _sheetField(roomCtrl, 'Phòng', Icons.meeting_room),
+        _sheetField(codeCtrl, 'Tên lớp (VD: CNTT-01)', Icons.tag),
         _sheetField(schedCtrl, 'TKB (VD: T2(1-3), T5(4-6))', Icons.schedule),
         _sheetField(maxCtrl, 'SV tối đa', Icons.people),
       ],
@@ -901,7 +898,6 @@ class _AcademicStructurePageState extends State<AcademicStructurePage>
           'academicCourseId': selectedCourseId,
           'semesterId': selectedSemId,
           'teacherId': selectedTeacherId,
-          'room': roomCtrl.text.isEmpty ? null : roomCtrl.text,
           'schedule': schedCtrl.text.isEmpty ? null : schedCtrl.text,
           'maxStudents': int.tryParse(maxCtrl.text) ?? 50,
         };

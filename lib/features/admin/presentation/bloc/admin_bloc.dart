@@ -22,6 +22,11 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
   final AssignRoadmapTeacherUseCase assignRoadmapTeacher;
   final ImportStudentsUseCase importStudents;
   final ImportTeachersUseCase importTeachers;
+  final ImportSubjectsUseCase importSubjects;
+  final GetAcademicCoursesWithTeachersUseCase getAcademicCoursesWithTeachers;
+  final CreateCourseClassUseCase createCourseClassUseCase;
+  final AssignCourseTeacherUseCase assignCourseTeacherUseCase;
+  final UnassignCourseTeacherUseCase unassignCourseTeacherUseCase;
 
   AdminBloc({
     required this.getUsers,
@@ -39,6 +44,11 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
     required this.assignRoadmapTeacher,
     required this.importStudents,
     required this.importTeachers,
+    required this.importSubjects,
+    required this.getAcademicCoursesWithTeachers,
+    required this.createCourseClassUseCase,
+    required this.assignCourseTeacherUseCase,
+    required this.unassignCourseTeacherUseCase,
   }) : super(AdminInitial()) {
     on<LoadUsers>(_onLoadUsers);
     on<EditUser>(_onEditUser);
@@ -55,6 +65,11 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
     on<AssignRoadmapTeacher>(_onAssignRoadmapTeacher);
     on<ImportStudents>(_onImportStudents);
     on<ImportTeachers>(_onImportTeachers);
+    on<ImportSubjects>(_onImportSubjects);
+    on<LoadAcademicCoursesWithTeachers>(_onLoadAcademicCoursesWithTeachers);
+    on<CreateCourseClassEvent>(_onCreateCourseClass);
+    on<AssignCourseTeacherEvent>(_onAssignCourseTeacher);
+    on<UnassignCourseTeacherEvent>(_onUnassignCourseTeacher);
   }
 
   Future<void> _onLoadUsers(LoadUsers event, Emitter<AdminState> emit) async {
@@ -229,6 +244,92 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
   ) async {
     emit(AdminLoading());
     final result = await importTeachers(event.payload);
+    result.fold(
+      (failure) => emit(AdminError(failure.message)),
+      (message) => emit(AdminActionSuccess(message)),
+    );
+  }
+
+  Future<void> _onImportSubjects(
+    ImportSubjects event,
+    Emitter<AdminState> emit,
+  ) async {
+    emit(AdminLoading());
+    final result = await importSubjects(event.payload);
+    result.fold(
+      (failure) => emit(AdminError(failure.message)),
+      (message) => emit(AdminActionSuccess(message)),
+    );
+  }
+
+  Future<void> _onLoadAcademicCoursesWithTeachers(
+    LoadAcademicCoursesWithTeachers event,
+    Emitter<AdminState> emit,
+  ) async {
+    emit(AdminLoading());
+    final result = await getAcademicCoursesWithTeachers();
+    result.fold(
+      (failure) => emit(AdminError(failure.message)),
+      (courses) => emit(AcademicCoursesWithTeachersLoaded(courses)),
+    );
+  }
+
+  Future<void> _onCreateCourseClass(
+    CreateCourseClassEvent event,
+    Emitter<AdminState> emit,
+  ) async {
+    emit(AdminLoading());
+    final result = await createCourseClassUseCase(
+      event.academicCourseId,
+      event.classCode,
+      room: event.room,
+      schedule: event.schedule,
+      maxStudents: event.maxStudents,
+    );
+    result.fold(
+      (failure) => emit(AdminError(failure.message)),
+      (message) => emit(AdminActionSuccess(message)),
+    );
+  }
+
+  Future<void> _onAssignCourseTeacher(
+    AssignCourseTeacherEvent event,
+    Emitter<AdminState> emit,
+  ) async {
+    emit(AdminLoading());
+    final result = await assignCourseTeacherUseCase(
+      event.courseClassId,
+      event.teacherId,
+      force: event.force,
+    );
+    result.fold((failure) => emit(AdminError(failure.message)), (data) {
+      final success = data['success'] as bool? ?? false;
+      final needConfirm = data['needConfirm'] as bool? ?? false;
+      if (success) {
+        emit(AdminActionSuccess(data['message'] as String? ?? 'Thành công'));
+      } else if (needConfirm) {
+        emit(
+          AssignNeedConfirm(
+            message: data['message'] as String? ?? '',
+            courseClassId: event.courseClassId,
+            newTeacherId: event.teacherId,
+            currentTeacher: Map<String, dynamic>.from(
+              data['currentTeacher'] ?? {},
+            ),
+          ),
+        );
+      } else {
+        emit(AdminError(data['error'] as String? ?? 'Lỗi không xác định'));
+      }
+    });
+  }
+
+  Future<void> _onUnassignCourseTeacher(
+    UnassignCourseTeacherEvent event,
+    Emitter<AdminState> emit,
+  ) async {
+    emit(AdminLoading());
+    final result = await unassignCourseTeacherUseCase(event.courseClassId);
     result.fold(
       (failure) => emit(AdminError(failure.message)),
       (message) => emit(AdminActionSuccess(message)),

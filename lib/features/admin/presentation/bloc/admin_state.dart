@@ -66,3 +66,30 @@ class AcademicDataLoaded extends AdminState {
     courseClasses,
   ];
 }
+
+class AcademicCoursesWithTeachersLoaded extends AdminState {
+  final List<Map<String, dynamic>> courses;
+  const AcademicCoursesWithTeachersLoaded(this.courses);
+  @override
+  List<Object?> get props => [courses];
+}
+
+class AssignNeedConfirm extends AdminState {
+  final String message;
+  final int courseClassId;
+  final int newTeacherId;
+  final Map<String, dynamic> currentTeacher;
+  const AssignNeedConfirm({
+    required this.message,
+    required this.courseClassId,
+    required this.newTeacherId,
+    required this.currentTeacher,
+  });
+  @override
+  List<Object?> get props => [
+    message,
+    courseClassId,
+    newTeacherId,
+    currentTeacher,
+  ];
+}

@@ -42,6 +42,8 @@ abstract class AdminRepository {
 
   Future<Either<Failure, String>> importTeachers(Map<String, dynamic> payload);
 
+  Future<Either<Failure, String>> importSubjects(Map<String, dynamic> payload);
+
   Future<Either<Failure, List<Map<String, dynamic>>>>
   getAcademicCoursesWithTeachers();
 

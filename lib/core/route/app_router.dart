@@ -47,6 +47,9 @@ import '../../features/user/presentation/pages/teacher_applications_admin_page.d
 import '../../features/admin/presentation/pages/academic_structure_page.dart';
 import '../../features/admin/presentation/bloc/admin_bloc.dart';
 import '../../features/course/presentation/pages/enrollment_import_page.dart';
+import '../../features/admin/presentation/pages/student_import_page.dart';
+import '../../features/admin/presentation/pages/teacher_import_page.dart';
+import '../../features/admin/presentation/pages/subject_import_page.dart';
 import '../../features/roadmap/presentation/pages/path_detail_page.dart';
 import '../../features/roadmap/data/learning_paths_data.dart';
 
@@ -83,6 +86,27 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: AppRoutes.enrollmentImport,
       builder: (context, state) => const EnrollmentImportPage(),
+    ),
+    GoRoute(
+      path: AppRoutes.studentImport,
+      builder: (context, state) => BlocProvider(
+        create: (_) => sl<AdminBloc>(),
+        child: const StudentImportPage(),
+      ),
+    ),
+    GoRoute(
+      path: AppRoutes.teacherImport,
+      builder: (context, state) => BlocProvider(
+        create: (_) => sl<AdminBloc>(),
+        child: const TeacherImportPage(),
+      ),
+    ),
+    GoRoute(
+      path: AppRoutes.subjectImport,
+      builder: (context, state) => BlocProvider(
+        create: (_) => sl<AdminBloc>(),
+        child: const SubjectImportPage(),
+      ),
     ),
 
     GoRoute(

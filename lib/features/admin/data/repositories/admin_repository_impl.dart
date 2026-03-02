@@ -216,7 +216,12 @@ class AdminRepositoryImpl implements AdminRepository {
       final response = await apiClient.post('/admin/import-students', payload);
       final created = response['created'] ?? 0;
       final skipped = response['skipped'] ?? 0;
-      return Right('Import: $created tạo mới, $skipped bỏ qua');
+      final errors = List<String>.from(response['errors'] ?? []);
+      var msg = 'Import: $created tạo mới, $skipped bỏ qua';
+      if (errors.isNotEmpty) {
+        msg += '\n⚠️ Lỗi:\n${errors.join('\n')}';
+      }
+      return Right(msg);
     } catch (e) {
       return Left(ServerFailure('Lỗi: $e'));
     }
@@ -230,7 +235,31 @@ class AdminRepositoryImpl implements AdminRepository {
       final response = await apiClient.post('/admin/import-teachers', payload);
       final created = response['created'] ?? 0;
       final skipped = response['skipped'] ?? 0;
-      return Right('Import GV: $created tạo mới, $skipped cập nhật');
+      final errors = List<String>.from(response['errors'] ?? []);
+      var msg = 'Import GV: $created tạo mới, $skipped cập nhật';
+      if (errors.isNotEmpty) {
+        msg += '\n Lỗi:\n${errors.join('\n')}';
+      }
+      return Right(msg);
+    } catch (e) {
+      return Left(ServerFailure('Lỗi: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, String>> importSubjects(
+    Map<String, dynamic> payload,
+  ) async {
+    try {
+      final response = await apiClient.post('/admin/import-subjects', payload);
+      final created = response['created'] ?? 0;
+      final skipped = response['skipped'] ?? 0;
+      final errors = List<String>.from(response['errors'] ?? []);
+      var msg = 'Import: $created tạo mới, $skipped bỏ qua';
+      if (errors.isNotEmpty) {
+        msg += '\n Lỗi:\n${errors.join('\n')}';
+      }
+      return Right(msg);
     } catch (e) {
       return Left(ServerFailure('Lỗi: $e'));
     }
