@@ -1,6 +1,8 @@
 ﻿import 'package:backend/repositories/user_repository.dart';
 import 'package:dart_frog/dart_frog.dart';
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
+import 'package:dotenv/dotenv.dart';
+
 Future<Response> onRequest(RequestContext context) async {
   if (context.request.method != HttpMethod.post) {
     return Response(statusCode: 405);
@@ -19,12 +21,19 @@ Future<Response> onRequest(RequestContext context) async {
     return Response.json(
         statusCode: 401, body: {'message': 'Sai email hoặc mật khẩu'});
   }
+  if (user.isBanned) {
+    return Response.json(
+        statusCode: 403,
+        body: {'message': 'Tài khoản đã bị khoá. Liên hệ quản trị viên.'});
+  }
   final jwt = JWT({
     'id': user.id,
     'email': user.email,
     'role': user.role,
   });
-  final token = jwt.sign(SecretKey('my_secret_key_123'));
+  final env = DotEnv()..load();
+  final jwtSecret = env['JWT_SECRET'] ?? 'my_secret_key_123';
+  final token = jwt.sign(SecretKey(jwtSecret));
   return Response.json(body: {
     'message': 'Đăng nhập thành công',
     'token': token,
@@ -32,5 +41,6 @@ Future<Response> onRequest(RequestContext context) async {
     'email': user.email,
     'fullName': user.fullName,
     'role': user.role,
+    'departmentId': user.departmentId,
   });
 }

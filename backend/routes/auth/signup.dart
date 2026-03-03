@@ -1,5 +1,7 @@
 ﻿import 'package:backend/repositories/user_repository.dart';
+import 'package:backend/services/logger_service.dart';
 import 'package:dart_frog/dart_frog.dart';
+
 Future<Response> onRequest(RequestContext context) async {
   if (context.request.method != HttpMethod.post) {
     return Response(statusCode: 405);
@@ -20,8 +22,8 @@ Future<Response> onRequest(RequestContext context) async {
     return Response.json(
         body: {'message': 'Đăng ký thành công', 'id': user.id});
   } catch (e, stackTrace) {
-    print('SIGNUP ERROR: $e');
-    print('STACK TRACE: $stackTrace');
+    logger.error('Signup failed',
+        error: e, stackTrace: stackTrace, context: 'signup');
     final errorString = e.toString();
     if (errorString.contains('23505') ||
         errorString.contains('already exists')) {
@@ -30,6 +32,7 @@ Future<Response> onRequest(RequestContext context) async {
       });
     }
     return Response.json(
-        statusCode: 500, body: {'error': 'Lỗi hệ thống: $errorString'});
+        statusCode: 500,
+        body: {'error': 'Đã xảy ra lỗi hệ thống. Vui lòng thử lại sau.'});
   }
 }
