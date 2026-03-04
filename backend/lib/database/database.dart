@@ -12,7 +12,11 @@ class Users extends Table {
   TextColumn get fullName => text().nullable()();
   TextColumn get resetToken => text().nullable()();
   IntColumn get role => integer().withDefault(const Constant(0))();
+  BoolColumn get isBanned => boolean().withDefault(const Constant(false))();
   DateTimeColumn get resetTokenExpiry => dateTime().nullable()();
+  @ReferenceName('userDepartment')
+  IntColumn get departmentId =>
+      integer().nullable().references(Departments, #id)();
 }
 
 class StudentProfiles extends Table {
@@ -22,6 +26,11 @@ class StudentProfiles extends Table {
   TextColumn get studentId => text().nullable()();
   TextColumn get major => text().nullable()();
   TextColumn get avatarUrl => text().nullable()();
+  @ReferenceName('studentDepartment')
+  IntColumn get departmentId =>
+      integer().nullable().references(Departments, #id)();
+  TextColumn get studentClass => text().nullable()();
+  TextColumn get academicYear => text().nullable()();
 }
 
 class Subjects extends Table {
@@ -300,7 +309,9 @@ class Courses extends Table {
 
 class Modules extends Table {
   IntColumn get id => integer().autoIncrement()();
-  IntColumn get courseId => integer().references(Courses, #id)();
+  IntColumn get courseId => integer().nullable().references(Courses, #id)();
+  IntColumn get academicCourseId =>
+      integer().nullable().references(AcademicCourses, #id)();
   TextColumn get title => text()();
   TextColumn get description => text().nullable()();
   IntColumn get orderIndex => integer()();
@@ -518,6 +529,117 @@ class CommentMentions extends Table {
   DateTimeColumn get createdAt => dateTime()();
 }
 
+class TeacherApplications extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  @ReferenceName('teacherApplicationUser')
+  IntColumn get userId => integer().references(Users, #id)();
+  TextColumn get fullName => text()();
+  TextColumn get expertise => text()();
+  TextColumn get experience => text()();
+  TextColumn get qualifications => text()();
+  TextColumn get reason => text()();
+  IntColumn get status => integer().withDefault(const Constant(0))();
+  TextColumn get adminNote => text().nullable()();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get reviewedAt => dateTime().nullable()();
+}
+
+class Departments extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get name => text()();
+  TextColumn get code => text().unique()();
+  TextColumn get description => text().nullable()();
+  DateTimeColumn get createdAt => dateTime()();
+}
+
+class Semesters extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get name => text()();
+  IntColumn get year => integer()();
+  IntColumn get term => integer()();
+  DateTimeColumn get startDate => dateTime()();
+  DateTimeColumn get endDate => dateTime()();
+  BoolColumn get isActive => boolean().withDefault(const Constant(false))();
+}
+
+class AcademicCourses extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get name => text()();
+  TextColumn get code => text().unique()();
+  IntColumn get credits => integer().withDefault(const Constant(3))();
+  IntColumn get departmentId => integer().references(Departments, #id)();
+  TextColumn get description => text().nullable()();
+  TextColumn get thumbnailUrl => text().nullable()();
+  TextColumn get courseType => text().withDefault(const Constant('required'))();
+  BoolColumn get isPublished => boolean().withDefault(const Constant(false))();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime().nullable()();
+}
+
+class CourseClasses extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get academicCourseId =>
+      integer().references(AcademicCourses, #id)();
+  IntColumn get semesterId => integer().references(Semesters, #id)();
+  IntColumn get teacherId => integer().nullable().references(Users, #id)();
+  TextColumn get classCode => text().unique()();
+  IntColumn get maxStudents => integer().withDefault(const Constant(50))();
+  TextColumn get room => text().nullable()();
+  TextColumn get schedule => text().nullable()();
+  DateTimeColumn get createdAt => dateTime()();
+}
+
+class CourseClassEnrollments extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get courseClassId => integer().references(CourseClasses, #id)();
+  @ReferenceName('enrollmentStudent')
+  IntColumn get studentId => integer().references(Users, #id)();
+  TextColumn get status => text().withDefault(const Constant('enrolled'))();
+  TextColumn get source => text().withDefault(const Constant('import'))();
+  RealColumn get progressPercent => real().withDefault(const Constant(0.0))();
+  DateTimeColumn get enrolledAt => dateTime()();
+  DateTimeColumn get completedAt => dateTime().nullable()();
+}
+
+class EnrollmentImports extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  @ReferenceName('importAdmin')
+  IntColumn get adminId => integer().references(Users, #id)();
+  IntColumn get semesterId => integer().references(Semesters, #id)();
+  TextColumn get fileName => text()();
+  IntColumn get totalRows => integer()();
+  IntColumn get successCount => integer()();
+  IntColumn get errorCount => integer()();
+  TextColumn get errorDetails => text().nullable()();
+  DateTimeColumn get importedAt => dateTime()();
+}
+
+class PersonalRoadmaps extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  @ReferenceName('personalRoadmapUser')
+  IntColumn get userId => integer().references(Users, #id)();
+  IntColumn get departmentId =>
+      integer().nullable().references(Departments, #id)();
+  TextColumn get title => text()();
+  TextColumn get description => text().nullable()();
+  BoolColumn get isCustomized => boolean().withDefault(const Constant(false))();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime().nullable()();
+}
+
+class PersonalRoadmapItems extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get roadmapId => integer().references(PersonalRoadmaps, #id)();
+  IntColumn get academicCourseId =>
+      integer().references(AcademicCourses, #id)();
+  IntColumn get semesterOrder => integer().withDefault(const Constant(1))();
+  IntColumn get orderIndex => integer().withDefault(const Constant(0))();
+  BoolColumn get isRequired => boolean().withDefault(const Constant(true))();
+  TextColumn get status => text().withDefault(const Constant('pending'))();
+  TextColumn get note => text().nullable()();
+  DateTimeColumn get addedAt => dateTime()();
+}
+
 @DriftDatabase(tables: [
   Users,
   StudentProfiles,
@@ -561,6 +683,15 @@ class CommentMentions extends Table {
   CommentMentions,
   ChatConversations,
   ChatMessages,
+  TeacherApplications,
+  Departments,
+  Semesters,
+  AcademicCourses,
+  CourseClasses,
+  CourseClassEnrollments,
+  EnrollmentImports,
+  PersonalRoadmaps,
+  PersonalRoadmapItems,
 ])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_createDatabase());
@@ -581,7 +712,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 16;
+  int get schemaVersion => 25;
 
   @override
   MigrationStrategy get migration {
@@ -695,6 +826,76 @@ class AppDatabase extends _$AppDatabase {
           await m.addColumn(courseReviews, courseReviews.teacherResponse);
           await m.addColumn(courseReviews, courseReviews.responseDate);
           await m.addColumn(courseReviews, courseReviews.helpfulCount);
+        }
+
+        if (from < 17) {
+          await m.createTable(teacherApplications);
+        }
+
+        if (from < 18) {
+          await m.createTable(departments);
+          await m.createTable(semesters);
+          await m.createTable(academicCourses);
+          await m.createTable(courseClasses);
+        }
+
+        if (from < 19) {
+          await m.addColumn(users, users.isBanned);
+        }
+
+        if (from < 20) {
+          await m.issueCustomQuery(
+              'DROP TABLE IF EXISTS course_class_enrollments CASCADE');
+          await m.issueCustomQuery(
+              'DROP TABLE IF EXISTS enrollment_imports CASCADE');
+          await m
+              .issueCustomQuery('DROP TABLE IF EXISTS course_classes CASCADE');
+          await m.issueCustomQuery(
+              'DROP TABLE IF EXISTS academic_courses CASCADE');
+
+          await m.createTable(academicCourses);
+          await m.createTable(courseClasses);
+          await m.createTable(courseClassEnrollments);
+          await m.createTable(enrollmentImports);
+
+          await m.issueCustomQuery(
+            'ALTER TABLE modules ADD COLUMN IF NOT EXISTS academic_course_id INTEGER REFERENCES academic_courses(id)',
+          );
+        }
+
+        if (from < 21) {
+          await m.issueCustomQuery(
+            'ALTER TABLE modules ADD COLUMN IF NOT EXISTS course_id INTEGER REFERENCES courses(id)',
+          );
+        }
+
+        if (from < 22) {
+          await m.issueCustomQuery(
+            'ALTER TABLE users ADD COLUMN IF NOT EXISTS department_id INTEGER REFERENCES departments(id)',
+          );
+          await m.issueCustomQuery(
+            'ALTER TABLE student_profiles ADD COLUMN IF NOT EXISTS department_id INTEGER REFERENCES departments(id)',
+          );
+          await m.issueCustomQuery(
+            'ALTER TABLE student_profiles ADD COLUMN IF NOT EXISTS student_class TEXT',
+          );
+        }
+
+        if (from < 23) {
+          await m.createTable(personalRoadmaps);
+          await m.createTable(personalRoadmapItems);
+        }
+
+        if (from < 24) {
+          await m.issueCustomQuery(
+            'ALTER TABLE student_profiles ADD COLUMN IF NOT EXISTS academic_year TEXT',
+          );
+        }
+
+        if (from < 25) {
+          await m.issueCustomQuery(
+            'ALTER TABLE course_classes ALTER COLUMN teacher_id DROP NOT NULL',
+          );
         }
       },
     );
