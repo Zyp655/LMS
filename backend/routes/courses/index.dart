@@ -1,6 +1,7 @@
-﻿import 'dart:io';
+import 'dart:io';
 import 'package:dart_frog/dart_frog.dart';
 import 'package:backend/database/database.dart';
+import 'package:backend/helpers/pagination.dart';
 import 'package:drift/drift.dart';
 
 Future<Response> onRequest(RequestContext context) async {
@@ -18,27 +19,42 @@ Future<Response> _getCourses(RequestContext context) async {
   try {
     final db = context.read<AppDatabase>();
     final queryParams = context.request.uri.queryParameters;
-    var query = db.select(db.courses);
+    final pg = Pagination.fromQuery(queryParams);
+
+    final filters = <Expression<bool> Function(Courses)>[];
+
     if (queryParams.containsKey('search')) {
       final search = queryParams['search']!;
-      query = query..where((tbl) => tbl.title.contains(search));
+      filters.add((tbl) => tbl.title.contains(search));
     }
     if (queryParams.containsKey('level')) {
       final level = queryParams['level']!;
-      query = query..where((tbl) => tbl.level.equals(level));
+      filters.add((tbl) => tbl.level.equals(level));
     }
     if (queryParams.containsKey('instructorId')) {
       final instructorId = int.tryParse(queryParams['instructorId']!);
       if (instructorId != null) {
-        query = query..where((tbl) => tbl.instructorId.equals(instructorId));
+        filters.add((tbl) => tbl.instructorId.equals(instructorId));
       }
     }
     if (queryParams.containsKey('majorId')) {
       final majorId = int.tryParse(queryParams['majorId']!);
       if (majorId != null) {
-        query = query..where((tbl) => tbl.majorId.equals(majorId));
+        filters.add((tbl) => tbl.majorId.equals(majorId));
       }
     }
+
+    final countQuery = db.select(db.courses);
+    for (final f in filters) {
+      countQuery.where((tbl) => f(tbl));
+    }
+    final total = (await countQuery.get()).length;
+
+    final query = db.select(db.courses);
+    for (final f in filters) {
+      query.where((tbl) => f(tbl));
+    }
+    query.limit(pg.limit, offset: pg.offset);
     final courses = await query.get();
 
     final List<Map<String, dynamic>> coursesJson = [];
@@ -56,8 +72,8 @@ Future<Response> _getCourses(RequestContext context) async {
           .get();
       double averageRating = 0;
       if (reviews.isNotEmpty) {
-        final total = reviews.fold<int>(0, (sum, r) => sum + r.rating);
-        averageRating = total / reviews.length;
+        final t = reviews.fold<int>(0, (sum, r) => sum + r.rating);
+        averageRating = t / reviews.length;
       }
 
       final studentCount = await (db.select(db.enrollments)
@@ -98,11 +114,12 @@ Future<Response> _getCourses(RequestContext context) async {
         'updatedAt': course.updatedAt?.toIso8601String(),
       });
     }
-    return Response.json(body: {'courses': coursesJson});
+    return Response.json(
+        body: pg.wrap(coursesJson, total: total, key: 'courses'));
   } catch (e) {
     return Response.json(
       statusCode: HttpStatus.internalServerError,
-      body: {'error': 'Failed to fetch courses: $e'},
+      body: {'error': 'Đã xảy ra lỗi hệ thống. Vui lòng thử lại sau.'},
     );
   }
 }
@@ -157,7 +174,7 @@ Future<Response> _createCourse(RequestContext context) async {
   } catch (e) {
     return Response.json(
       statusCode: HttpStatus.internalServerError,
-      body: {'error': 'Failed to create course: $e'},
+      body: {'error': 'Đã xảy ra lỗi hệ thống. Vui lòng thử lại sau.'},
     );
   }
 }

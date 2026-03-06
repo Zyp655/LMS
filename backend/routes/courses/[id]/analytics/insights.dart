@@ -1,9 +1,10 @@
-﻿import 'dart:io';
+import 'dart:io';
 import 'package:dart_frog/dart_frog.dart';
 import 'package:backend/database/database.dart';
 import 'package:backend/services/ai_service.dart';
 import 'package:drift/drift.dart';
 import 'package:dotenv/dotenv.dart';
+
 Future<Response> onRequest(RequestContext context, String id) async {
   final courseId = int.tryParse(id);
   if (courseId == null) {
@@ -78,8 +79,7 @@ Future<Response> onRequest(RequestContext context, String id) async {
         'title': module.title,
         'studentCount': completers,
         'completionRate': double.parse(completionRate.toStringAsFixed(2)),
-        'dropOffRate': double.parse(
-            dropOffRate.toStringAsFixed(2)),
+        'dropOffRate': double.parse(dropOffRate.toStringAsFixed(2)),
         'avgQuizScore': avgQuizScore != null
             ? double.parse(avgQuizScore.toStringAsFixed(1))
             : null,
@@ -99,7 +99,7 @@ Future<Response> onRequest(RequestContext context, String id) async {
         );
       } catch (e) {
         aiInsights = {
-          'summary': 'Không thể tạo báo cáo AI lúc này. (${e.toString()})',
+          'summary': 'Không thể tạo báo cáo AI lúc này.',
           'top_bottleneck': null,
           'causes': [],
           'recommendations': []
@@ -122,7 +122,7 @@ Future<Response> onRequest(RequestContext context, String id) async {
   } catch (e) {
     return Response.json(
       statusCode: HttpStatus.internalServerError,
-      body: {'error': e.toString()},
+      body: {'error': 'Đã xảy ra lỗi hệ thống. Vui lòng thử lại sau.'},
     );
   }
 }

@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:dart_frog/dart_frog.dart';
 import 'package:backend/database/database.dart';
+import 'package:backend/services/discussion_broadcaster.dart';
 import 'package:drift/drift.dart';
 
 Future<Response> onRequest(RequestContext context) async {
@@ -47,6 +48,16 @@ Future<Response> onRequest(RequestContext context) async {
           await _adjustVotes(db, commentId, downDelta: -1);
         }
 
+        final updated = await (db.select(db.comments)
+              ..where((t) => t.id.equals(commentId)))
+            .getSingle();
+        context.read<DiscussionBroadcaster>().onVoteUpdate(
+              updated.lessonId,
+              commentId,
+              updated.upvotes,
+              updated.downvotes,
+            );
+
         return Response.json(body: {'action': 'removed', 'voteType': voteType});
       } else {
         await (db.update(db.commentVotes)
@@ -61,6 +72,16 @@ Future<Response> onRequest(RequestContext context) async {
         } else {
           await _adjustVotes(db, commentId, upDelta: -1, downDelta: 1);
         }
+
+        final switched = await (db.select(db.comments)
+              ..where((t) => t.id.equals(commentId)))
+            .getSingle();
+        context.read<DiscussionBroadcaster>().onVoteUpdate(
+              switched.lessonId,
+              commentId,
+              switched.upvotes,
+              switched.downvotes,
+            );
 
         return Response.json(
             body: {'action': 'switched', 'voteType': voteType});
@@ -81,6 +102,16 @@ Future<Response> onRequest(RequestContext context) async {
         await _adjustVotes(db, commentId, downDelta: 1);
       }
 
+      final voted = await (db.select(db.comments)
+            ..where((t) => t.id.equals(commentId)))
+          .getSingle();
+      context.read<DiscussionBroadcaster>().onVoteUpdate(
+            voted.lessonId,
+            commentId,
+            voted.upvotes,
+            voted.downvotes,
+          );
+
       return Response.json(
         statusCode: HttpStatus.created,
         body: {'action': 'voted', 'voteType': voteType},
@@ -89,7 +120,7 @@ Future<Response> onRequest(RequestContext context) async {
   } catch (e) {
     return Response.json(
       statusCode: HttpStatus.internalServerError,
-      body: {'error': 'Failed to vote: $e'},
+      body: {'error': 'Đã xảy ra lỗi hệ thống. Vui lòng thử lại sau.'},
     );
   }
 }

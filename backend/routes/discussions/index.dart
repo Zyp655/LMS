@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:dart_frog/dart_frog.dart';
 import 'package:backend/database/database.dart';
+import 'package:backend/services/discussion_broadcaster.dart';
 import 'package:drift/drift.dart';
 
 Future<Response> onRequest(RequestContext context) async {
@@ -43,9 +44,11 @@ Future<Response> _getDiscussions(RequestContext context, AppDatabase db) async {
 
     final rootComments = await query.get();
 
+    final userIds = <int>{};
     final result = <Map<String, dynamic>>[];
+
     for (final comment in rootComments) {
-      final commentMap = _commentToJson(comment);
+      userIds.add(comment.userId);
 
       final pathPrefix = comment.path ?? '${comment.id}';
       final repliesQuery = db.select(db.comments)
@@ -56,7 +59,28 @@ Future<Response> _getDiscussions(RequestContext context, AppDatabase db) async {
       final allReplies = await repliesQuery.get();
       final nested = allReplies
           .where((r) => (r.path ?? '').startsWith('$pathPrefix/'))
-          .map(_commentToJson)
+          .toList();
+
+      for (final r in nested) {
+        userIds.add(r.userId);
+      }
+    }
+
+    final userMap = await _fetchUserInfoBatch(db, userIds);
+
+    for (final comment in rootComments) {
+      final commentMap = _commentToJson(comment, userMap);
+
+      final pathPrefix = comment.path ?? '${comment.id}';
+      final repliesQuery = db.select(db.comments)
+        ..where((t) => t.lessonId.equals(lessonId))
+        ..where((t) => t.depth.isBiggerThanValue(0))
+        ..orderBy([(t) => OrderingTerm.asc(t.createdAt)]);
+
+      final allReplies = await repliesQuery.get();
+      final nested = allReplies
+          .where((r) => (r.path ?? '').startsWith('$pathPrefix/'))
+          .map((r) => _commentToJson(r, userMap))
           .toList();
 
       commentMap['replies'] = nested;
@@ -83,7 +107,7 @@ Future<Response> _getDiscussions(RequestContext context, AppDatabase db) async {
   } catch (e) {
     return Response.json(
       statusCode: HttpStatus.internalServerError,
-      body: {'error': 'Failed to fetch discussions: $e'},
+      body: {'error': 'Đã xảy ra lỗi hệ thống. Vui lòng thử lại sau.'},
     );
   }
 }
@@ -91,6 +115,7 @@ Future<Response> _getDiscussions(RequestContext context, AppDatabase db) async {
 Future<Response> _createComment(RequestContext context, AppDatabase db) async {
   try {
     final body = await context.request.json() as Map<String, dynamic>;
+    final broadcaster = context.read<DiscussionBroadcaster>();
 
     final lessonId = body['lessonId'] as int?;
     final userId = body['userId'] as int?;
@@ -138,6 +163,21 @@ Future<Response> _createComment(RequestContext context, AppDatabase db) async {
           .write(CommentsCompanion(path: Value('$id')));
     }
 
+    final userMap = await _fetchUserInfoBatch(db, {userId});
+    final userInfo = userMap[userId];
+
+    broadcaster.onNewComment(lessonId, {
+      'id': id,
+      'lessonId': lessonId,
+      'userId': userId,
+      'content': content,
+      'parentId': parentId,
+      'depth': depth,
+      'userName': userInfo?['userName'],
+      'userAvatar': userInfo?['userAvatar'],
+      'createdAt': DateTime.now().toIso8601String(),
+    });
+
     return Response.json(
       statusCode: HttpStatus.created,
       body: {'id': id, 'message': 'Comment created'},
@@ -145,12 +185,16 @@ Future<Response> _createComment(RequestContext context, AppDatabase db) async {
   } catch (e) {
     return Response.json(
       statusCode: HttpStatus.internalServerError,
-      body: {'error': 'Failed to create comment: $e'},
+      body: {'error': 'Đã xảy ra lỗi hệ thống. Vui lòng thử lại sau.'},
     );
   }
 }
 
-Map<String, dynamic> _commentToJson(Comment comment) {
+Map<String, dynamic> _commentToJson(
+  Comment comment,
+  Map<int, Map<String, String?>> userMap,
+) {
+  final userInfo = userMap[comment.userId];
   return {
     'id': comment.id,
     'lessonId': comment.lessonId,
@@ -165,5 +209,38 @@ Map<String, dynamic> _commentToJson(Comment comment) {
     'isAnswered': comment.isAnswered,
     'editedAt': comment.editedAt?.toIso8601String(),
     'createdAt': comment.createdAt.toIso8601String(),
+    'userName': userInfo?['userName'],
+    'userAvatar': userInfo?['userAvatar'],
   };
+}
+
+Future<Map<int, Map<String, String?>>> _fetchUserInfoBatch(
+  AppDatabase db,
+  Set<int> userIds,
+) async {
+  if (userIds.isEmpty) return {};
+
+  final result = <int, Map<String, String?>>{};
+
+  final users =
+      await (db.select(db.users)..where((u) => u.id.isIn(userIds))).get();
+
+  for (final user in users) {
+    result[user.id] = {
+      'userName': user.fullName ?? user.email,
+      'userAvatar': null,
+    };
+  }
+
+  final profiles = await (db.select(db.studentProfiles)
+        ..where((p) => p.userId.isIn(userIds)))
+      .get();
+
+  for (final profile in profiles) {
+    if (result.containsKey(profile.userId)) {
+      result[profile.userId]!['userAvatar'] = profile.avatarUrl;
+    }
+  }
+
+  return result;
 }
