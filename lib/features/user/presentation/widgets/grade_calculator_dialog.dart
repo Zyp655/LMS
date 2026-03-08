@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../../../core/theme/app_colors.dart';
 
 class GradeCalculatorDialog extends StatefulWidget {
   const GradeCalculatorDialog({super.key});
@@ -102,7 +103,7 @@ class _GradeCalculatorDialogState extends State<GradeCalculatorDialog> {
   @override
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final backgroundColor = isDarkMode ? const Color(0xFF1E1E1E) : Colors.white;
+    final backgroundColor = isDarkMode ? AppColors.darkSurface : Colors.white;
     final textColor = isDarkMode ? Colors.white : Colors.black87;
     final cardColor = isDarkMode ? Colors.grey[800] : Colors.grey[50];
 
@@ -152,7 +153,7 @@ class _GradeCalculatorDialogState extends State<GradeCalculatorDialog> {
                         children: [
                           Icon(
                             Icons.school,
-                            color: Colors.blueAccent,
+                            color: AppColors.info,
                             size: 20,
                           ),
                           const SizedBox(width: 12),
@@ -250,9 +251,9 @@ class _GradeCalculatorDialogState extends State<GradeCalculatorDialog> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.1),
+                    color: AppColors.info.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                    border: Border.all(color: AppColors.info.withValues(alpha: 0.3)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -261,7 +262,7 @@ class _GradeCalculatorDialogState extends State<GradeCalculatorDialog> {
                         children: [
                           Icon(
                             Icons.info_outline,
-                            color: Colors.blue,
+                            color: AppColors.info,
                             size: 18,
                           ),
                           const SizedBox(width: 8),
@@ -269,7 +270,7 @@ class _GradeCalculatorDialogState extends State<GradeCalculatorDialog> {
                             'Công thức tính:',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
-                              color: Colors.blue,
+                              color: AppColors.info,
                               fontSize: 13,
                             ),
                           ),
@@ -282,7 +283,7 @@ class _GradeCalculatorDialogState extends State<GradeCalculatorDialog> {
                             : 'Chuyên cần (10%) + CK (30%) + Hết môn (60%)',
                         style: TextStyle(
                           fontSize: 12,
-                          color: textColor.withOpacity(0.8),
+                          color: textColor.withValues(alpha: 0.8),
                         ),
                       ),
                     ],
@@ -340,10 +341,10 @@ class _GradeCalculatorDialogState extends State<GradeCalculatorDialog> {
                   width: double.infinity,
                   child: ElevatedButton.icon(
                     onPressed: _calculateScore,
-                    icon: const Icon(Icons.calculate),
+                    icon: Icon(Icons.calculate),
                     label: const Text('Tính Điểm'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blueAccent,
+                      backgroundColor: AppColors.info,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
@@ -361,15 +362,15 @@ class _GradeCalculatorDialogState extends State<GradeCalculatorDialog> {
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          _getScoreColor(_totalScore!).withOpacity(0.1),
-                          _getScoreColor(_totalScore!).withOpacity(0.05),
+                          _getScoreColor(_totalScore!).withValues(alpha: 0.1),
+                          _getScoreColor(_totalScore!).withValues(alpha: 0.05),
                         ],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: _getScoreColor(_totalScore!).withOpacity(0.5),
+                        color: _getScoreColor(_totalScore!).withValues(alpha: 0.5),
                       ),
                     ),
                     child: Column(
@@ -378,7 +379,7 @@ class _GradeCalculatorDialogState extends State<GradeCalculatorDialog> {
                           'Điểm Tổng Kết',
                           style: TextStyle(
                             fontSize: 14,
-                            color: textColor.withOpacity(0.7),
+                            color: textColor.withValues(alpha: 0.7),
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -436,7 +437,7 @@ class _GradeCalculatorDialogState extends State<GradeCalculatorDialog> {
                   child: TextButton(
                     onPressed: () => Navigator.of(context).pop(),
                     style: TextButton.styleFrom(
-                      foregroundColor: textColor.withOpacity(0.7),
+                      foregroundColor: textColor.withValues(alpha: 0.7),
                     ),
                     child: const Text('Đóng'),
                   ),
@@ -469,10 +470,10 @@ class _GradeCalculatorDialogState extends State<GradeCalculatorDialog> {
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
-        prefixIcon: Icon(icon, color: Colors.blueAccent),
+        prefixIcon: Icon(icon, color: AppColors.info),
         suffixText: percentage,
         suffixStyle: TextStyle(
-          color: Colors.blueAccent,
+          color: AppColors.info,
           fontWeight: FontWeight.bold,
         ),
         filled: true,
@@ -489,15 +490,15 @@ class _GradeCalculatorDialogState extends State<GradeCalculatorDialog> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.blueAccent, width: 2),
+          borderSide: BorderSide(color: AppColors.info, width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.red),
+          borderSide: BorderSide(color: AppColors.error),
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.red, width: 2),
+          borderSide: BorderSide(color: AppColors.error, width: 2),
         ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,

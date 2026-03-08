@@ -1,10 +1,16 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/common/theme_cubit.dart';
 import '../../../../core/route/app_route.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_event.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
+import '../../../profile/presentation/bloc/achievement_bloc.dart';
+import '../../../profile/presentation/bloc/achievement_event.dart';
+import '../../../profile/presentation/bloc/achievement_state.dart';
+import '../../../profile/domain/entities/achievement_entity.dart';
 import '../../domain/entities/user_entity_extended.dart';
 import '../bloc/user_bloc.dart';
 import '../bloc/user_event.dart';
@@ -12,22 +18,18 @@ import '../bloc/user_state.dart';
 import '../../../../injection_container.dart' as di;
 import '../widgets/transcript_dialog.dart';
 import '../widgets/grade_calculator_dialog.dart';
-import '../../../quiz/presentation/pages/generate_quiz_page.dart';
-import '../../../quiz/presentation/pages/multiplayer_lobby_page.dart';
-import '../../../quiz/presentation/pages/leaderboard_page.dart';
-import '../../../profile/presentation/pages/achievements_page.dart';
-import '../../../analytics/presentation/pages/analytics_dashboard_page.dart';
-import '../../../analytics/presentation/bloc/analytics_bloc.dart';
-import '../../../offline/presentation/pages/offline_management_page.dart';
-import '../../../offline/presentation/bloc/offline_bloc.dart';
+import '../widgets/change_password_dialog.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => di.sl<UserBloc>(),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (context) => di.sl<UserBloc>()),
+        BlocProvider(create: (context) => di.sl<AchievementBloc>()),
+      ],
       child: const ProfileView(),
     );
   }
@@ -40,11 +42,13 @@ class ProfileView extends StatefulWidget {
   State<ProfileView> createState() => _ProfileViewState();
 }
 
-class _ProfileViewState extends State<ProfileView> {
+class _ProfileViewState extends State<ProfileView>
+    with SingleTickerProviderStateMixin {
   late TextEditingController _classController;
   late TextEditingController _msvController;
   late TextEditingController _departmentController;
   late TextEditingController _msgvController;
+  late AnimationController _animController;
 
   @override
   void initState() {
@@ -53,10 +57,15 @@ class _ProfileViewState extends State<ProfileView> {
     _msvController = TextEditingController();
     _departmentController = TextEditingController();
     _msgvController = TextEditingController();
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    )..forward();
 
     final authState = context.read<AuthBloc>().state;
     if (authState is AuthSuccess && authState.user != null) {
       context.read<UserBloc>().add(LoadUserProfile(authState.user!.id));
+      context.read<AchievementBloc>().add(LoadAchievements(authState.user!.id));
     }
   }
 
@@ -66,6 +75,7 @@ class _ProfileViewState extends State<ProfileView> {
     _msvController.dispose();
     _departmentController.dispose();
     _msgvController.dispose();
+    _animController.dispose();
     super.dispose();
   }
 
@@ -79,51 +89,20 @@ class _ProfileViewState extends State<ProfileView> {
     }
   }
 
-  void _onSave(int userId, bool isTeacher, String email, String? fullName) {
-    final user = UserEntityExtended(
-      id: userId,
-      email: email,
-      fullName: fullName,
-      role: isTeacher ? 1 : 0,
-      className: isTeacher ? null : _classController.text,
-      studentId: isTeacher ? null : _msvController.text,
-      department: isTeacher ? _departmentController.text : null,
-      teacherId: isTeacher ? _msgvController.text : null,
-    );
-    context.read<UserBloc>().add(UpdateUserProfile(user));
-  }
-
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final backgroundColor = isDarkMode
-        ? const Color(0xFF121212)
-        : Colors.grey[100];
-    final cardColor = isDarkMode ? const Color(0xFF1E1E1E) : Colors.white;
-    final textColor = isDarkMode ? Colors.white : Colors.black87;
-    final subTextColor = isDarkMode ? Colors.grey[400] : Colors.grey[600];
-    final Color inputFillColor = isDarkMode
-        ? const Color(0xFF2C2C2C)
-        : (Colors.grey[50] ?? Colors.white);
-    const accentColor = Colors.blueAccent;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final cardColor = AppColors.cardColor(context);
+    final textColor = AppColors.textPrimary(context);
 
     return Scaffold(
-      backgroundColor: backgroundColor,
-      appBar: AppBar(
-        title: const Text("Hồ Sơ Cá Nhân"),
-        centerTitle: true,
-        elevation: 0,
-        backgroundColor: isDarkMode ? const Color(0xFF1E1E1E) : accentColor,
-        foregroundColor: Colors.white,
-      ),
       body: MultiBlocListener(
         listeners: [
           BlocListener<AuthBloc, AuthState>(
             listener: (context, state) {
               if (state is AuthInitial) {
-                Navigator.of(
-                  context,
-                ).pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
+                context.go(AppRoutes.login);
               }
             },
           ),
@@ -135,14 +114,14 @@ class _ProfileViewState extends State<ProfileView> {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(state.message),
-                    backgroundColor: Colors.green,
+                    backgroundColor: AppColors.success,
                   ),
                 );
               } else if (state is UserError) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(state.message),
-                    backgroundColor: Colors.red,
+                    backgroundColor: AppColors.error,
                   ),
                 );
               }
@@ -152,485 +131,265 @@ class _ProfileViewState extends State<ProfileView> {
         child: BlocBuilder<AuthBloc, AuthState>(
           builder: (context, authState) {
             if (authState is! AuthSuccess || authState.user == null) {
-              return const Center(child: Text("Vui lòng đăng nhập"));
+              return const Center(child: Text('Vui lòng đăng nhập'));
             }
 
             final authUser = authState.user!;
 
             return BlocBuilder<UserBloc, UserState>(
               builder: (context, userState) {
-                String name = authUser.fullName ?? "Người dùng";
+                String name = authUser.fullName ?? 'Người dùng';
                 String email = authUser.email;
                 bool isTeacher = authUser.role == 1;
-                String roleName = isTeacher ? "Giáo Viên" : "Sinh Viên";
+                String roleName = isTeacher ? 'Giảng Viên' : 'Sinh Viên';
 
                 if (userState is UserProfileLoaded) {
                   name = userState.user.fullName ?? name;
                   email = userState.user.email;
                   isTeacher = userState.user.role == 1;
-                  roleName = isTeacher ? "Giáo Viên" : "Sinh Viên";
+                  roleName = isTeacher ? 'Giảng Viên' : 'Sinh Viên';
                 }
 
                 if (userState is UserLoading) {
                   return const Center(child: CircularProgressIndicator());
                 }
 
-                return SingleChildScrollView(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    children: [
-                      const SizedBox(height: 20),
-                      Center(
+                return CustomScrollView(
+                  slivers: [
+                    _buildHeroHeader(
+                      name: name,
+                      email: email,
+                      isTeacher: isTeacher,
+                      roleName: roleName,
+                      theme: theme,
+                      isDark: isDark,
+                    ),
+
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: Column(
                           children: [
-                            Container(
-                              padding: const EdgeInsets.all(4),
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: accentColor,
-                                  width: 2,
-                                ),
+                            const SizedBox(height: 20),
+
+                            if (!isTeacher) ...[
+                              _buildStatsRow(isDark, textColor),
+                              const SizedBox(height: 20),
+                            ],
+
+                            if (!isTeacher) ...[
+                              _buildAchievementsPreview(
+                                isDark: isDark,
+                                cardColor: cardColor,
+                                textColor: textColor,
+                                theme: theme,
                               ),
-                              child: CircleAvatar(
-                                radius: 50,
-                                backgroundColor: isDarkMode
-                                    ? Colors.grey[800]
-                                    : Colors.blue.shade100,
-                                child: Text(
-                                  name.isNotEmpty ? name[0].toUpperCase() : "U",
-                                  style: const TextStyle(
-                                    fontSize: 40,
-                                    color: accentColor,
-                                    fontWeight: FontWeight.bold,
+                              const SizedBox(height: 20),
+                            ],
+
+                            _buildInfoSection(
+                              isTeacher: isTeacher,
+                              userState: userState,
+                              theme: theme,
+                              cardColor: cardColor,
+                              textColor: textColor,
+                              isDark: isDark,
+                            ),
+                            const SizedBox(height: 20),
+
+                            if (!isTeacher) ...[
+                              _buildSectionCard(
+                                title: 'Công cụ học tập',
+                                icon: Icons.school_outlined,
+                                theme: theme,
+                                cardColor: cardColor,
+                                textColor: textColor,
+                                children: [
+                                  _buildMenuItem(
+                                    icon: Icons.assessment,
+                                    label: 'Xem Bảng Điểm',
+                                    color: AppColors.info,
+                                    onTap: () => showDialog(
+                                      context: context,
+                                      builder: (_) => const TranscriptDialog(),
+                                    ),
+                                  ),
+                                  _buildMenuItem(
+                                    icon: Icons.calculate,
+                                    label: 'Tính Điểm',
+                                    color: AppColors.success,
+                                    onTap: () => showDialog(
+                                      context: context,
+                                      builder: (_) =>
+                                          const GradeCalculatorDialog(),
+                                    ),
+                                  ),
+                                  _buildMenuItem(
+                                    icon: Icons.auto_awesome,
+                                    label: 'Quiz AI',
+                                    color: AppColors.secondary,
+                                    onTap: () =>
+                                        context.push(AppRoutes.generateQuiz),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+
+                              _buildSectionCard(
+                                title: 'Hoạt động',
+                                icon: Icons.explore_outlined,
+                                theme: theme,
+                                cardColor: cardColor,
+                                textColor: textColor,
+                                children: [
+                                  _buildMenuItem(
+                                    icon: Icons.people,
+                                    label: 'Multiplayer Quiz',
+                                    color: AppColors.primary,
+                                    onTap: () => context.push(
+                                      AppRoutes.multiplayerLobby,
+                                    ),
+                                  ),
+                                  _buildMenuItem(
+                                    icon: Icons.leaderboard,
+                                    label: 'Bảng xếp hạng',
+                                    color: AppColors.warning,
+                                    onTap: () {
+                                      final userSt = context
+                                          .read<UserBloc>()
+                                          .state;
+                                      if (userSt is UserProfileLoaded) {
+                                        context.push(AppRoutes.leaderboard);
+                                      }
+                                    },
+                                  ),
+                                  _buildMenuItem(
+                                    icon: Icons.bar_chart,
+                                    label: 'Thống kê học tập',
+                                    color: AppColors.info,
+                                    onTap: () =>
+                                        context.push(AppRoutes.analytics),
+                                  ),
+                                  _buildMenuItem(
+                                    icon: Icons.download_for_offline,
+                                    label: 'Quản lý Offline',
+                                    color: AppColors.primaryDark,
+                                    onTap: () => context.push(
+                                      AppRoutes.offlineManagement,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                            ],
+
+                            _buildSectionCard(
+                              title: 'Cài đặt',
+                              icon: Icons.settings_outlined,
+                              theme: theme,
+                              cardColor: cardColor,
+                              textColor: textColor,
+                              children: [
+                                SwitchListTile(
+                                  secondary: Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color:
+                                          (isDark
+                                                  ? AppColors.warning
+                                                  : AppColors.secondary)
+                                              .withValues(alpha: 0.15),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(
+                                      isDark
+                                          ? Icons.dark_mode
+                                          : Icons.light_mode,
+                                      color: isDark
+                                          ? AppColors.warning
+                                          : AppColors.secondary,
+                                      size: 20,
+                                    ),
+                                  ),
+                                  title: Text(
+                                    'Chế độ tối',
+                                    style: theme.textTheme.titleSmall,
+                                  ),
+                                  value: isDark,
+                                  onChanged: (value) {
+                                    context.read<ThemeCubit>().toggleTheme(
+                                      value,
+                                    );
+                                  },
+                                ),
+                                const Divider(height: 1),
+                                ListTile(
+                                  leading: Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.warning.withValues(
+                                        alpha: 0.15,
+                                      ),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(
+                                      Icons.lock_reset_rounded,
+                                      color: AppColors.warning,
+                                      size: 20,
+                                    ),
+                                  ),
+                                  title: Text(
+                                    'Đổi Mật Khẩu',
+                                    style: theme.textTheme.titleSmall,
+                                  ),
+                                  trailing: Icon(Icons.chevron_right, size: 20),
+                                  onTap: () {
+                                    showDialog(
+                                      context: context,
+                                      builder: (_) =>
+                                          const ChangePasswordDialog(),
+                                    );
+                                  },
+                                ),
+                              ],
+                            ),
+
+                            SizedBox(
+                              width: double.infinity,
+                              height: 52,
+                              child: OutlinedButton.icon(
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: AppColors.error,
+                                  side: BorderSide(
+                                    color: AppColors.error.withValues(
+                                      alpha: 0.5,
+                                    ),
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(14),
                                   ),
                                 ),
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              isTeacher ? email : name,
-                              style: TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                                color: textColor,
-                              ),
-                            ),
-                            if (!isTeacher) ...[
-                              const SizedBox(height: 4),
-                              Text(
-                                email,
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: subTextColor,
-                                ),
-                              ),
-                            ],
-                            const SizedBox(height: 12),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: isTeacher
-                                    ? Colors.orange.withOpacity(0.2)
-                                    : accentColor.withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Text(
-                                roleName,
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: isTeacher
-                                      ? Colors.orange
-                                      : accentColor,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      if (!isTeacher)
-                        SizedBox(
-                          width: double.infinity,
-                          child: OutlinedButton.icon(
-                            onPressed: () {
-                              showDialog(
-                                context: context,
-                                builder: (context) => const TranscriptDialog(),
-                              );
-                            },
-                            icon: const Icon(Icons.assessment),
-                            label: const Text("Xem Bảng Điểm"),
-                            style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              side: BorderSide(color: accentColor),
-                              foregroundColor: accentColor,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                          ),
-                        ),
-                      const SizedBox(height: 12),
-                      if (!isTeacher)
-                        SizedBox(
-                          width: double.infinity,
-                          child: OutlinedButton.icon(
-                            onPressed: () {
-                              showDialog(
-                                context: context,
-                                builder: (context) =>
-                                    const GradeCalculatorDialog(),
-                              );
-                            },
-                            icon: const Icon(Icons.calculate),
-                            label: const Text("Tính Điểm"),
-                            style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              side: BorderSide(color: Colors.green),
-                              foregroundColor: Colors.green,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                          ),
-                        ),
-                      const SizedBox(height: 12),
-                      if (!isTeacher) ...[
-                        const SizedBox(height: 12),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton.icon(
-                            onPressed: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      const GenerateQuizPage(),
-                                ),
-                              );
-                            },
-                            icon: const Icon(Icons.auto_awesome),
-                            label: const Text("Quiz AI"),
-                            style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              backgroundColor: Colors.purple,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: OutlinedButton.icon(
                                 onPressed: () {
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          const MultiplayerLobbyPage(),
-                                    ),
+                                  context.read<AuthBloc>().add(
+                                    LogoutRequested(),
                                   );
                                 },
-                                icon: const Icon(Icons.people),
-                                label: const Text("Multiplayer"),
-                                style: OutlinedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 12,
-                                  ),
-                                  side: const BorderSide(
-                                    color: Colors.deepPurple,
-                                  ),
-                                  foregroundColor: Colors.deepPurple,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
+                                icon: const Icon(Icons.logout),
+                                label: const Text(
+                                  'Đăng Xuất',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
                                   ),
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: OutlinedButton.icon(
-                                onPressed: () {
-                                  final userState = context
-                                      .read<UserBloc>()
-                                      .state;
-                                  if (userState is UserProfileLoaded) {
-                                    Navigator.of(context).push(
-                                      MaterialPageRoute(
-                                        builder: (context) => LeaderboardPage(
-                                          classId:
-                                              int.tryParse(
-                                                userState.user.className ?? '1',
-                                              ) ??
-                                              1,
-                                        ),
-                                      ),
-                                    );
-                                  } else {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text(
-                                          'Đang tải thông tin... Vui lòng thử lại sau giây lát',
-                                        ),
-                                      ),
-                                    );
-
-                                    final authState = context
-                                        .read<AuthBloc>()
-                                        .state;
-                                    if (authState is AuthSuccess &&
-                                        authState.user != null) {
-                                      context.read<UserBloc>().add(
-                                        LoadUserProfile(authState.user!.id),
-                                      );
-                                    }
-                                  }
-                                },
-                                icon: const Icon(Icons.leaderboard),
-                                label: const Text("Leaderboard"),
-                                style: OutlinedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 12,
-                                  ),
-                                  side: const BorderSide(color: Colors.orange),
-                                  foregroundColor: Colors.orange,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                ),
-                              ),
-                            ),
+                            const SizedBox(height: 30),
                           ],
                         ),
-                        const SizedBox(height: 12),
-                        SizedBox(
-                          width: double.infinity,
-                          child: OutlinedButton.icon(
-                            onPressed: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      const AchievementsPage(),
-                                ),
-                              );
-                            },
-                            icon: const Icon(Icons.emoji_events),
-                            label: const Text("Thành Tích & Streak"),
-                            style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              side: const BorderSide(color: Colors.amber),
-                              foregroundColor: Colors.amber[800],
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        SizedBox(
-                          width: double.infinity,
-                          child: OutlinedButton.icon(
-                            onPressed: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (context) => BlocProvider(
-                                    create: (_) => di.sl<AnalyticsBloc>(),
-                                    child: AnalyticsDashboardPage(
-                                      userId: authUser.id,
-                                    ),
-                                  ),
-                                ),
-                              );
-                            },
-                            icon: const Icon(Icons.bar_chart),
-                            label: const Text("Thống kê học tập"),
-                            style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              side: const BorderSide(color: Colors.indigo),
-                              foregroundColor: Colors.indigo,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        SizedBox(
-                          width: double.infinity,
-                          child: OutlinedButton.icon(
-                            onPressed: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (context) => BlocProvider(
-                                    create: (_) => di.sl<OfflineBloc>(),
-                                    child: const OfflineManagementPage(),
-                                  ),
-                                ),
-                              );
-                            },
-                            icon: const Icon(Icons.download_for_offline),
-                            label: const Text("Quản lý Offline"),
-                            style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              side: const BorderSide(color: Colors.teal),
-                              foregroundColor: Colors.teal,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                      const SizedBox(height: 30),
-                      if (isTeacher) ...[
-                        _buildEditableRow(
-                          icon: Icons.business,
-                          label: "Khoa / Bộ môn",
-                          controller: _departmentController,
-                          cardColor: cardColor,
-                          textColor: textColor,
-                          subTextColor: subTextColor,
-                          fillColor: inputFillColor,
-                        ),
-                        const SizedBox(height: 16),
-                        _buildEditableRow(
-                          icon: Icons.badge,
-                          label: "Mã Giáo Viên (MSGV)",
-                          controller: _msgvController,
-                          cardColor: cardColor,
-                          textColor: textColor,
-                          subTextColor: subTextColor,
-                          fillColor: inputFillColor,
-                          isNumber: true,
-                        ),
-                      ] else ...[
-                        _buildEditableRow(
-                          icon: Icons.school_outlined,
-                          label: "Lớp / Chuyên ngành",
-                          controller: _classController,
-                          cardColor: cardColor,
-                          textColor: textColor,
-                          subTextColor: subTextColor,
-                          fillColor: inputFillColor,
-                        ),
-                        const SizedBox(height: 16),
-                        _buildEditableRow(
-                          icon: Icons.badge_outlined,
-                          label: "Mã số sinh viên (MSV)",
-                          controller: _msvController,
-                          cardColor: cardColor,
-                          textColor: textColor,
-                          subTextColor: subTextColor,
-                          fillColor: inputFillColor,
-                          isNumber: true,
-                        ),
-                      ],
-                      const SizedBox(height: 40),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 50,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          onPressed: () =>
-                              _onSave(authUser.id, isTeacher, email, name),
-                          child: const Text(
-                            "Lưu Thông Tin",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
                       ),
-                      const SizedBox(height: 16),
-                      Container(
-                        decoration: BoxDecoration(
-                          color: cardColor,
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: SwitchListTile(
-                          secondary: Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: isDarkMode
-                                  ? Colors.orange.withOpacity(0.2)
-                                  : Colors.purple.withOpacity(0.1),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              isDarkMode ? Icons.dark_mode : Icons.light_mode,
-                              color: isDarkMode ? Colors.orange : Colors.purple,
-                            ),
-                          ),
-                          title: Text(
-                            "Chế độ tối",
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: textColor,
-                            ),
-                          ),
-                          value: isDarkMode,
-                          activeThumbColor: accentColor,
-                          onChanged: (value) {
-                            context.read<ThemeCubit>().toggleTheme(value);
-                          },
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 55,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.redAccent.withOpacity(0.9),
-                            foregroundColor: Colors.white,
-                            elevation: 2,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          onPressed: () {
-                            context.read<AuthBloc>().add(LogoutRequested());
-                          },
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: const [
-                              Icon(Icons.logout),
-                              SizedBox(width: 8),
-                              Text(
-                                "Đăng Xuất",
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 30),
-                    ],
-                  ),
+                    ),
+                  ],
                 );
               },
             );
@@ -640,72 +399,660 @@ class _ProfileViewState extends State<ProfileView> {
     );
   }
 
-  Widget _buildEditableRow({
+  Widget _buildHeroHeader({
+    required String name,
+    required String email,
+    required bool isTeacher,
+    required String roleName,
+    required ThemeData theme,
+    required bool isDark,
+  }) {
+    return SliverAppBar(
+      expandedHeight: 180,
+      pinned: true,
+      backgroundColor: isDark ? AppColors.darkSurface : AppColors.primary,
+      title: const Text('Hồ Sơ Cá Nhân'),
+      centerTitle: true,
+      flexibleSpace: FlexibleSpaceBar(
+        background: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: isDark
+                  ? [
+                      AppColors.darkBackground,
+                      AppColors.primaryDark.withValues(alpha: 0.4),
+                    ]
+                  : [
+                      AppColors.primaryDark,
+                      AppColors.primary,
+                      AppColors.secondary,
+                    ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+          child: SafeArea(
+            top: false,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const SizedBox(height: 0),
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.5),
+                      width: 3,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.3),
+                        blurRadius: 20,
+                        spreadRadius: 2,
+                      ),
+                    ],
+                  ),
+                  child: CircleAvatar(
+                    radius: 30,
+                    backgroundColor: Colors.white.withValues(alpha: 0.2),
+                    child: Text(
+                      name.isNotEmpty ? name[0].toUpperCase() : 'U',
+                      style: const TextStyle(
+                        fontSize: 22,
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  name,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  email,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.white.withValues(alpha: 0.8),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        isTeacher ? Icons.workspace_premium : Icons.school,
+                        color: Colors.white,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        roleName,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatsRow(bool isDark, Color textColor) {
+    return BlocBuilder<AchievementBloc, AchievementState>(
+      builder: (context, achieveState) {
+        int achievePoints = 0;
+        int earnedCount = 0;
+        int totalAchieve = 0;
+
+        if (achieveState is AchievementsLoaded) {
+          achievePoints = achieveState.totalPoints;
+          earnedCount = achieveState.earnedCount;
+          totalAchieve = achieveState.achievements.length;
+        }
+
+        return Row(
+          children: [
+            Expanded(
+              child: _buildStatCard(
+                icon: Icons.emoji_events,
+                label: 'Thành tích',
+                value: '$earnedCount/$totalAchieve',
+                color: AppColors.warning,
+                isDark: isDark,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _buildStatCard(
+                icon: Icons.stars,
+                label: 'Điểm tích lũy',
+                value: '$achievePoints',
+                color: AppColors.primary,
+                isDark: isDark,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _buildStatCard(
+                icon: Icons.local_fire_department,
+                label: 'Hoạt động',
+                value: earnedCount > 5
+                    ? 'Pro'
+                    : earnedCount > 2
+                    ? 'Tốt'
+                    : 'Mới',
+                color: AppColors.error,
+                isDark: isDark,
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildStatCard({
     required IconData icon,
     required String label,
-    required TextEditingController controller,
-    required Color cardColor,
-    required Color textColor,
-    required Color? subTextColor,
-    required Color fillColor,
-    bool isNumber = false,
+    required String value,
+    required Color color,
+    required bool isDark,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
       decoration: BoxDecoration(
-        color: cardColor,
+        color: isDark ? AppColors.darkCard : Colors.white,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: color.withValues(alpha: 0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
-      child: Row(
+      child: Column(
         children: [
           Container(
-            padding: const EdgeInsets.all(10),
+            padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.blueAccent.withOpacity(0.1),
+              color: color.withValues(alpha: 0.12),
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, color: Colors.blueAccent, size: 24),
+            child: Icon(icon, color: color, size: 22),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              color: isDark
+                  ? AppColors.textSecondaryDark
+                  : AppColors.textSecondaryLight,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAchievementsPreview({
+    required bool isDark,
+    required Color cardColor,
+    required Color textColor,
+    required ThemeData theme,
+  }) {
+    return BlocBuilder<AchievementBloc, AchievementState>(
+      builder: (context, state) {
+        List<AchievementEntity> earned = [];
+
+        if (state is AchievementsLoaded) {
+          earned = state.achievements.where((a) => a.earned).take(6).toList();
+        }
+
+        return Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: cardColor,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.border(context)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    Icons.workspace_premium,
+                    size: 18,
+                    color: AppColors.warning,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Huy hiệu đạt được',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      color: AppColors.warning,
+                    ),
+                  ),
+                  const Spacer(),
+                  GestureDetector(
+                    onTap: () => context.push(AppRoutes.achievements),
+                    child: Text(
+                      'Xem tất cả →',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              if (state is AchievementLoading)
+                const Center(
+                  child: SizedBox(
+                    height: 24,
+                    width: 24,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                )
+              else if (earned.isEmpty)
+                Center(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.emoji_events_outlined,
+                          size: 40,
+                          color: textColor.withValues(alpha: 0.3),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Chưa có huy hiệu nào',
+                          style: TextStyle(
+                            color: textColor.withValues(alpha: 0.5),
+                            fontSize: 13,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Học tập để mở khóa thành tích!',
+                          style: TextStyle(
+                            color: textColor.withValues(alpha: 0.35),
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              else
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: earned.map((a) => _buildBadge(a, isDark)).toList(),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildBadge(AchievementEntity achievement, bool isDark) {
+    final color = _badgeColor(achievement.iconName);
+    return Tooltip(
+      message: '${achievement.name}\n+${achievement.points} điểm',
+      child: Column(
+        children: [
+          Container(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [color, color.withValues(alpha: 0.7)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: color.withValues(alpha: 0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Icon(
+              _getIcon(achievement.iconName),
+              color: Colors.white,
+              size: 24,
+            ),
+          ),
+          const SizedBox(height: 4),
+          SizedBox(
+            width: 56,
+            child: Text(
+              achievement.name,
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w500,
+                color: isDark
+                    ? AppColors.textSecondaryDark
+                    : AppColors.textSecondaryLight,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color _badgeColor(String iconName) {
+    switch (iconName) {
+      case 'emoji_events':
+        return AppColors.warning;
+      case 'local_fire_department':
+      case 'whatshot':
+        return AppColors.error;
+      case 'military_tech':
+        return AppColors.primaryDark;
+      case 'bolt':
+        return AppColors.info;
+      case 'school':
+        return AppColors.primary;
+      case 'leaderboard':
+        return AppColors.secondary;
+      default:
+        return AppColors.primary;
+    }
+  }
+
+  IconData _getIcon(String iconName) {
+    switch (iconName) {
+      case 'emoji_events':
+        return Icons.emoji_events;
+      case 'local_fire_department':
+        return Icons.local_fire_department;
+      case 'whatshot':
+        return Icons.whatshot;
+      case 'military_tech':
+        return Icons.military_tech;
+      case 'bolt':
+        return Icons.bolt;
+      case 'school':
+        return Icons.school;
+      case 'emoji_flags':
+        return Icons.emoji_flags;
+      case 'leaderboard':
+        return Icons.leaderboard;
+      default:
+        return Icons.emoji_events;
+    }
+  }
+
+  Widget _buildInfoSection({
+    required bool isTeacher,
+    required UserState userState,
+    required ThemeData theme,
+    required Color cardColor,
+    required Color textColor,
+    required bool isDark,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border(context)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.person_outline, size: 18, color: AppColors.primary),
+              const SizedBox(width: 8),
+              Text(
+                'Thông tin cá nhân',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  color: AppColors.primary,
+                ),
+              ),
+              const Spacer(),
+            ],
+          ),
+          const SizedBox(height: 16),
+          if (isTeacher) ...[
+            _buildInfoField(
+              label: 'Khoa / Bộ môn',
+              controller: _departmentController,
+              icon: Icons.business,
+              editable: false,
+              isDark: isDark,
+            ),
+            const SizedBox(height: 12),
+            _buildInfoField(
+              label: 'Mã số giảng viên',
+              controller: _msgvController,
+              icon: Icons.badge,
+              editable: false,
+              isDark: isDark,
+            ),
+          ] else ...[
+            _buildInfoField(
+              label: 'Lớp',
+              controller: _classController,
+              icon: Icons.class_,
+              editable: false,
+              isDark: isDark,
+            ),
+            const SizedBox(height: 12),
+            _buildInfoField(
+              label: 'Mã sinh viên',
+              controller: _msvController,
+              icon: Icons.badge,
+              editable: false,
+              isDark: isDark,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoField({
+    required String label,
+    required TextEditingController controller,
+    required IconData icon,
+    required bool editable,
+    required bool isDark,
+  }) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isDark
+            ? AppColors.darkSurfaceVariant
+            : AppColors.lightSurfaceVariant,
+        borderRadius: BorderRadius.circular(12),
+        border: editable
+            ? Border.all(color: AppColors.primary.withValues(alpha: 0.5))
+            : null,
+      ),
+      child: Row(
+        children: [
+          Icon(
+            icon,
+            size: 20,
+            color: isDark
+                ? AppColors.textSecondaryDark
+                : AppColors.textSecondaryLight,
+          ),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   label,
-                  style: TextStyle(fontSize: 13, color: subTextColor),
-                ),
-                TextFormField(
-                  controller: controller,
-                  keyboardType: isNumber
-                      ? TextInputType.number
-                      : TextInputType.text,
                   style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: textColor,
+                    fontSize: 11,
+                    color: isDark
+                        ? AppColors.textSecondaryDark
+                        : AppColors.textSecondaryLight,
+                    fontWeight: FontWeight.w500,
                   ),
-                  decoration: InputDecoration(
-                    isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 8),
-                    border: InputBorder.none,
-                    hintText: "Nhập $label",
-                    hintStyle: TextStyle(color: subTextColor?.withOpacity(0.5)),
+                ),
+                const SizedBox(height: 2),
+                editable
+                    ? TextField(
+                        controller: controller,
+                        style: TextStyle(
+                          fontSize: 15,
+                          color: isDark
+                              ? AppColors.textPrimaryDark
+                              : AppColors.textPrimaryLight,
+                        ),
+                        decoration: const InputDecoration(
+                          isDense: true,
+                          contentPadding: EdgeInsets.zero,
+                          border: InputBorder.none,
+                        ),
+                      )
+                    : Text(
+                        controller.text.isEmpty
+                            ? 'Chưa cập nhật'
+                            : controller.text,
+                        style: TextStyle(
+                          fontSize: 15,
+                          color: controller.text.isEmpty
+                              ? (isDark
+                                    ? AppColors.textSecondaryDark
+                                    : AppColors.textSecondaryLight)
+                              : (isDark
+                                    ? AppColors.textPrimaryDark
+                                    : AppColors.textPrimaryLight),
+                          fontStyle: controller.text.isEmpty
+                              ? FontStyle.italic
+                              : FontStyle.normal,
+                        ),
+                      ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionCard({
+    required String title,
+    required IconData icon,
+    required ThemeData theme,
+    required Color cardColor,
+    required Color textColor,
+    required List<Widget> children,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border(context)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Row(
+              children: [
+                Icon(icon, size: 18, color: AppColors.primary),
+                const SizedBox(width: 8),
+                Text(
+                  title,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    color: AppColors.primary,
                   ),
                 ),
               ],
             ),
           ),
-          Icon(Icons.edit, size: 18, color: subTextColor),
+          ...children,
+          const SizedBox(height: 8),
         ],
       ),
+    );
+  }
+
+  Widget _buildMenuItem({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return ListTile(
+      dense: true,
+      leading: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Icon(icon, color: color, size: 20),
+      ),
+      title: Text(label, style: Theme.of(context).textTheme.titleSmall),
+      trailing: Icon(
+        Icons.chevron_right,
+        size: 20,
+        color: AppColors.textSecondary(context),
+      ),
+      onTap: onTap,
     );
   }
 }

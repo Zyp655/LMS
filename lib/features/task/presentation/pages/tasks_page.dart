@@ -10,6 +10,7 @@ import '../../domain/entities/task_entity.dart';
 import '../bloc/task_bloc.dart';
 import '../bloc/task_event.dart';
 import '../bloc/task_state.dart';
+import '../../../../core/theme/app_colors.dart';
 
 class TasksPage extends StatelessWidget {
   const TasksPage({super.key});
@@ -54,10 +55,10 @@ class _TasksViewState extends State<TasksView> {
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final backgroundColor = isDarkMode
-        ? const Color(0xFF121212)
+        ? AppColors.darkBackground
         : Colors.grey[100];
-    final cardColor = isDarkMode ? const Color(0xFF1E1E1E) : Colors.white;
-    final accentColor = Colors.teal;
+    final cardColor = isDarkMode ? AppColors.darkSurface : Colors.white;
+    final accentColor = AppColors.primary;
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -68,7 +69,7 @@ class _TasksViewState extends State<TasksView> {
         ),
         centerTitle: true,
         elevation: 0,
-        backgroundColor: isDarkMode ? const Color(0xFF1E1E1E) : accentColor,
+        backgroundColor: isDarkMode ? AppColors.darkSurface : accentColor,
         foregroundColor: Colors.white,
       ),
       floatingActionButton: ScaleTransition(
@@ -76,7 +77,7 @@ class _TasksViewState extends State<TasksView> {
         child: FloatingActionButton(
           onPressed: () => _showAddTaskDialog(context),
           backgroundColor: accentColor,
-          child: const Icon(Icons.add, color: Colors.white),
+          child: Icon(Icons.add, color: Colors.white),
         ),
       ),
       body: BlocConsumer<TaskBloc, TaskState>(
@@ -85,14 +86,14 @@ class _TasksViewState extends State<TasksView> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.message),
-                backgroundColor: Colors.green,
+                backgroundColor: AppColors.success,
               ),
             );
           } else if (state is TaskError) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.message),
-                backgroundColor: Colors.red,
+                backgroundColor: AppColors.error,
               ),
             );
           }
@@ -163,8 +164,8 @@ class _TasksViewState extends State<TasksView> {
                           background: Container(
                             alignment: Alignment.centerRight,
                             padding: const EdgeInsets.only(right: 20),
-                            color: Colors.red,
-                            child: const Icon(
+                            color: AppColors.error,
+                            child: Icon(
                               Icons.delete,
                               color: Colors.white,
                             ),
@@ -188,7 +189,7 @@ class _TasksViewState extends State<TasksView> {
                                         Navigator.pop(dialogContext, true),
                                     child: const Text(
                                       "Xóa",
-                                      style: TextStyle(color: Colors.red),
+                                      style: TextStyle(color: AppColors.error),
                                     ),
                                   ),
                                 ],
@@ -299,7 +300,7 @@ class _TasksViewState extends State<TasksView> {
                                             vertical: 2,
                                           ),
                                           decoration: BoxDecoration(
-                                            color: Colors.red.withOpacity(0.1),
+                                            color: AppColors.error.withValues(alpha: 0.1),
                                             borderRadius: BorderRadius.circular(
                                               4,
                                             ),
@@ -308,7 +309,7 @@ class _TasksViewState extends State<TasksView> {
                                             "Quá hạn",
                                             style: TextStyle(
                                               fontSize: 10,
-                                              color: Colors.red,
+                                              color: AppColors.error,
                                               fontWeight: FontWeight.bold,
                                             ),
                                           ),
@@ -413,7 +414,7 @@ class _AddTaskDialogState extends State<AddTaskDialog> {
           children: [
             TextField(
               controller: _titleController,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: "Tiêu đề",
                 hintText: "Ví dụ: Nộp bài tập lớn",
                 border: OutlineInputBorder(),
@@ -423,7 +424,7 @@ class _AddTaskDialogState extends State<AddTaskDialog> {
             const SizedBox(height: 16),
             TextField(
               controller: _descController,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: "Mô tả (tùy chọn)",
                 border: OutlineInputBorder(),
               ),
@@ -436,7 +437,7 @@ class _AddTaskDialogState extends State<AddTaskDialog> {
               subtitle: Text(
                 "${DateFormat('dd/MM/yyyy').format(_selectedDate)} - ${_selectedTime.format(context)}",
               ),
-              trailing: const Icon(Icons.calendar_today),
+              trailing: Icon(Icons.calendar_today),
               onTap: _pickDateTime,
             ),
           ],
