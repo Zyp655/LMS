@@ -5,7 +5,7 @@ import '../../domain/entities/quiz_entity.dart';
 import '../../domain/entities/leaderboard_entry.dart';
 import '../../domain/repositories/quiz_repository.dart';
 import '../datasources/quiz_remote_data_source.dart';
-import '../models/quiz_statistics_model.dart';
+import '../../domain/entities/quiz_statistics_entity.dart';
 
 class QuizRepositoryImpl implements QuizRepository {
   final QuizRemoteDataSource remoteDataSource;
@@ -131,7 +131,7 @@ class QuizRepositoryImpl implements QuizRepository {
   }
 
   @override
-  Future<Either<Failure, QuizStatisticsResponse>> getStatistics(
+  Future<Either<Failure, QuizStatisticsResponseEntity>> getStatistics(
     int userId, {
     String? topic,
   }) async {

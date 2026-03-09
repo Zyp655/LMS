@@ -44,7 +44,10 @@ abstract class QuizRemoteDataSource {
     required int timeSpentSeconds,
   });
 
-  Future<QuizStatisticsResponse> getStatistics(int userId, {String? topic});
+  Future<QuizStatisticsResponseModel> getStatistics(
+    int userId, {
+    String? topic,
+  });
   Future<List<Map<String, dynamic>>> getLeaderboard({
     required int classId,
     required String period,
@@ -284,7 +287,7 @@ class QuizRemoteDataSourceImpl implements QuizRemoteDataSource {
   }
 
   @override
-  Future<QuizStatisticsResponse> getStatistics(
+  Future<QuizStatisticsResponseModel> getStatistics(
     int userId, {
     String? topic,
   }) async {
@@ -301,7 +304,7 @@ class QuizRemoteDataSourceImpl implements QuizRemoteDataSource {
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body) as Map<String, dynamic>;
       if (data['success'] == true) {
-        return QuizStatisticsResponse.fromJson(data);
+        return QuizStatisticsResponseModel.fromJson(data);
       } else {
         throw Exception(data['error'] ?? 'Unknown error');
       }
