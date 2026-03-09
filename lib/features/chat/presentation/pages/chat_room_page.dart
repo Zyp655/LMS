@@ -64,9 +64,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
     _typingDebounce?.cancel();
     _messageController.dispose();
     _scrollController.dispose();
-    _chatBloc
-      ..add(const DisconnectWebSocket())
-      ..close();
+    _chatBloc.add(LoadConversations(_currentUserId));
     super.dispose();
   }
 

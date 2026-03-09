@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
-
+﻿import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
 
 class SubmissionGradingPage extends StatefulWidget {
   final int submissionId;
@@ -35,7 +35,8 @@ class _SubmissionGradingPageState extends State<SubmissionGradingPage> {
     final grade = double.tryParse(_gradeController.text);
     if (grade == null || grade < 0 || grade > 10) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng nhập điểm hợp lệ (0-10)')),
+        SnackBar(
+                    content: Text('Vui lòng nhập điểm hợp lệ (0-10)')),
       );
       return;
     }
@@ -47,9 +48,9 @@ class _SubmissionGradingPageState extends State<SubmissionGradingPage> {
       setState(() => _isSubmitting = false);
       Navigator.pop(context, true); 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Đã chấm điểm thành công!'),
-          backgroundColor: Colors.green,
+        SnackBar(
+                    content: Text('Đã chấm điểm thành công!'),
+          backgroundColor: AppColors.success,
         ),
       );
     }
@@ -97,10 +98,10 @@ class _SubmissionGradingPageState extends State<SubmissionGradingPage> {
                 child: Row(
                   children: [
                     CircleAvatar(
-                      backgroundColor: Colors.blueAccent.withOpacity(0.2),
+                      backgroundColor: AppColors.info.withValues(alpha: 0.2),
                       child: Text(
                         widget.studentName[0].toUpperCase(),
-                        style: const TextStyle(color: Colors.blueAccent),
+                        style: TextStyle(color: AppColors.info),
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -145,13 +146,13 @@ class _SubmissionGradingPageState extends State<SubmissionGradingPage> {
                   if (widget.linkUrl != null && widget.linkUrl!.isNotEmpty) ...[
                     Row(
                       children: [
-                        const Icon(Icons.link, color: Colors.blue),
+                        Icon(Icons.link, color: AppColors.info),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             widget.linkUrl!,
                             style: const TextStyle(
-                              color: Colors.blue,
+                              color: AppColors.info,
                               decoration: TextDecoration.underline,
                             ),
                           ),
@@ -188,7 +189,7 @@ class _SubmissionGradingPageState extends State<SubmissionGradingPage> {
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'Điểm (0-10)',
                       border: OutlineInputBorder(),
                       prefixIcon: Icon(Icons.score),
@@ -203,7 +204,7 @@ class _SubmissionGradingPageState extends State<SubmissionGradingPage> {
             TextFormField(
               controller: _feedbackController,
               maxLines: 4,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Nhận xét của giáo viên',
                 hintText: 'Bài làm rất tốt, tuy nhiên cần cải thiện...',
                 border: OutlineInputBorder(),

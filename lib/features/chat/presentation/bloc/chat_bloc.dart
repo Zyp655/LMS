@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:get_it/get_it.dart';
 import '../../data/services/chat_ws_service.dart';
 import '../../domain/entities/chat_message_entity.dart';
 import '../../domain/usecases/chat_usecases.dart';
@@ -18,6 +20,8 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   StreamSubscription<int>? _readReceiptSub;
   StreamSubscription<Map<String, dynamic>>? _typingSub;
   Timer? _typingClearTimer;
+
+  List<dynamic>? _cachedConversations;
 
   ChatBloc({
     required this.getConversations,
@@ -39,12 +43,23 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     on<SendTypingEvent>(_onSendTyping);
     on<WebSocketTypingReceived>(_onTypingReceived);
     on<ClearTypingIndicator>(_onClearTyping);
+    on<RefreshConversations>(_onRefreshConversations);
+  }
+
+  int get _currentUserId {
+    try {
+      return GetIt.instance<SharedPreferences>().getInt('userId') ?? 0;
+    } catch (_) {
+      return 0;
+    }
   }
 
   Future<void> _onConnectWebSocket(
     ConnectWebSocket event,
     Emitter<ChatState> emit,
   ) async {
+    if (wsService.isConnected) return;
+
     await wsService.connect(event.userId);
 
     _messageSub?.cancel();
@@ -63,8 +78,6 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       final userName = data['userName'] as String? ?? '';
       add(WebSocketTypingReceived(convId, userName));
     });
-
-    emit(ChatConnected());
   }
 
   Future<void> _onDisconnectWebSocket(
@@ -82,9 +95,47 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     WebSocketMessageReceived event,
     Emitter<ChatState> emit,
   ) {
+    final msg = event.message;
+
     if (state is MessagesLoaded) {
       final current = state as MessagesLoaded;
-      emit(current.copyWithNewMessage(event.message).copyWithClearTyping());
+      if (msg.conversationId == current.conversationId ||
+          msg.conversationId == 0) {
+        emit(current.copyWithNewMessage(msg).copyWithClearTyping());
+        return;
+      }
+    }
+
+    if (_cachedConversations != null) {
+      _refreshCachedConversations(msg);
+      emit(ConversationsLoaded(List.from(_cachedConversations!)));
+    }
+  }
+
+  void _refreshCachedConversations(ChatMessageEntity msg) {
+    if (_cachedConversations == null) return;
+    final userId = _currentUserId;
+
+    bool found = false;
+    for (int i = 0; i < _cachedConversations!.length; i++) {
+      final c = _cachedConversations![i];
+      if (c.id == msg.conversationId) {
+        _cachedConversations![i] = c.copyWith(
+          lastMessage: msg.text,
+          lastMessageTime: msg.timestamp,
+          unreadCount: msg.senderId != userId
+              ? c.unreadCount + 1
+              : c.unreadCount,
+        );
+        found = true;
+        break;
+      }
+    }
+
+    if (found) {
+      _cachedConversations!.sort(
+        (a, b) => b.lastMessageTime.compareTo(a.lastMessageTime),
+      );
     }
   }
 
@@ -135,10 +186,21 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   ) async {
     emit(ChatLoading());
     final result = await getConversations(event.userId);
-    result.fold(
-      (failure) => emit(ChatError(failure.message)),
-      (conversations) => emit(ConversationsLoaded(conversations)),
-    );
+    result.fold((failure) => emit(ChatError(failure.message)), (conversations) {
+      _cachedConversations = List.from(conversations);
+      emit(ConversationsLoaded(conversations));
+    });
+  }
+
+  Future<void> _onRefreshConversations(
+    RefreshConversations event,
+    Emitter<ChatState> emit,
+  ) async {
+    final result = await getConversations(event.userId);
+    result.fold((failure) {}, (conversations) {
+      _cachedConversations = List.from(conversations);
+      emit(ConversationsLoaded(conversations));
+    });
   }
 
   Future<void> _onLoadMessages(

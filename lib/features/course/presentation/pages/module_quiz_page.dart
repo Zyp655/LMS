@@ -1,8 +1,9 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/api/api_constants.dart';
+import '../../../../core/theme/app_colors.dart';
 
 class ModuleQuizPage extends StatefulWidget {
   final int moduleId;
@@ -97,7 +98,6 @@ class _ModuleQuizPageState extends State<ModuleQuizPage> {
       }
     }
 
-    // Save quiz result to SharedPreferences
     final prefs = await SharedPreferences.getInstance();
     final key = 'quiz_result_${widget.moduleId}';
     await prefs.setString(
@@ -125,13 +125,13 @@ class _ModuleQuizPageState extends State<ModuleQuizPage> {
           _quizData?['quiz']?['topic'] ?? 'Bài kiểm tra',
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
-        backgroundColor: const Color(0xFFFF6636),
+        backgroundColor: AppColors.accent,
         foregroundColor: Colors.white,
         elevation: 0,
       ),
       body: _isLoading
           ? const Center(
-              child: CircularProgressIndicator(color: Color(0xFFFF6636)),
+              child: CircularProgressIndicator(color: AppColors.accent),
             )
           : _questions.isEmpty
           ? _buildNoQuiz()
@@ -156,7 +156,7 @@ class _ModuleQuizPageState extends State<ModuleQuizPage> {
           ElevatedButton(
             onPressed: () => Navigator.pop(context),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFFF6636),
+              backgroundColor: AppColors.accent,
               foregroundColor: Colors.white,
             ),
             child: const Text('Quay lại'),
@@ -169,7 +169,6 @@ class _ModuleQuizPageState extends State<ModuleQuizPage> {
   Widget _buildQuiz() {
     return Column(
       children: [
-        // Progress bar
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           color: Colors.white,
@@ -192,13 +191,12 @@ class _ModuleQuizPageState extends State<ModuleQuizPage> {
               LinearProgressIndicator(
                 value: (_currentQuestionIndex + 1) / _questions.length,
                 backgroundColor: Colors.grey[200],
-                color: const Color(0xFFFF6636),
+                color: AppColors.accent,
               ),
             ],
           ),
         ),
 
-        // Questions
         Expanded(
           child: PageView.builder(
             controller: _pageController,
@@ -212,7 +210,6 @@ class _ModuleQuizPageState extends State<ModuleQuizPage> {
           ),
         ),
 
-        // Navigation
         Container(
           padding: const EdgeInsets.all(16),
           color: Colors.white,
@@ -222,7 +219,7 @@ class _ModuleQuizPageState extends State<ModuleQuizPage> {
                 Expanded(
                   child: OutlinedButton.icon(
                     onPressed: _previousQuestion,
-                    icon: const Icon(Icons.arrow_back),
+                    icon: Icon(Icons.arrow_back),
                     label: const Text('Trước'),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 14),
@@ -235,10 +232,10 @@ class _ModuleQuizPageState extends State<ModuleQuizPage> {
                 child: _currentQuestionIndex < _questions.length - 1
                     ? ElevatedButton.icon(
                         onPressed: _nextQuestion,
-                        icon: const Icon(Icons.arrow_forward),
+                        icon: Icon(Icons.arrow_forward),
                         label: const Text('Tiếp theo'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFFF6636),
+                          backgroundColor: AppColors.accent,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 14),
                         ),
@@ -247,10 +244,10 @@ class _ModuleQuizPageState extends State<ModuleQuizPage> {
                         onPressed: _userAnswers.length == _questions.length
                             ? _submitQuiz
                             : null,
-                        icon: const Icon(Icons.check_circle),
+                        icon: Icon(Icons.check_circle),
                         label: const Text('Nộp bài'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF4CAF50),
+                          backgroundColor: AppColors.success,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 14),
                         ),
@@ -281,7 +278,7 @@ class _ModuleQuizPageState extends State<ModuleQuizPage> {
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 10,
                 ),
               ],
@@ -306,12 +303,12 @@ class _ModuleQuizPageState extends State<ModuleQuizPage> {
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? const Color(0xFFFF6636).withOpacity(0.1)
+                      ? AppColors.accent.withValues(alpha: 0.1)
                       : Colors.white,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: isSelected
-                        ? const Color(0xFFFF6636)
+                        ? AppColors.accent
                         : Colors.grey[300]!,
                     width: isSelected ? 2 : 1,
                   ),
@@ -323,7 +320,7 @@ class _ModuleQuizPageState extends State<ModuleQuizPage> {
                       height: 28,
                       decoration: BoxDecoration(
                         color: isSelected
-                            ? const Color(0xFFFF6636)
+                            ? AppColors.accent
                             : Colors.grey[200],
                         shape: BoxShape.circle,
                       ),
@@ -350,7 +347,7 @@ class _ModuleQuizPageState extends State<ModuleQuizPage> {
                       ),
                     ),
                     if (isSelected)
-                      const Icon(Icons.check_circle, color: Color(0xFFFF6636)),
+                      Icon(Icons.check_circle, color: AppColors.accent),
                   ],
                 ),
               ),
@@ -374,8 +371,8 @@ class _ModuleQuizPageState extends State<ModuleQuizPage> {
             padding: const EdgeInsets.all(32),
             decoration: BoxDecoration(
               color: isPassing
-                  ? const Color(0xFF4CAF50)
-                  : const Color(0xFFFF6636),
+                  ? AppColors.success
+                  : AppColors.accent,
               borderRadius: BorderRadius.circular(20),
             ),
             child: Column(
@@ -457,12 +454,12 @@ class _ModuleQuizPageState extends State<ModuleQuizPage> {
                   if (userAnswer != null && userAnswer != correctIndex)
                     Text(
                       '❌ Bạn chọn: ${options[userAnswer]}',
-                      style: const TextStyle(color: Colors.red),
+                      style: TextStyle(color: AppColors.error),
                     ),
                   Text(
                     '✅ Đáp án đúng: ${options[correctIndex]}',
                     style: const TextStyle(
-                      color: Colors.green,
+                      color: AppColors.success,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -471,16 +468,16 @@ class _ModuleQuizPageState extends State<ModuleQuizPage> {
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFFF3E0),
+                        color: AppColors.warning.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.lightbulb,
                             size: 16,
-                            color: Color(0xFFF57C00),
+                            color: AppColors.warningDark,
                           ),
                           const SizedBox(width: 8),
                           Expanded(
@@ -488,7 +485,7 @@ class _ModuleQuizPageState extends State<ModuleQuizPage> {
                               q['explanation'].toString(),
                               style: const TextStyle(
                                 fontSize: 13,
-                                color: Color(0xFFE65100),
+                                color: AppColors.accent,
                               ),
                             ),
                           ),
@@ -524,7 +521,7 @@ class _ModuleQuizPageState extends State<ModuleQuizPage> {
                 child: ElevatedButton(
                   onPressed: () => Navigator.pop(context),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFF6636),
+                    backgroundColor: AppColors.accent,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),

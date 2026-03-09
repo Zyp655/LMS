@@ -1,18 +1,12 @@
-import 'package:flutter/material.dart';
-import '../../domain/entities/course_entity.dart';
-import '../../../../core/route/app_route.dart';
+﻿import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import '../../domain/entities/course_class_entity.dart';
+import '../../../../core/theme/app_colors.dart';
 
 class CourseCard extends StatefulWidget {
-  final CourseEntity course;
-  final bool showProgress;
-  final double? progress;
+  final CourseClassEntity courseClass;
 
-  const CourseCard({
-    super.key,
-    required this.course,
-    this.showProgress = false,
-    this.progress,
-  });
+  const CourseCard({super.key, required this.courseClass});
 
   @override
   State<CourseCard> createState() => _CourseCardState();
@@ -23,309 +17,299 @@ class _CourseCardState extends State<CourseCard> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cc = widget.courseClass;
+
     return GestureDetector(
       onTapDown: (_) => setState(() => _isPressed = true),
       onTapUp: (_) => setState(() => _isPressed = false),
       onTapCancel: () => setState(() => _isPressed = false),
       onTap: () {
-        Navigator.pushNamed(
-          context,
-          AppRoutes.courseDetail,
-          arguments: widget.course.id,
-        );
+        context.push('/courses/${cc.courseId}');
       },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
         transform: Matrix4.identity()..scale(_isPressed ? 0.98 : 1.0),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
+            color: isDark ? AppColors.darkSurface : Colors.white,
+            borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: const Color(
-                  0xFF6C63FF,
-                ).withOpacity(_isPressed ? 0.15 : 0.08),
-                blurRadius: _isPressed ? 20 : 16,
+                color: Colors.black.withValues(alpha: _isPressed ? 0.12 : 0.08),
+                blurRadius: _isPressed ? 24 : 20,
                 offset: Offset(0, _isPressed ? 8 : 4),
               ),
             ],
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildThumbnail(),
-              _buildContent(),
-              if (widget.showProgress) _buildProgressBar(),
-            ],
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildHeader(isDark, cc),
+                const SizedBox(height: 12),
+                _buildTitle(isDark, cc),
+                const SizedBox(height: 8),
+                _buildDepartmentCredits(isDark, cc),
+                const SizedBox(height: 12),
+                _buildTeacherSchedule(isDark, cc),
+                const SizedBox(height: 16),
+                _buildFooter(isDark, cc),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildThumbnail() {
-    return Stack(
+  Widget _buildHeader(bool isDark, CourseClassEntity cc) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        ClipRRect(
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-          child: AspectRatio(
-            aspectRatio: 16 / 9,
-            child: widget.course.thumbnailUrl != null
-                ? Image.network(
-                    widget.course.thumbnailUrl!,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => _buildPlaceholder(),
-                    loadingBuilder: (context, child, loadingProgress) {
-                      if (loadingProgress == null) return child;
-                      return _buildLoadingPlaceholder();
-                    },
-                  )
-                : _buildPlaceholder(),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: cc.isRequired
+                ? AppColors.primary.withValues(alpha: 0.12)
+                : AppColors.warning.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(8),
           ),
-        ),
-        Positioned.fill(
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(20),
-              ),
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Colors.transparent, Colors.black.withOpacity(0.3)],
-                stops: const [0.6, 1.0],
-              ),
+          child: Text(
+            cc.isRequired ? 'Bắt buộc' : 'Tự chọn',
+            style: TextStyle(
+              color: cc.isRequired ? AppColors.primary : AppColors.warningDark,
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.3,
             ),
           ),
         ),
-        Positioned(top: 12, left: 12, child: _buildPriceBadge()),
-        Positioned(bottom: 12, right: 12, child: _buildDurationBadge()),
+        Text(
+          cc.courseCode,
+          style: TextStyle(
+            color: isDark ? Colors.grey[400] : Colors.grey[500],
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            fontFamily: 'JetBrains Mono',
+            letterSpacing: 0.5,
+          ),
+        ),
       ],
     );
   }
 
-  Widget _buildPriceBadge() {
-    final isFree = widget.course.price == 0;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: isFree ? const Color(0xFF00C853) : Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.15),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+  Widget _buildTitle(bool isDark, CourseClassEntity cc) {
+    return Text(
+      cc.courseName,
+      style: TextStyle(
+        fontSize: 18,
+        fontWeight: FontWeight.bold,
+        color: isDark ? Colors.white : AppColors.darkBackground,
+        height: 1.3,
       ),
-      child: Text(
-        isFree ? 'MIỄN PHÍ' : '${_formatPrice(widget.course.price)}đ',
-        style: TextStyle(
-          color: isFree ? Colors.white : const Color(0xFF6C63FF),
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
+      maxLines: 2,
+      overflow: TextOverflow.ellipsis,
     );
   }
 
-  Widget _buildDurationBadge() {
-    if (widget.course.durationMinutes == 0) return const SizedBox();
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.6),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.play_circle_fill, size: 14, color: Colors.white),
+  Widget _buildDepartmentCredits(bool isDark, CourseClassEntity cc) {
+    return Row(
+      children: [
+        if (cc.departmentName != null) ...[
+          Icon(
+            Icons.account_balance_outlined,
+            size: 14,
+            color: isDark ? Colors.grey[400] : Colors.grey[500],
+          ),
           const SizedBox(width: 4),
           Text(
-            _formatDuration(widget.course.durationMinutes),
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
+            cc.departmentName!,
+            style: TextStyle(
+              fontSize: 13,
+              color: isDark ? Colors.grey[400] : Colors.grey[600],
             ),
           ),
+          const SizedBox(width: 8),
+          Text('•', style: TextStyle(color: Colors.grey[400])),
+          const SizedBox(width: 8),
         ],
-      ),
-    );
-  }
-
-  Widget _buildContent() {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            widget.course.title,
-            style: const TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF1A1A2E),
-              height: 1.3,
-            ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-          if (widget.course.description != null) ...[
-            const SizedBox(height: 8),
-            Text(
-              widget.course.description!,
-              style: TextStyle(
-                fontSize: 13,
-                color: Colors.grey[600],
-                height: 1.4,
-              ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              _buildStatItem(
-                Icons.people_outline,
-                _formatStudentCount(widget.course.studentCount),
-              ),
-              const SizedBox(width: 16),
-              _buildStatItem(
-                Icons.star,
-                '${widget.course.rating} (${widget.course.reviewsCount})',
-                iconColor: Colors.amber,
-              ),
-              const Spacer(),
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF6C63FF).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(
-                  Icons.arrow_forward,
-                  size: 18,
-                  color: Color(0xFF6C63FF),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatItem(IconData icon, String text, {Color? iconColor}) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 16, color: iconColor ?? Colors.grey[500]),
+        Icon(
+          Icons.school_outlined,
+          size: 14,
+          color: isDark ? Colors.grey[400] : Colors.grey[500],
+        ),
         const SizedBox(width: 4),
         Text(
-          text,
+          '${cc.credits} tín chỉ',
           style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey[600],
-            fontWeight: FontWeight.w500,
+            fontSize: 13,
+            color: isDark ? Colors.grey[400] : Colors.grey[600],
           ),
         ),
       ],
     );
   }
 
-  String _formatStudentCount(int count) {
-    if (count >= 1000) {
-      return '${(count / 1000).toStringAsFixed(1)}k học viên';
-    }
-    return '$count học viên';
-  }
-
-  Widget _buildProgressBar() {
-    final progress = widget.progress ?? 0.0;
+  Widget _buildTeacherSchedule(bool isDark, CourseClassEntity cc) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isDark
+            ? AppColors.darkSurfaceVariant.withValues(alpha: 0.5)
+            : Colors.grey[50],
+        borderRadius: BorderRadius.circular(10),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Row(
+            children: [
+              Icon(Icons.person_outline, size: 15, color: AppColors.primary),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  'GV: ${cc.teacherName}',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: isDark ? Colors.grey[300] : Colors.grey[700],
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (cc.schedule != null || cc.room != null) ...[
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                Icon(
+                  Icons.schedule_outlined,
+                  size: 15,
+                  color: AppColors.accent,
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    [
+                      if (cc.schedule != null) cc.schedule,
+                      if (cc.room != null) cc.room,
+                    ].join(' • '),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isDark ? Colors.grey[400] : Colors.grey[600],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFooter(bool isDark, CourseClassEntity cc) {
+    return Column(
+      children: [
+        if (cc.isEnrolled && cc.progressPercent > 0) ...[
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Tiến độ học',
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                'Tiến độ',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: isDark ? Colors.grey[400] : Colors.grey[600],
+                ),
               ),
               Text(
-                '${(progress * 100).toInt()}%',
+                '${cc.progressPercent.toInt()}%',
                 style: const TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF6C63FF),
+                  color: AppColors.primary,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           ClipRRect(
             borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(
-              value: progress,
-              backgroundColor: Colors.grey[200],
+              value: cc.progressPercent / 100,
+              backgroundColor: isDark ? Colors.grey[800] : Colors.grey[200],
               valueColor: const AlwaysStoppedAnimation<Color>(
-                Color(0xFF6C63FF),
+                AppColors.primary,
               ),
-              minHeight: 6,
+              minHeight: 5,
             ),
           ),
+          const SizedBox(height: 12),
         ],
-      ),
-    );
-  }
-
-  Widget _buildPlaceholder() {
-    return Container(
-      color: const Color(0xFFE8E8F4),
-      child: Center(
-        child: Icon(
-          Icons.school,
-          size: 48,
-          color: const Color(0xFF6C63FF).withOpacity(0.3),
+        Row(
+          children: [
+            Icon(
+              Icons.people_outline,
+              size: 16,
+              color: isDark ? Colors.grey[400] : Colors.grey[500],
+            ),
+            const SizedBox(width: 4),
+            Text(
+              '${cc.enrolledCount}/${cc.maxStudents}',
+              style: TextStyle(
+                fontSize: 12,
+                color: isDark ? Colors.grey[400] : Colors.grey[600],
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            if (cc.semesterName != null) ...[
+              const SizedBox(width: 12),
+              Icon(
+                Icons.calendar_today_outlined,
+                size: 14,
+                color: isDark ? Colors.grey[400] : Colors.grey[500],
+              ),
+              const SizedBox(width: 4),
+              Text(
+                cc.semesterName!,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: isDark ? Colors.grey[400] : Colors.grey[600],
+                ),
+              ),
+            ],
+            const Spacer(),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: cc.isCompleted ? AppColors.success : AppColors.primary,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    cc.isCompleted ? Icons.check_circle : Icons.play_arrow,
+                    size: 16,
+                    color: Colors.white,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    cc.isCompleted ? 'Hoàn thành' : 'Vào học',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
-      ),
+      ],
     );
-  }
-
-  Widget _buildLoadingPlaceholder() {
-    return Container(
-      color: const Color(0xFFE8E8F4),
-      child: Center(
-        child: CircularProgressIndicator(
-          strokeWidth: 2,
-          valueColor: AlwaysStoppedAnimation<Color>(
-            const Color(0xFF6C63FF).withOpacity(0.5),
-          ),
-        ),
-      ),
-    );
-  }
-
-  String _formatDuration(int minutes) {
-    if (minutes < 60) return '$minutes phút';
-    final hours = minutes ~/ 60;
-    final mins = minutes % 60;
-    return mins == 0 ? '${hours}h' : '${hours}h ${mins}m';
-  }
-
-  String _formatPrice(double price) {
-    if (price >= 1000000) {
-      return '${(price / 1000000).toStringAsFixed(1)}M';
-    } else if (price >= 1000) {
-      return '${(price / 1000).toStringAsFixed(0)}K';
-    }
-    return price.toStringAsFixed(0);
   }
 }

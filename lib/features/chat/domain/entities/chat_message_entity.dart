@@ -2,6 +2,7 @@ import 'package:equatable/equatable.dart';
 
 class ChatMessageEntity extends Equatable {
   final int id;
+  final int conversationId;
   final int senderId;
   final String senderName;
   final String text;
@@ -12,6 +13,7 @@ class ChatMessageEntity extends Equatable {
 
   const ChatMessageEntity({
     required this.id,
+    this.conversationId = 0,
     required this.senderId,
     required this.senderName,
     required this.text,
@@ -24,6 +26,7 @@ class ChatMessageEntity extends Equatable {
   factory ChatMessageEntity.fromJson(Map<String, dynamic> json) {
     return ChatMessageEntity(
       id: json['id'] as int,
+      conversationId: json['conversationId'] as int? ?? 0,
       senderId: json['senderId'] as int,
       senderName: json['senderName'] as String? ?? '',
       text: json['content'] as String? ?? '',
@@ -44,6 +47,7 @@ class ChatMessageEntity extends Equatable {
   @override
   List<Object?> get props => [
     id,
+    conversationId,
     senderId,
     text,
     timestamp,

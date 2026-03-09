@@ -4,6 +4,7 @@ import 'package:timeago/timeago.dart' as timeago;
 import '../bloc/submission_bloc.dart';
 import '../../../../injection_container.dart' as di;
 import 'submission_grading_page.dart';
+import '../../../../core/theme/app_colors.dart';
 
 class CourseSubmissionsPage extends StatelessWidget {
   final int assignmentId;
@@ -84,7 +85,7 @@ class CourseSubmissionsPage extends StatelessWidget {
                               'Điểm: ${submission.grade}',
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
-                                color: Colors.green,
+                                color: AppColors.success,
                               ),
                             ),
                           if (submission.linkUrl != null)
@@ -93,13 +94,13 @@ class CourseSubmissionsPage extends StatelessWidget {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
-                                color: Colors.blue,
+                                color: AppColors.info,
                                 fontSize: 12,
                               ),
                             ),
                         ],
                       ),
-                      trailing: const Icon(Icons.chevron_right),
+                      trailing: Icon(Icons.chevron_right),
                       onTap: () async {
                         final result = await Navigator.push(
                           context,

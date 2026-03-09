@@ -20,6 +20,34 @@ class ConversationsLoaded extends ChatState {
 
   const ConversationsLoaded(this.conversations);
 
+  ConversationsLoaded copyWithUpdatedConversation({
+    required int conversationId,
+    required String lastMessage,
+    required DateTime lastMessageTime,
+    required int senderId,
+    required int currentUserId,
+  }) {
+    final updated = conversations.map((c) {
+      if (c.id == conversationId) {
+        return ChatConversationEntity(
+          id: c.id,
+          participantId: c.participantId,
+          participantName: c.participantName,
+          participantAvatar: c.participantAvatar,
+          isTeacher: c.isTeacher,
+          lastMessage: lastMessage,
+          lastMessageTime: lastMessageTime,
+          unreadCount: senderId != currentUserId
+              ? c.unreadCount + 1
+              : c.unreadCount,
+        );
+      }
+      return c;
+    }).toList();
+    updated.sort((a, b) => b.lastMessageTime.compareTo(a.lastMessageTime));
+    return ConversationsLoaded(updated);
+  }
+
   @override
   List<Object?> get props => [conversations];
 }
@@ -52,6 +80,7 @@ class MessagesLoaded extends ChatState {
         .map(
           (m) => ChatMessageEntity(
             id: m.id,
+            conversationId: m.conversationId,
             senderId: m.senderId,
             senderName: m.senderName,
             text: m.text,

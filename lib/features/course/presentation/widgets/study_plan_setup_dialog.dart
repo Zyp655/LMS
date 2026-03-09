@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
-import '../../../../core/api/api_constants.dart';
+import 'package:get_it/get_it.dart';
+import '../../../../core/api/api_client.dart';
+import '../../../../core/theme/app_colors.dart';
 
 class StudyPlanSetupDialog extends StatefulWidget {
   final int courseId;
@@ -52,7 +51,7 @@ class _StudyPlanSetupDialogState extends State<StudyPlanSetupDialog> {
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF1A1A2E),
+                color: AppColors.darkBackground,
               ),
             ),
             const SizedBox(height: 8),
@@ -77,9 +76,9 @@ class _StudyPlanSetupDialogState extends State<StudyPlanSetupDialog> {
                 ),
                 child: Row(
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.calendar_today,
-                      color: Color(0xFFFF6636),
+                      color: AppColors.accent,
                       size: 20,
                     ),
                     const SizedBox(width: 12),
@@ -106,7 +105,7 @@ class _StudyPlanSetupDialogState extends State<StudyPlanSetupDialog> {
               min: 15,
               max: 120,
               divisions: 7,
-              activeColor: const Color(0xFFFF6636),
+              activeColor: AppColors.accent,
               label: '$_dailyMinutes phút',
               onChanged: (val) => setState(() => _dailyMinutes = val.round()),
             ),
@@ -129,11 +128,11 @@ class _StudyPlanSetupDialogState extends State<StudyPlanSetupDialog> {
                       }
                     });
                   },
-                  selectedColor: const Color(0xFFFF6636).withOpacity(0.2),
-                  checkmarkColor: const Color(0xFFFF6636),
+                  selectedColor: AppColors.accent.withValues(alpha: 0.2),
+                  checkmarkColor: AppColors.accent,
                   labelStyle: TextStyle(
                     color: isSelected
-                        ? const Color(0xFFFF6636)
+                        ? AppColors.accent
                         : Colors.black87,
                     fontWeight: isSelected
                         ? FontWeight.bold
@@ -159,9 +158,9 @@ class _StudyPlanSetupDialogState extends State<StudyPlanSetupDialog> {
                 ),
                 child: Row(
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.access_time,
-                      color: Color(0xFFFF6636),
+                      color: AppColors.accent,
                       size: 20,
                     ),
                     const SizedBox(width: 12),
@@ -183,7 +182,7 @@ class _StudyPlanSetupDialogState extends State<StudyPlanSetupDialog> {
               child: ElevatedButton(
                 onPressed: _isLoading ? null : _savePlan,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFF6636),
+                  backgroundColor: AppColors.accent,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
@@ -232,7 +231,7 @@ class _StudyPlanSetupDialogState extends State<StudyPlanSetupDialog> {
         style: const TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w600,
-          color: Color(0xFF1A1A2E),
+          color: AppColors.darkBackground,
         ),
       ),
     );
@@ -248,7 +247,7 @@ class _StudyPlanSetupDialogState extends State<StudyPlanSetupDialog> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(primary: Color(0xFFFF6636)),
+            colorScheme: const ColorScheme.light(primary: AppColors.accent),
           ),
           child: child!,
         );
@@ -264,7 +263,7 @@ class _StudyPlanSetupDialogState extends State<StudyPlanSetupDialog> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(primary: Color(0xFFFF6636)),
+            colorScheme: const ColorScheme.light(primary: AppColors.accent),
           ),
           child: child!,
         );
@@ -276,7 +275,8 @@ class _StudyPlanSetupDialogState extends State<StudyPlanSetupDialog> {
   Future<void> _savePlan() async {
     if (_targetDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng chọn ngày hoàn thành')),
+        SnackBar(
+                    content: Text('Vui lòng chọn ngày hoàn thành')),
       );
       return;
     }
@@ -287,44 +287,28 @@ class _StudyPlanSetupDialogState extends State<StudyPlanSetupDialog> {
       final hour = _reminderTime.hour.toString().padLeft(2, '0');
       final minute = _reminderTime.minute.toString().padLeft(2, '0');
 
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('token');
-      final headers = {
-        'Content-Type': 'application/json',
-        if (token != null) 'Authorization': 'Bearer $token',
-      };
+      final api = GetIt.instance<ApiClient>();
+      await api.post('/courses/${widget.courseId}/study_plan', {
+        'targetCompletionDate': _targetDate!.toIso8601String(),
+        'dailyStudyMinutes': _dailyMinutes,
+        'preferredDays': _preferredDays,
+        'reminderTime': '$hour:$minute',
+      });
 
-      final response = await http.post(
-        Uri.parse(
-          '${ApiConstants.baseUrl}/courses/${widget.courseId}/study_plan',
-        ),
-        headers: headers,
-        body: jsonEncode({
-          'targetCompletionDate': _targetDate!.toIso8601String(),
-          'dailyStudyMinutes': _dailyMinutes,
-          'preferredDays': _preferredDays,
-          'reminderTime': '$hour:$minute',
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        if (mounted) {
-          widget.onSaved();
-          Navigator.pop(context); 
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Đã tạo kế hoạch học tập thành công!'),
-              backgroundColor: Colors.green,
-            ),
-          );
-        }
-      } else {
-        throw Exception('Failed to create plan');
+      if (mounted) {
+        widget.onSaved();
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+                    content: Text('Đã tạo kế hoạch học tập thành công!'),
+            backgroundColor: AppColors.success,
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text('Lỗi: $e'), backgroundColor: AppColors.error),
         );
       }
     } finally {

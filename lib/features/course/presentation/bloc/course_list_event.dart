@@ -9,46 +9,34 @@ abstract class CourseListEvent extends Equatable {
 
 class LoadCoursesEvent extends CourseListEvent {
   final String? search;
-  final String? level;
-  final int? instructorId;
-  final int? majorId;
-  final bool showUnpublished;
+  final int? departmentId;
+  final String? courseType;
 
-  const LoadCoursesEvent({
-    this.search,
-    this.level,
-    this.instructorId,
-    this.majorId,
-    this.showUnpublished = false,
-  });
+  const LoadCoursesEvent({this.search, this.departmentId, this.courseType});
 
   @override
-  List<Object?> get props => [
-    search,
-    level,
-    instructorId,
-    majorId,
-    showUnpublished,
-  ];
+  List<Object?> get props => [search, departmentId, courseType];
 }
 
 class RefreshCoursesEvent extends CourseListEvent {}
 
 class CreateCourseEvent extends CourseListEvent {
-  final String title;
-  final String description;
-  final String level;
-  final int instructorId;
+  final String name;
+  final String code;
+  final int credits;
+  final String? description;
+  final String courseType;
 
   const CreateCourseEvent({
-    required this.title,
-    required this.description,
-    required this.level,
-    required this.instructorId,
+    required this.name,
+    required this.code,
+    required this.credits,
+    this.description,
+    this.courseType = 'required',
   });
 
   @override
-  List<Object?> get props => [title, description, level, instructorId];
+  List<Object?> get props => [name, code, credits, description, courseType];
 }
 
 class DeleteCourseEvent extends CourseListEvent {

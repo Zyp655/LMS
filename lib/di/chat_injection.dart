@@ -15,7 +15,7 @@ void initChatModule(GetIt sl) {
   sl.registerLazySingleton(() => SendMessageUseCase(sl()));
   sl.registerLazySingleton(() => MarkMessagesReadUseCase(sl()));
   sl.registerLazySingleton(() => CreateConversationUseCase(sl()));
-  sl.registerFactory(
+  sl.registerLazySingleton(
     () => ChatBloc(
       getConversations: sl(),
       getMessages: sl(),

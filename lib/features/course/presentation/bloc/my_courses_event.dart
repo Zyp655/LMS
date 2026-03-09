@@ -24,3 +24,18 @@ class RefreshMyCoursesEvent extends MyCoursesEvent {
   @override
   List<Object?> get props => [userId];
 }
+
+class LoadMyAcademicCoursesEvent extends MyCoursesEvent {
+  final int userId;
+  final int? semesterId;
+  final String? status;
+
+  const LoadMyAcademicCoursesEvent({
+    required this.userId,
+    this.semesterId,
+    this.status,
+  });
+
+  @override
+  List<Object?> get props => [userId, semesterId, status];
+}

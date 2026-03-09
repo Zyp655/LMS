@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -22,6 +23,8 @@ class FcmService {
 
   int? _currentUserId;
   int? _activeConversationId;
+  StreamSubscription<String>? _tokenRefreshSub;
+  StreamSubscription<RemoteMessage>? _onMessageSub;
 
   static const AndroidNotificationChannel _chatChannel =
       AndroidNotificationChannel(
@@ -56,7 +59,10 @@ class FcmService {
 
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
-    FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
+    _onMessageSub?.cancel();
+    _onMessageSub = FirebaseMessaging.onMessage.listen(
+      _handleForegroundMessage,
+    );
 
     FirebaseMessaging.onMessageOpenedApp.listen(_handleNotificationTap);
 
@@ -65,12 +71,15 @@ class FcmService {
       _handleNotificationTap(initialMessage);
     }
 
-    final token = await _messaging.getToken();
-    if (token != null) {
-      await _sendTokenToServer(token);
-    }
+    try {
+      final token = await _messaging.getToken();
+      if (token != null) {
+        await _sendTokenToServer(token);
+      }
+    } catch (_) {}
 
-    _messaging.onTokenRefresh.listen(_sendTokenToServer);
+    _tokenRefreshSub?.cancel();
+    _tokenRefreshSub = _messaging.onTokenRefresh.listen(_sendTokenToServer);
   }
 
   void setActiveConversation(int? conversationId) {
@@ -159,6 +168,10 @@ class FcmService {
   }
 
   Future<void> dispose() async {
+    await _tokenRefreshSub?.cancel();
+    await _onMessageSub?.cancel();
+    _tokenRefreshSub = null;
+    _onMessageSub = null;
     _currentUserId = null;
     _activeConversationId = null;
   }

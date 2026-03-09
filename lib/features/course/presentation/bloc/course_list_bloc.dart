@@ -32,10 +32,8 @@ class CourseListBloc extends Bloc<CourseListEvent, CourseListState> {
 
     final result = await getCoursesUseCase(
       search: event.search,
-      level: event.level,
-      instructorId: event.instructorId,
-      majorId: event.majorId,
-      showUnpublished: event.showUnpublished,
+      departmentId: event.departmentId,
+      courseType: event.courseType,
     );
 
     result.fold(
@@ -50,10 +48,8 @@ class CourseListBloc extends Bloc<CourseListEvent, CourseListState> {
   ) async {
     final result = await getCoursesUseCase(
       search: _lastLoadEvent?.search,
-      level: _lastLoadEvent?.level,
-      instructorId: _lastLoadEvent?.instructorId,
-      majorId: _lastLoadEvent?.majorId,
-      showUnpublished: _lastLoadEvent?.showUnpublished ?? false,
+      departmentId: _lastLoadEvent?.departmentId,
+      courseType: _lastLoadEvent?.courseType,
     );
 
     result.fold(
@@ -67,16 +63,16 @@ class CourseListBloc extends Bloc<CourseListEvent, CourseListState> {
     Emitter<CourseListState> emit,
   ) async {
     final result = await createCourseUseCase(
-      title: event.title,
+      name: event.name,
+      code: event.code,
+      credits: event.credits,
       description: event.description,
-      level: event.level,
-      instructorId: event.instructorId,
+      courseType: event.courseType,
     );
 
     result.fold(
-      (failure) =>
-          emit(CourseListError(failure.message)), 
-      (course) => add(RefreshCoursesEvent()), 
+      (failure) => emit(CourseListError(failure.message)),
+      (course) => add(RefreshCoursesEvent()),
     );
   }
 

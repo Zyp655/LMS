@@ -9,8 +9,11 @@ import 'course_detail_event.dart';
 import 'course_detail_state.dart';
 import '../../domain/entities/module_entity.dart';
 import '../../domain/entities/lesson_entity.dart';
+import '../../domain/entities/enrollment_entity.dart';
 import '../../domain/usecases/update_lesson_usecase.dart';
 import '../../domain/usecases/delete_lesson_usecase.dart';
+import '../../../../core/api/api_client.dart';
+import '../../../../injection_container.dart';
 
 class CourseDetailBloc extends Bloc<CourseDetailEvent, CourseDetailState> {
   final GetCourseDetailsUseCase getCourseDetailsUseCase;
@@ -60,30 +63,36 @@ class CourseDetailBloc extends Bloc<CourseDetailEvent, CourseDetailState> {
         await curriculumResult.fold(
           (failure) async => emit(CourseDetailError(failure.message)),
           (modules) async {
+            EnrollmentEntity? enrollment;
             if (event.userId != null) {
-              final enrollmentsResult = await getMyCoursesUseCase(
-                event.userId!,
-              );
-              enrollmentsResult.fold(
-                (failure) {
-                  emit(CourseDetailLoaded(course: course, modules: modules));
-                },
-                (enrollments) {
-                  final enrollment = enrollments
-                      .where((e) => e.courseId == event.courseId)
-                      .firstOrNull;
-                  emit(
-                    CourseDetailLoaded(
-                      course: course,
-                      modules: modules,
-                      enrollment: enrollment,
+              try {
+                final api = sl<ApiClient>();
+                final data = await api.get(
+                  '/academic/courses/${event.courseId}?userId=${event.userId}',
+                );
+                final enrollmentData = data['enrollment'];
+                if (enrollmentData != null) {
+                  enrollment = EnrollmentEntity(
+                    id: enrollmentData['id'] as int,
+                    userId: event.userId!,
+                    courseId: event.courseId,
+                    progressPercent:
+                        (enrollmentData['progressPercent'] as num?)?.toDouble() ?? 0.0,
+                    enrolledAt: DateTime.parse(
+                      enrollmentData['enrolledAt'] as String,
                     ),
                   );
-                },
-              );
-            } else {
-              emit(CourseDetailLoaded(course: course, modules: modules));
+                }
+              } catch (_) {
+              }
             }
+            emit(
+              CourseDetailLoaded(
+                course: course,
+                modules: modules,
+                enrollment: enrollment,
+              ),
+            );
           },
         );
       },

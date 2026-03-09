@@ -75,6 +75,7 @@ class ChatWsService {
         final msgData = data['data'] as Map<String, dynamic>;
         final message = ChatMessageEntity(
           id: msgData['id'] as int,
+          conversationId: msgData['conversationId'] as int? ?? 0,
           senderId: msgData['senderId'] as int,
           senderName: msgData['senderName'] as String? ?? '',
           text: msgData['content'] as String? ?? '',

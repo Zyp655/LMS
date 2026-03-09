@@ -32,28 +32,30 @@ class _ConversationsPageState extends State<ConversationsPage> {
   Future<void> _loadUserIdAndFetch() async {
     final prefs = GetIt.instance<SharedPreferences>();
     _currentUserId = prefs.getInt('userId') ?? 0;
+    _chatBloc.add(ConnectWebSocket(_currentUserId));
     _chatBloc.add(LoadConversations(_currentUserId));
-  }
-
-  @override
-  void dispose() {
-    _chatBloc.close();
-    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider.value(
       value: _chatBloc,
-      child: _ConversationsView(currentUserId: _currentUserId),
+      child: _ConversationsView(
+        currentUserId: _currentUserId,
+        chatBloc: _chatBloc,
+      ),
     );
   }
 }
 
 class _ConversationsView extends StatelessWidget {
   final int currentUserId;
+  final ChatBloc chatBloc;
 
-  const _ConversationsView({required this.currentUserId});
+  const _ConversationsView({
+    required this.currentUserId,
+    required this.chatBloc,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -89,58 +91,63 @@ class _ConversationsView extends StatelessWidget {
           ),
         ],
       ),
-      body: BlocBuilder<ChatBloc, ChatState>(
-        builder: (context, state) {
-          if (state is ChatLoading) {
-            return const Center(
-              child: CircularProgressIndicator(color: AppColors.secondary),
-            );
-          }
-          if (state is ConversationsLoaded) {
-            if (state.conversations.isEmpty) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.chat_bubble_outline,
-                      size: 64,
-                      color: subTextColor,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Chưa có cuộc trò chuyện nào',
-                      style: TextStyle(color: subTextColor, fontSize: 16),
-                    ),
-                  ],
-                ),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          chatBloc.add(RefreshConversations(currentUserId));
+        },
+        child: BlocBuilder<ChatBloc, ChatState>(
+          builder: (context, state) {
+            if (state is ChatLoading) {
+              return const Center(
+                child: CircularProgressIndicator(color: AppColors.secondary),
               );
             }
-            return ListView.separated(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              itemCount: state.conversations.length,
-              separatorBuilder: (_, __) => Divider(
-                indent: 76,
-                height: 1,
-                color: subTextColor.withAlpha(30),
-              ),
-              itemBuilder: (context, index) {
-                final conv = state.conversations[index];
-                return _ConversationTile(
-                  conversation: conv,
-                  currentUserId: currentUserId,
-                  cardColor: cardColor,
-                  textColor: textColor,
-                  subTextColor: subTextColor,
+            if (state is ConversationsLoaded) {
+              if (state.conversations.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.chat_bubble_outline,
+                        size: 64,
+                        color: subTextColor,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Chưa có cuộc trò chuyện nào',
+                        style: TextStyle(color: subTextColor, fontSize: 16),
+                      ),
+                    ],
+                  ),
                 );
-              },
-            );
-          }
-          if (state is ChatError) {
-            return Center(child: Text(state.message));
-          }
-          return const SizedBox.shrink();
-        },
+              }
+              return ListView.separated(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                itemCount: state.conversations.length,
+                separatorBuilder: (_, __) => Divider(
+                  indent: 76,
+                  height: 1,
+                  color: subTextColor.withAlpha(30),
+                ),
+                itemBuilder: (context, index) {
+                  final conv = state.conversations[index];
+                  return _ConversationTile(
+                    conversation: conv,
+                    currentUserId: currentUserId,
+                    cardColor: cardColor,
+                    textColor: textColor,
+                    subTextColor: subTextColor,
+                  );
+                },
+              );
+            }
+            if (state is ChatError) {
+              return Center(child: Text(state.message));
+            }
+            return const SizedBox.shrink();
+          },
+        ),
       ),
     );
   }

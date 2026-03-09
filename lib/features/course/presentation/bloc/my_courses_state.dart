@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import '../../domain/entities/enrollment_entity.dart';
+import '../../domain/entities/course_class_entity.dart';
 
 abstract class MyCoursesState extends Equatable {
   const MyCoursesState();
@@ -19,6 +20,15 @@ class MyCoursesLoaded extends MyCoursesState {
 
   @override
   List<Object?> get props => [enrollments];
+}
+
+class MyAcademicCoursesLoaded extends MyCoursesState {
+  final List<CourseClassEntity> courseClasses;
+
+  const MyAcademicCoursesLoaded(this.courseClasses);
+
+  @override
+  List<Object?> get props => [courseClasses];
 }
 
 class MyCoursesError extends MyCoursesState {

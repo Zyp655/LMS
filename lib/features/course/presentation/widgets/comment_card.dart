@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../domain/entities/comment_entity.dart';
 
-
 class CommentCard extends StatelessWidget {
   final CommentEntity comment;
   final bool isTeacher;
@@ -22,6 +21,8 @@ class CommentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
     return Container(
       margin: EdgeInsets.only(
         left: isReply ? 20.0 + (depth * 16.0) : 0,
@@ -30,17 +31,17 @@ class CommentCard extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: isTeacher
-            ? const Color(0xFF6C63FF).withOpacity(0.05)
-            : Colors.white,
+            ? cs.primary.withValues(alpha: 0.06)
+            : cs.surfaceContainerLow,
         borderRadius: BorderRadius.circular(12),
         border: isTeacher
-            ? Border.all(color: const Color(0xFF6C63FF).withOpacity(0.2))
+            ? Border.all(color: cs.primary.withValues(alpha: 0.2))
             : null,
         boxShadow: isTeacher
             ? null
             : [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.03),
+                  color: cs.shadow.withValues(alpha: 0.04),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -55,8 +56,8 @@ class CommentCard extends StatelessWidget {
               CircleAvatar(
                 radius: 18,
                 backgroundColor: isTeacher
-                    ? const Color(0xFF6C63FF)
-                    : Colors.grey[200],
+                    ? cs.primary
+                    : cs.surfaceContainerHighest,
                 backgroundImage: comment.userAvatarUrl != null
                     ? NetworkImage(comment.userAvatarUrl!)
                     : null,
@@ -66,7 +67,7 @@ class CommentCard extends StatelessWidget {
                             ? comment.userName[0].toUpperCase()
                             : '?',
                         style: TextStyle(
-                          color: isTeacher ? Colors.white : Colors.grey[600],
+                          color: isTeacher ? cs.onPrimary : cs.onSurfaceVariant,
                           fontWeight: FontWeight.bold,
                           fontSize: 14,
                         ),
@@ -85,21 +86,19 @@ class CommentCard extends StatelessWidget {
                           style: TextStyle(
                             fontWeight: FontWeight.w600,
                             fontSize: 14,
-                            color: isTeacher
-                                ? const Color(0xFF6C63FF)
-                                : Colors.grey[800],
+                            color: isTeacher ? cs.primary : cs.onSurface,
                           ),
                         ),
                         if (isTeacher) ...[
                           const SizedBox(width: 6),
-                          _buildTeacherBadge(),
+                          _buildTeacherBadge(cs),
                         ],
                         const Spacer(),
                         Text(
                           _formatTimestamp(comment.createdAt),
                           style: TextStyle(
                             fontSize: 11,
-                            color: Colors.grey[400],
+                            color: cs.onSurfaceVariant.withValues(alpha: 0.6),
                           ),
                         ),
                       ],
@@ -109,7 +108,7 @@ class CommentCard extends StatelessWidget {
                       comment.content,
                       style: TextStyle(
                         fontSize: 14,
-                        color: Colors.grey[700],
+                        color: cs.onSurfaceVariant,
                         height: 1.4,
                       ),
                     ),
@@ -118,6 +117,7 @@ class CommentCard extends StatelessWidget {
                       children: [
                         if (onLike != null)
                           _buildActionButton(
+                            cs: cs,
                             icon: Icons.thumb_up_outlined,
                             label: 'Thích',
                             onTap: onLike,
@@ -125,6 +125,7 @@ class CommentCard extends StatelessWidget {
                         const SizedBox(width: 16),
                         if (onReply != null)
                           _buildActionButton(
+                            cs: cs,
                             icon: Icons.reply,
                             label: 'Trả lời',
                             onTap: onReply,
@@ -141,12 +142,12 @@ class CommentCard extends StatelessWidget {
     );
   }
 
-  Widget _buildTeacherBadge() {
+  Widget _buildTeacherBadge(ColorScheme cs) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF6C63FF), Color(0xFF4834DF)],
+        gradient: LinearGradient(
+          colors: [cs.primary, cs.primary.withValues(alpha: 0.8)],
         ),
         borderRadius: BorderRadius.circular(4),
       ),
@@ -169,6 +170,7 @@ class CommentCard extends StatelessWidget {
   }
 
   Widget _buildActionButton({
+    required ColorScheme cs,
     required IconData icon,
     required String label,
     VoidCallback? onTap,
@@ -180,13 +182,13 @@ class CommentCard extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         child: Row(
           children: [
-            Icon(icon, size: 16, color: Colors.grey[500]),
+            Icon(icon, size: 16, color: cs.onSurfaceVariant),
             const SizedBox(width: 4),
             Text(
               label,
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.grey[500],
+                color: cs.onSurfaceVariant,
                 fontWeight: FontWeight.w500,
               ),
             ),

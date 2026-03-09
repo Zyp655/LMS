@@ -132,3 +132,12 @@ class ClearTypingIndicator extends ChatEvent {
   @override
   List<Object?> get props => [conversationId];
 }
+
+class RefreshConversations extends ChatEvent {
+  final int userId;
+
+  const RefreshConversations(this.userId);
+
+  @override
+  List<Object?> get props => [userId];
+}

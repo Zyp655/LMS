@@ -1,16 +1,17 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:shimmer/shimmer.dart';
-import 'package:http/http.dart' as http;
-import '../bloc/course_list_bloc.dart';
-import '../bloc/course_list_event.dart';
-import '../bloc/course_list_state.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../bloc/my_courses_bloc.dart';
+import '../bloc/my_courses_event.dart';
+import '../bloc/my_courses_state.dart';
 import '../widgets/course_card.dart';
-import '../widgets/major_filter_widget.dart';
-import '../../domain/entities/major_entity.dart';
-import '../../data/datasources/major_remote_datasource.dart';
+import '../widgets/semester_selector_widget.dart';
 import '../../../../core/route/app_route.dart';
+import '../../../../core/theme/app_colors.dart';
 
 class CourseCatalogPage extends StatefulWidget {
   const CourseCatalogPage({super.key});
@@ -20,229 +21,156 @@ class CourseCatalogPage extends StatefulWidget {
 }
 
 class _CourseCatalogPageState extends State<CourseCatalogPage> {
-  final TextEditingController _searchController = TextEditingController();
-  String? _selectedLevel;
-  int? _selectedMajorId;
+  int? _selectedSemesterId;
   final ScrollController _scrollController = ScrollController();
-  List<MajorEntity> _majors = [];
-  bool _isLoadingMajors = true;
+  int? _userId;
 
   @override
   void initState() {
     super.initState();
-    context.read<CourseListBloc>().add(const LoadCoursesEvent());
-    _loadMajors();
+    _loadUserAndCourses();
   }
 
-  Future<void> _loadMajors() async {
-    try {
-      final dataSource = MajorRemoteDataSourceImpl(client: http.Client());
-      final majors = await dataSource.getMajors();
-      if (mounted) {
-        setState(() {
-          _majors = majors;
-          _isLoadingMajors = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isLoadingMajors = false;
-        });
-      }
+  Future<void> _loadUserAndCourses() async {
+    final prefs = await SharedPreferences.getInstance();
+    _userId = prefs.getInt('userId');
+    if (_userId != null && mounted) {
+      context.read<MyCoursesBloc>().add(
+        LoadMyAcademicCoursesEvent(
+          userId: _userId!,
+          semesterId: _selectedSemesterId,
+        ),
+      );
     }
   }
 
   @override
   void dispose() {
-    _searchController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
 
-  void _onSearch() {
-    context.read<CourseListBloc>().add(
-      LoadCoursesEvent(
-        search: _searchController.text.isEmpty ? null : _searchController.text,
-        level: _selectedLevel,
-        majorId: _selectedMajorId,
-      ),
-    );
+  void _onRefreshCourses() {
+    if (_userId != null) {
+      context.read<MyCoursesBloc>().add(
+        LoadMyAcademicCoursesEvent(
+          userId: _userId!,
+          semesterId: _selectedSemesterId,
+        ),
+      );
+    }
   }
 
-  void _onMajorSelected(int? majorId) {
-    setState(() {
-      _selectedMajorId = majorId;
-    });
-    _onSearch();
+  Future<void> _onRefresh() async {
+    _onRefreshCourses();
+    await Future.delayed(const Duration(milliseconds: 500));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
-      body: CustomScrollView(
-        controller: _scrollController,
-        slivers: [
-          _buildSliverAppBar(context),
-          SliverToBoxAdapter(child: _buildSearchSection()),
-          SliverToBoxAdapter(
-            child: MajorFilterWidget(
-              majors: _majors,
-              selectedMajorId: _selectedMajorId,
-              onMajorSelected: _onMajorSelected,
-              isLoading: _isLoadingMajors,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      body: RefreshIndicator(
+        onRefresh: _onRefresh,
+        color: AppColors.primary,
+        child: CustomScrollView(
+          controller: _scrollController,
+          slivers: [
+            _buildSliverAppBar(context),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                child: SemesterSelectorWidget(
+                  selectedSemesterId: _selectedSemesterId,
+                  onSemesterChanged: (id) {
+                    setState(() => _selectedSemesterId = id);
+                    _onRefreshCourses();
+                  },
+                ),
+              ),
             ),
-          ),
-
-          _buildCourseGrid(),
-        ],
+            _buildCourseList(),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildSliverAppBar(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? AppColors.darkSurface : Colors.white;
+    final textColor = isDark
+        ? AppColors.textPrimaryDark
+        : AppColors.textPrimaryLight;
+    final subColor = isDark ? Colors.grey[400]! : Colors.grey[500]!;
+
     return SliverAppBar(
-      expandedHeight: 180,
+      expandedHeight: 90,
       floating: false,
       pinned: true,
       elevation: 0,
-      backgroundColor: const Color(0xFF6C63FF),
-      flexibleSpace: FlexibleSpaceBar(
-        background: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Color(0xFF6C63FF), Color(0xFF4834DF)],
-            ),
-          ),
-          child: Stack(
-            children: [
-              Positioned(
-                right: -50,
-                top: -50,
-                child: Container(
-                  width: 200,
-                  height: 200,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white.withOpacity(0.1),
-                  ),
-                ),
-              ),
-              Positioned(
-                left: -30,
-                bottom: -30,
-                child: Container(
-                  width: 150,
-                  height: 150,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white.withOpacity(0.05),
-                  ),
-                ),
-              ),
-              SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      const Text(
-                        'Khám phá',
-                        style: TextStyle(color: Colors.white70, fontSize: 16),
-                      ).animate().fadeIn().slideX(begin: -0.1),
-                      const SizedBox(height: 4),
-                      const Text(
-                        'Khóa Học Online',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ).animate().fadeIn(delay: 100.ms).slideX(begin: -0.1),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Học mọi lúc, mọi nơi với các khóa học chất lượng',
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.8),
-                          fontSize: 14,
-                        ),
-                      ).animate().fadeIn(delay: 200.ms),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
+      backgroundColor: bgColor,
+      surfaceTintColor: Colors.transparent,
+      title: Text(
+        'Khám phá môn học',
+        style: TextStyle(
+          color: textColor,
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
         ),
       ),
       actions: [
         IconButton(
-          icon: const Icon(Icons.bookmark_outline, color: Colors.white),
-          onPressed: () => Navigator.pushNamed(context, AppRoutes.myCourses),
-        ),
-        IconButton(
-          icon: const Icon(Icons.notifications_outlined, color: Colors.white),
-          onPressed: () {},
+          icon: Icon(Icons.notifications_outlined, color: AppColors.primary),
+          onPressed: () => context.push(AppRoutes.notifications),
         ),
       ],
-    );
-  }
-
-  Widget _buildSearchSection() {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-      child: Column(
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 20,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Tìm kiếm khóa học, chủ đề...',
-                hintStyle: TextStyle(color: Colors.grey[400]),
-                prefixIcon: Icon(Icons.search, color: Colors.grey[400]),
-                suffixIcon: _searchController.text.isNotEmpty
-                    ? IconButton(
-                        icon: Icon(Icons.clear, color: Colors.grey[400]),
-                        onPressed: () {
-                          _searchController.clear();
-                          _onSearch();
-                        },
-                      )
-                    : null,
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 16,
-                ),
+      flexibleSpace: FlexibleSpaceBar(
+        background: Container(
+          color: bgColor,
+          child: SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 56, 16, 12),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.grey[800] : Colors.grey[100],
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(
+                        color: isDark ? Colors.grey[700]! : Colors.grey[300]!,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.search, size: 20, color: subColor),
+                        const SizedBox(width: 10),
+                        Text(
+                          'Tìm kiếm môn học...',
+                          style: TextStyle(color: subColor, fontSize: 14),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-              onSubmitted: (_) => _onSearch(),
-              onChanged: (_) => setState(() {}),
             ),
-          ).animate().fadeIn().slideY(begin: 0.1),
-        ],
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildCourseGrid() {
-    return BlocBuilder<CourseListBloc, CourseListState>(
+  Widget _buildCourseList() {
+    return BlocBuilder<MyCoursesBloc, MyCoursesState>(
       builder: (context, state) {
-        if (state is CourseListInitial || state is CourseListLoading) {
+        if (state is MyCoursesInitial || state is MyCoursesLoading) {
           return SliverPadding(
             padding: const EdgeInsets.all(16),
             sliver: SliverList(
@@ -252,10 +180,11 @@ class _CourseCatalogPageState extends State<CourseCatalogPage> {
               ),
             ),
           );
-        } else if (state is CourseListError) {
+        } else if (state is MyCoursesError) {
           return SliverFillRemaining(child: _buildErrorState(state.message));
-        } else if (state is CourseListLoaded) {
-          if (state.courses.isEmpty) {
+        } else if (state is MyAcademicCoursesLoaded) {
+          final courses = state.courseClasses;
+          if (courses.isEmpty) {
             return SliverFillRemaining(child: _buildEmptyState());
           }
 
@@ -265,12 +194,12 @@ class _CourseCatalogPageState extends State<CourseCatalogPage> {
               delegate: SliverChildBuilderDelegate(
                 (context, index) => Padding(
                   padding: const EdgeInsets.only(bottom: 16),
-                  child: CourseCard(course: state.courses[index])
+                  child: CourseCard(courseClass: courses[index])
                       .animate()
                       .fadeIn(delay: Duration(milliseconds: 50 * index))
                       .slideY(begin: 0.05),
                 ),
-                childCount: state.courses.length,
+                childCount: courses.length,
               ),
             ),
           );
@@ -281,14 +210,15 @@ class _CourseCatalogPageState extends State<CourseCatalogPage> {
   }
 
   Widget _buildShimmerCard() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Shimmer.fromColors(
-      baseColor: Colors.grey[300]!,
-      highlightColor: Colors.grey[100]!,
+      baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
+      highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
         height: 280,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isDark ? AppColors.darkSurfaceVariant : Colors.white,
           borderRadius: BorderRadius.circular(16),
         ),
       ),
@@ -296,6 +226,7 @@ class _CourseCatalogPageState extends State<CourseCatalogPage> {
   }
 
   Widget _buildErrorState(String message) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -305,31 +236,41 @@ class _CourseCatalogPageState extends State<CourseCatalogPage> {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: Colors.red[50],
+                color: isDark
+                    ? Colors.red.withValues(alpha: 0.15)
+                    : Colors.red[50],
                 shape: BoxShape.circle,
               ),
-              child: Icon(Icons.wifi_off, size: 48, color: Colors.red[300]),
+              child: Icon(
+                Icons.wifi_off,
+                size: 48,
+                color: AppColors.error.withValues(alpha: 0.35),
+              ),
             ),
             const SizedBox(height: 24),
-            const Text(
+            Text(
               'Không thể tải khóa học',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: isDark ? Colors.white : Colors.black87,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey[600]),
+              style: TextStyle(
+                color: isDark ? Colors.grey[400] : Colors.grey[600],
+              ),
             ),
             const SizedBox(height: 24),
             ElevatedButton.icon(
-              onPressed: () {
-                context.read<CourseListBloc>().add(RefreshCoursesEvent());
-              },
-              icon: const Icon(Icons.refresh),
+              onPressed: _onRefreshCourses,
+              icon: Icon(Icons.refresh),
               label: const Text('Thử lại'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF6C63FF),
+                backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(
                   horizontal: 32,
@@ -347,6 +288,7 @@ class _CourseCatalogPageState extends State<CourseCatalogPage> {
   }
 
   Widget _buildEmptyState() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -358,28 +300,35 @@ class _CourseCatalogPageState extends State<CourseCatalogPage> {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    const Color(0xFF6C63FF).withOpacity(0.1),
-                    const Color(0xFF4834DF).withOpacity(0.1),
+                    AppColors.primary.withValues(alpha: 0.1),
+                    AppColors.primaryDark.withValues(alpha: 0.1),
                   ],
                 ),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
-                Icons.search_off,
+              child: Icon(
+                Icons.school_outlined,
                 size: 64,
-                color: Color(0xFF6C63FF),
+                color: AppColors.primary,
               ),
             ),
             const SizedBox(height: 24),
-            const Text(
-              'Không tìm thấy khóa học',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            Text(
+              'Chưa có lớp học phần',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: isDark ? Colors.white : Colors.black87,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
-              'Thử tìm kiếm với từ khóa khác\nhoặc thay đổi bộ lọc',
+              'Bạn sẽ thấy các môn học khi admin\nxếp lớp cho bạn',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey[600], height: 1.5),
+              style: TextStyle(
+                color: isDark ? Colors.grey[400] : Colors.grey[600],
+                height: 1.5,
+              ),
             ),
           ],
         ),

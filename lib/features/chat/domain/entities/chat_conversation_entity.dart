@@ -21,6 +21,23 @@ class ChatConversationEntity extends Equatable {
     this.unreadCount = 0,
   });
 
+  ChatConversationEntity copyWith({
+    String? lastMessage,
+    DateTime? lastMessageTime,
+    int? unreadCount,
+  }) {
+    return ChatConversationEntity(
+      id: id,
+      participantId: participantId,
+      participantName: participantName,
+      participantAvatar: participantAvatar,
+      isTeacher: isTeacher,
+      lastMessage: lastMessage ?? this.lastMessage,
+      lastMessageTime: lastMessageTime ?? this.lastMessageTime,
+      unreadCount: unreadCount ?? this.unreadCount,
+    );
+  }
+
   @override
   List<Object?> get props => [
     id,

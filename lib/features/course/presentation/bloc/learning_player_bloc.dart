@@ -1,5 +1,4 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../../core/services/notification_service.dart';
 import '../../domain/usecases/update_lesson_progress_usecase.dart';
 import 'learning_player_event.dart';
 import 'learning_player_state.dart';
@@ -7,7 +6,6 @@ import 'learning_player_state.dart';
 class LearningPlayerBloc
     extends Bloc<LearningPlayerEvent, LearningPlayerState> {
   final UpdateLessonProgressUseCase updateLessonProgressUseCase;
-  final NotificationService _notificationService = NotificationService();
 
   LearningPlayerBloc({required this.updateLessonProgressUseCase})
     : super(LearningPlayerInitial()) {
@@ -26,12 +24,7 @@ class LearningPlayerBloc
       isCompleted: event.isCompleted,
     );
 
-    result.fold(
-      (failure) {
-      },
-      (_) {
-      },
-    );
+    result.fold((failure) {}, (_) {});
   }
 
   Future<void> _onMarkComplete(

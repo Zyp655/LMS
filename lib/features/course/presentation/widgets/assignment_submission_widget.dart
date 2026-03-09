@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/submission_bloc.dart';
+import '../../../../core/theme/app_colors.dart';
 
 class AssignmentSubmissionWidget extends StatefulWidget {
   final int assignmentId;
@@ -51,12 +52,12 @@ class _AssignmentSubmissionWidgetState extends State<AssignmentSubmissionWidget>
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(state.message),
-              backgroundColor: Colors.green,
+              backgroundColor: AppColors.success,
             ),
           );
         } else if (state is SubmissionError) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.message), backgroundColor: Colors.red),
+            SnackBar(content: Text(state.message), backgroundColor: AppColors.error),
           );
         }
       },
@@ -90,7 +91,7 @@ class _AssignmentSubmissionWidgetState extends State<AssignmentSubmissionWidget>
                 height: 50,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blueAccent,
+                    backgroundColor: AppColors.info,
                     foregroundColor: Colors.white,
                   ),
                   onPressed: state is SubmissionLoading
@@ -114,14 +115,14 @@ class _AssignmentSubmissionWidgetState extends State<AssignmentSubmissionWidget>
         padding: const EdgeInsets.all(24),
         margin: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.green.withOpacity(0.1),
+          color: AppColors.success.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.green),
+          border: Border.all(color: AppColors.success),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.check_circle, size: 64, color: Colors.green),
+            Icon(Icons.check_circle, size: 64, color: AppColors.success),
             const SizedBox(height: 16),
             const Text(
               'Đã nộp bài thành công!',
@@ -134,7 +135,7 @@ class _AssignmentSubmissionWidgetState extends State<AssignmentSubmissionWidget>
                 style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: Colors.blueAccent,
+                  color: AppColors.info,
                 ),
               ),
             ],
@@ -163,7 +164,7 @@ class _AssignmentSubmissionWidgetState extends State<AssignmentSubmissionWidget>
           const SizedBox(height: 12),
           TextField(
             controller: _linkController,
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               hintText: 'https://github.com/username/project',
               border: OutlineInputBorder(),
               prefixIcon: Icon(Icons.link),
@@ -190,7 +191,7 @@ class _AssignmentSubmissionWidgetState extends State<AssignmentSubmissionWidget>
               controller: _textController,
               maxLines: null,
               keyboardType: TextInputType.multiline,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 hintText: 'Nhập nội dung bài làm ở đây...',
                 border: OutlineInputBorder(),
               ),
@@ -206,15 +207,16 @@ class _AssignmentSubmissionWidgetState extends State<AssignmentSubmissionWidget>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.camera_alt_outlined, size: 64, color: Colors.grey),
+          Icon(Icons.camera_alt_outlined, size: 64, color: Colors.grey),
           const SizedBox(height: 16),
           ElevatedButton.icon(
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Tính năng đang phát triển')),
+                SnackBar(
+                    content: Text('Tính năng đang phát triển')),
               );
             },
-            icon: const Icon(Icons.add_a_photo),
+            icon: Icon(Icons.add_a_photo),
             label: const Text('Chọn ảnh / Chụp ảnh'),
           ),
         ],
@@ -230,7 +232,8 @@ class _AssignmentSubmissionWidgetState extends State<AssignmentSubmissionWidget>
       if (link.isEmpty) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('Vui lòng nhập link')));
+        ).showSnackBar(SnackBar(
+                    content: Text('Vui lòng nhập link')));
         return;
       }
       text = null;
@@ -238,14 +241,16 @@ class _AssignmentSubmissionWidgetState extends State<AssignmentSubmissionWidget>
       if (text.isEmpty) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('Vui lòng nhập nội dung')));
+        ).showSnackBar(SnackBar(
+                    content: Text('Vui lòng nhập nội dung')));
         return;
       }
       link = null;
     } else {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Vui lòng chọn ảnh (Mock)')));
+      ).showSnackBar(SnackBar(
+                    content: Text('Vui lòng chọn ảnh (Mock)')));
       return;
     }
 
