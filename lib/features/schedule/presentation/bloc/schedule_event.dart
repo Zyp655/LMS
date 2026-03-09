@@ -18,7 +18,10 @@ class UpdateScheduleRequested extends ScheduleEvent {
   final ScheduleEntity schedule;
   UpdateScheduleRequested(this.schedule);
 }
+
 class JoinClassRequested extends ScheduleEvent {
   final String code;
   JoinClassRequested(this.code);
 }
+
+class ResetSchedule extends ScheduleEvent {}

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
@@ -582,12 +583,22 @@ class _MessageBubble extends StatelessWidget {
                           message.mediaUrl != null) ...[
                         ClipRRect(
                           borderRadius: BorderRadius.circular(10),
-                          child: Image.network(
-                            message.mediaUrl!,
+                          child: CachedNetworkImage(
+                            imageUrl: message.mediaUrl!,
                             width: 200,
                             height: 150,
                             fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Container(
+                            placeholder: (_, __) => Container(
+                              width: 200,
+                              height: 150,
+                              color: Colors.grey.withAlpha(40),
+                              child: const Center(
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              ),
+                            ),
+                            errorWidget: (_, __, ___) => Container(
                               width: 200,
                               height: 60,
                               decoration: BoxDecoration(

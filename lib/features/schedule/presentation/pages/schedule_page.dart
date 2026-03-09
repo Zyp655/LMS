@@ -1,5 +1,4 @@
-import 'package:file_picker/file_picker.dart';
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
 
@@ -9,9 +8,9 @@ import '../../domain/enitities/schedule_entity.dart';
 import '../bloc/schedule_bloc.dart';
 import '../bloc/schedule_event.dart';
 import '../bloc/schedule_state.dart';
-import '../utils/excel_schedule_parser.dart';
 import '../widgets/schedule_dialogs.dart';
 import '../widgets/schedule_calendar_view.dart';
+import '../../../../core/theme/app_colors.dart';
 
 class SchedulePage extends StatefulWidget {
   const SchedulePage({super.key});
@@ -30,52 +29,12 @@ class _SchedulePageState extends State<SchedulePage> {
     _notificationService.requestPermissions();
   }
 
-  Future<void> _pickAndParseExcel(BuildContext context) async {
-    try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['xlsx'],
-      );
-
-      if (result != null) {
-        String filePath = result.files.single.path!;
-        List<ScheduleEntity> parsedList = await ExcelScheduleParser.parse(
-          filePath,
-        );
-
-        if (parsedList.isNotEmpty && mounted) {
-          final config = await ScheduleDialogs.showImportConfig(
-            context,
-            parsedList.length,
-          );
-
-          if (config != null) {
-            _saveAndSchedule(
-              context,
-              parsedList,
-              config['minutes'],
-              config['repeat'],
-            );
-          }
-        }
-      }
-    } catch (e) {
-      if (mounted)
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text("Lỗi: $e")));
-    }
-  }
-
   void _saveAndSchedule(
     BuildContext context,
     List<ScheduleEntity> schedules,
     int minutesBefore,
     bool repeat,
   ) async {
-    int successCount = 0;
-    int ignoredCount = 0;
-
     for (var item in schedules) {
       context.read<ScheduleBloc>().add(AddScheduleRequested(item));
 
@@ -83,7 +42,6 @@ class _SchedulePageState extends State<SchedulePage> {
         Duration(minutes: minutesBefore),
       );
       if (!repeat && scheduledTime.isBefore(DateTime.now())) {
-        ignoredCount++;
       } else {
         int notificationId = item.subject.hashCode + item.start.hashCode;
 
@@ -93,9 +51,7 @@ class _SchedulePageState extends State<SchedulePage> {
             subject: item.subject,
             room: item.room,
             startTime: item.start,
-            minutesBefore: minutesBefore > 60
-                ? minutesBefore
-                : 60, 
+            minutesBefore: minutesBefore > 60 ? minutesBefore : 60,
           );
         } else {
           await _notificationService.scheduleClassNotification(
@@ -107,26 +63,13 @@ class _SchedulePageState extends State<SchedulePage> {
             isRepeating: repeat,
           );
         }
-        successCount++;
       }
     }
 
     if (mounted) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text("Đã lưu lịch học")));
-    }
-  }
-
-  void _onManualAdd(BuildContext context) async {
-    final result = await ScheduleDialogs.showScheduleForm(context);
-    if (result != null && mounted) {
-      _saveAndSchedule(
-        context,
-        [result['schedule']],
-        result['minutes'],
-        result['repeat'],
-      );
+      ).showSnackBar(SnackBar(content: Text("Đã lưu lịch học")));
     }
   }
 
@@ -161,69 +104,34 @@ class _SchedulePageState extends State<SchedulePage> {
       context.read<ScheduleBloc>().add(DeleteScheduleRequested(item.id!));
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text("Đã xóa lịch học")));
+      ).showSnackBar(SnackBar(content: Text("Đã xóa lịch học")));
     }
   }
 
-  void _showJoinClassDialog(BuildContext context) {
-    final codeController = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text("Tham Gia Lớp Học"),
-        content: TextField(
-          controller: codeController,
-          decoration: const InputDecoration(
-            labelText: "Nhập mã lớp",
-            border: OutlineInputBorder(),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text("Hủy"),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (codeController.text.isNotEmpty) {
-                context.read<ScheduleBloc>().add(
-                  JoinClassRequested(codeController.text.trim()),
-                );
-                Navigator.pop(ctx);
-              }
-            },
-            child: const Text("Vào Lớp"),
-          ),
-        ],
-      ),
-    );
-  }
-
-
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return BlocProvider(
       create: (_) => sl<ScheduleBloc>()..add(LoadSchedules()),
       child: Builder(
         builder: (context) {
           return Scaffold(
+            backgroundColor: isDark
+                ? AppColors.darkBackground
+                : AppColors.lightBackground,
             appBar: AppBar(
-              title: const Text("Thời Khóa Biểu"),
-              actions: [
-                IconButton(
-                  icon: const Icon(Icons.add_link),
-                  onPressed: () => _showJoinClassDialog(context),
+              title: Text(
+                'Lịch học',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 20,
+                  color: isDark ? Colors.white : Colors.black87,
                 ),
-                IconButton(
-                  icon: const Icon(Icons.upload_file),
-                  onPressed: () => _pickAndParseExcel(context),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.today),
-                  onPressed: () =>
-                      _calendarController.displayDate = DateTime.now(),
-                ),
-              ],
+              ),
+              backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
+              elevation: 0,
+              centerTitle: false,
+              actions: const [],
             ),
             body: BlocConsumer<ScheduleBloc, ScheduleState>(
               listener: (context, state) {
@@ -231,23 +139,25 @@ class _SchedulePageState extends State<SchedulePage> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(state.message),
-                      backgroundColor: Colors.red,
+                      backgroundColor: AppColors.error,
                     ),
                   );
                   context.read<ScheduleBloc>().add(LoadSchedules());
                 }
                 if (state is JoinClassSuccess) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text("Vào lớp thành công!"),
-                      backgroundColor: Colors.green,
+                    SnackBar(
+                      content: Text('Vào lớp thành công!'),
+                      backgroundColor: AppColors.success,
                     ),
                   );
                 }
               },
               builder: (context, state) {
                 if (state is ScheduleLoading) {
-                  return const Center(child: CircularProgressIndicator());
+                  return Center(
+                    child: CircularProgressIndicator(color: AppColors.primary),
+                  );
                 }
 
                 List<ScheduleEntity> appointments = [];
@@ -261,10 +171,7 @@ class _SchedulePageState extends State<SchedulePage> {
                 );
               },
             ),
-            floatingActionButton: FloatingActionButton(
-              onPressed: () => _onManualAdd(context),
-              child: const Icon(Icons.add),
-            ),
+            floatingActionButton: null,
           );
         },
       ),

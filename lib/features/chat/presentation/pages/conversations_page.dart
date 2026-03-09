@@ -96,6 +96,10 @@ class _ConversationsView extends StatelessWidget {
           chatBloc.add(RefreshConversations(currentUserId));
         },
         child: BlocBuilder<ChatBloc, ChatState>(
+          buildWhen: (prev, curr) =>
+              curr is ConversationsLoaded ||
+              curr is ChatLoading ||
+              curr is ChatError,
           builder: (context, state) {
             if (state is ChatLoading) {
               return const Center(

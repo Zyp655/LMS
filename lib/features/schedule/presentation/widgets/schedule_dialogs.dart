@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../domain/enitities/schedule_entity.dart';
+import '../../../../core/theme/app_colors.dart';
 
 class ScheduleDialogs {
   static Future<Map<String, dynamic>?> showImportConfig(
@@ -23,7 +24,7 @@ class ScheduleDialogs {
                   TextField(
                     controller: minutesController,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: "Báo trước (phút)",
                     ),
                   ),
@@ -78,7 +79,7 @@ class ScheduleDialogs {
                 child: const Text("Hủy"),
               ),
               TextButton(
-                style: TextButton.styleFrom(foregroundColor: Colors.red),
+                style: TextButton.styleFrom(foregroundColor: AppColors.error),
                 onPressed: () => Navigator.pop(context, true),
                 child: const Text("Xóa"),
               ),
@@ -125,7 +126,7 @@ class ScheduleDialogs {
                   children: [
                     DropdownButtonFormField<ScheduleType>(
                       value: selectedType,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: "Loại lịch",
                         border: OutlineInputBorder(),
                         contentPadding: EdgeInsets.symmetric(
@@ -156,14 +157,14 @@ class ScheduleDialogs {
                     const SizedBox(height: 10),
                     TextField(
                       controller: subjectController,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: "Tên môn / Sự kiện",
                         icon: Icon(Icons.book),
                       ),
                     ),
                     TextField(
                       controller: roomController,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: "Phòng / Địa điểm",
                         icon: Icon(Icons.room),
                       ),
@@ -173,7 +174,7 @@ class ScheduleDialogs {
                       TextField(
                         controller: creditsController,
                         keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           labelText: "Số tín chỉ",
                           icon: Icon(Icons.star_border),
                         ),
@@ -194,7 +195,7 @@ class ScheduleDialogs {
                       TextField(
                         controller: minutesController,
                         keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           labelText: "Báo trước (phút)",
                           icon: Icon(Icons.timer),
                         ),
@@ -215,7 +216,7 @@ class ScheduleDialogs {
                         TextField(
                           controller: weeksController,
                           keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             labelText: "Số tuần lặp lại",
                             suffixText: "tuần",
                             icon: Icon(Icons.repeat),
@@ -295,7 +296,7 @@ class ScheduleDialogs {
     Function(DateTime) onSelect,
   ) {
     return ListTile(
-      leading: const Icon(Icons.calendar_today),
+      leading: Icon(Icons.calendar_today),
       title: Text("$label: ${DateFormat('dd/MM/yyyy').format(date)}"),
       onTap: () async {
         final picked = await showDatePicker(
@@ -316,7 +317,7 @@ class ScheduleDialogs {
     Function(TimeOfDay) onSelect,
   ) {
     return ListTile(
-      leading: const Icon(Icons.access_time),
+      leading: Icon(Icons.access_time),
       title: Text("$label: ${time.format(context)}"),
       onTap: () async {
         final picked = await showTimePicker(

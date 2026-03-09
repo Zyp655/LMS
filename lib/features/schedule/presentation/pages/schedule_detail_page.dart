@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart'; 
 import 'package:image_picker/image_picker.dart';
 import '../../domain/enitities/schedule_entity.dart';
+import '../../../../core/theme/app_colors.dart';
 
 class ScheduleDetailPage extends StatefulWidget {
   final ScheduleEntity schedule;
@@ -40,16 +41,16 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
   }
 
   Widget _buildStatusHeader() {
-    Color statusColor = Colors.green;
+    Color statusColor = AppColors.success;
     String statusText = "An toàn";
     IconData statusIcon = Icons.check_circle;
 
     if (_currentAbsences >= _maxAbsences) {
-      statusColor = Colors.red;
+      statusColor = AppColors.error;
       statusText = "CẤM THI (Đã nghỉ quá mức)";
       statusIcon = Icons.warning;
     } else if (_currentAbsences == _maxAbsences - 1) {
-      statusColor = Colors.orange;
+      statusColor = AppColors.warning;
       statusText = "NGUY HIỂM (Chỉ còn 1 buổi)";
       statusIcon = Icons.warning_amber;
     }
@@ -57,7 +58,7 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: statusColor.withOpacity(0.1),
+        color: statusColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: statusColor),
       ),
@@ -103,7 +104,7 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
               ),
             ),
             PieChartSectionData(
-              color: Colors.green,
+              color: AppColors.success,
               value: remaining.toDouble(),
               title: 'Còn: $remaining',
               radius: 50,
@@ -126,7 +127,7 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
         title: Text(widget.schedule.subject),
         actions: [
           IconButton(
-            icon: const Icon(Icons.save),
+            icon: Icon(Icons.save),
             onPressed: () {
               Navigator.pop(context);
             },
@@ -150,7 +151,7 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 IconButton(
-                  icon: const Icon(Icons.remove_circle_outline),
+                  icon: Icon(Icons.remove_circle_outline),
                   onPressed: () => setState(() {
                     if (_currentAbsences > 0) _currentAbsences--;
                   }),
@@ -160,7 +161,7 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
                   style: const TextStyle(fontSize: 20),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.add_circle_outline),
+                  icon: Icon(Icons.add_circle_outline),
                   onPressed: () => setState(() => _currentAbsences++),
                 ),
               ],
@@ -175,7 +176,7 @@ class _ScheduleDetailPageState extends State<ScheduleDetailPage> {
             TextField(
               controller: _noteController,
               maxLines: 4,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 hintText: "Nhập ghi chú môn học...",
                 border: OutlineInputBorder(),
               ),

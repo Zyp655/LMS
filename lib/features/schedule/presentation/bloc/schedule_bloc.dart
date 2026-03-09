@@ -28,12 +28,17 @@ class ScheduleBloc extends Bloc<ScheduleEvent, ScheduleState> {
     on<DeleteScheduleRequested>(_onDeleteSchedule);
     on<UpdateScheduleRequested>(_onUpdateSchedule);
     on<JoinClassRequested>(_onJoinClass);
+    on<ResetSchedule>(_onReset);
+  }
+
+  void _onReset(ResetSchedule event, Emitter<ScheduleState> emit) {
+    emit(ScheduleInitial());
   }
 
   Future<void> _onLoadSchedules(
-      LoadSchedules event,
-      Emitter<ScheduleState> emit,
-      ) async {
+    LoadSchedules event,
+    Emitter<ScheduleState> emit,
+  ) async {
     emit(ScheduleLoading());
     final result = await getSchedulesUseCase();
     result.fold((failure) => emit(ScheduleError(failure.message)), (schedules) {
@@ -57,42 +62,42 @@ class ScheduleBloc extends Bloc<ScheduleEvent, ScheduleState> {
   }
 
   Future<void> _onAddSchedule(
-      AddScheduleRequested event,
-      Emitter<ScheduleState> emit,
-      ) async {
+    AddScheduleRequested event,
+    Emitter<ScheduleState> emit,
+  ) async {
     final result = await addScheduleUseCase([event.schedule]);
     result.fold(
-          (failure) => emit(ScheduleError(failure.message)),
-          (_) => add(LoadSchedules()),
+      (failure) => emit(ScheduleError(failure.message)),
+      (_) => add(LoadSchedules()),
     );
   }
 
   Future<void> _onDeleteSchedule(
-      DeleteScheduleRequested event,
-      Emitter<ScheduleState> emit,
-      ) async {
+    DeleteScheduleRequested event,
+    Emitter<ScheduleState> emit,
+  ) async {
     final result = await deleteScheduleUseCase(event.id);
     result.fold(
-          (failure) => emit(ScheduleError(failure.message)),
-          (_) => add(LoadSchedules()),
+      (failure) => emit(ScheduleError(failure.message)),
+      (_) => add(LoadSchedules()),
     );
   }
 
   Future<void> _onUpdateSchedule(
-      UpdateScheduleRequested event,
-      Emitter<ScheduleState> emit,
-      ) async {
+    UpdateScheduleRequested event,
+    Emitter<ScheduleState> emit,
+  ) async {
     final result = await updateScheduleUseCase(event.schedule);
     result.fold(
-          (failure) => emit(ScheduleError(failure.message)),
-          (_) => add(LoadSchedules()),
+      (failure) => emit(ScheduleError(failure.message)),
+      (_) => add(LoadSchedules()),
     );
   }
 
   Future<void> _onJoinClass(
-      JoinClassRequested event,
-      Emitter<ScheduleState> emit,
-      ) async {
+    JoinClassRequested event,
+    Emitter<ScheduleState> emit,
+  ) async {
     emit(ScheduleLoading());
     final result = await joinClassUseCase(event.code);
     result.fold((failure) => emit(ScheduleError(failure.message)), (_) {
@@ -110,7 +115,7 @@ class ScheduleBloc extends Bloc<ScheduleEvent, ScheduleState> {
           id: subject.id ?? 0,
           title: '⚠️ CẢNH BÁO TỪ GIÁO VIÊN',
           body:
-          'Môn ${subject.subject}: Thầy/Cô đã đánh dấu bạn nghỉ ${subject.currentAbsences} buổi. CẤM THI!',
+              'Môn ${subject.subject}: Thầy/Cô đã đánh dấu bạn nghỉ ${subject.currentAbsences} buổi. CẤM THI!',
         );
       }
 
@@ -119,7 +124,7 @@ class ScheduleBloc extends Bloc<ScheduleEvent, ScheduleState> {
           id: (subject.id ?? 0) + 1000,
           title: '⚠️ KẾT QUẢ HỌC TẬP',
           body:
-          'Môn ${subject.subject}: Giáo viên vừa nhập điểm ${subject.currentScore}. NGUY CƠ HỌC LẠI!',
+              'Môn ${subject.subject}: Giáo viên vừa nhập điểm ${subject.currentScore}. NGUY CƠ HỌC LẠI!',
         );
       }
     }

@@ -1,10 +1,11 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
 import '../../domain/enitities/schedule_entity.dart';
 import 'schedule_data_source.dart';
+import '../../../../core/theme/app_colors.dart';
 
-class ScheduleCalendarView extends StatelessWidget {
+class ScheduleCalendarView extends StatefulWidget {
   final List<ScheduleEntity> appointments;
   final CalendarController calendarController;
   final Function(ScheduleEntity) onEdit;
@@ -19,240 +20,508 @@ class ScheduleCalendarView extends StatelessWidget {
   });
 
   @override
+  State<ScheduleCalendarView> createState() => _ScheduleCalendarViewState();
+}
+
+class _ScheduleCalendarViewState extends State<ScheduleCalendarView> {
+  DateTime _selectedDate = DateTime.now();
+
+  List<ScheduleEntity> get _todayAppointments {
+    return widget.appointments.where((a) {
+      return a.start.year == _selectedDate.year &&
+          a.start.month == _selectedDate.month &&
+          a.start.day == _selectedDate.day;
+    }).toList()..sort((a, b) => a.start.compareTo(b.start));
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return SfCalendar(
-      controller: calendarController,
-      view: CalendarView.week,
-      firstDayOfWeek: 1,
-      dataSource: ScheduleDataSource(appointments),
-      timeSlotViewSettings: const TimeSlotViewSettings(
-        startHour: 6,
-        endHour: 23,
-        timeFormat: 'H:mm',
-      ),
-      headerStyle: const CalendarHeaderStyle(
-        textAlign: TextAlign.center,
-        backgroundColor: Colors.white,
-        textStyle: TextStyle(
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
-          color: Colors.blueAccent,
-        ),
-      ),
-      onTap: (CalendarTapDetails details) {
-        if (details.appointments != null && details.appointments!.isNotEmpty) {
-          final dynamic appointment = details.appointments!.first;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark ? AppColors.darkSurface : Colors.white;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final subColor = isDark ? Colors.grey[400]! : Colors.grey[600]!;
 
-          if (appointment is ScheduleEntity) {
-            if (appointment.classCode != null &&
-                appointment.classCode!.isNotEmpty) {
-              _showReadOnlyDialog(context, appointment);
-            } else {
-              _showActionBottomSheet(context, appointment);
-            }
-          }
-        }
-      },
-    );
-  }
-
-  void _showReadOnlyDialog(BuildContext context, ScheduleEntity item) {
-    final dateFormat = DateFormat('dd/MM/yyyy');
-    final timeFormat = DateFormat('HH:mm');
-
-    final isAbsenceWarning = item.currentAbsences >= item.maxAbsences;
-    final absenceColor = isAbsenceWarning ? Colors.red : Colors.black87;
-
-    bool showMidterm = item.credits >= 3;
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Row(
-          children: [
-            const Icon(Icons.school, color: Colors.blue),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(item.subject, style: const TextStyle(fontSize: 18)),
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildInfoRow(
-              Icons.vpn_key,
-              "Mã lớp: ${item.classCode}",
-              Colors.grey[700],
-            ),
-            const SizedBox(height: 8),
-            _buildInfoRow(Icons.room, "Phòng: ${item.room}", Colors.grey[700]),
-            const SizedBox(height: 8),
-            _buildInfoRow(
-              Icons.calendar_today,
-              "Ngày: ${dateFormat.format(item.start)}",
-              Colors.grey[700],
-            ),
-            const SizedBox(height: 8),
-            _buildInfoRow(
-              Icons.access_time,
-              "Giờ: ${timeFormat.format(item.start)} - ${timeFormat.format(item.end)}",
-              Colors.grey[700],
-            ),
-            const SizedBox(height: 8),
-            _buildInfoRow(
-              Icons.star,
-              "Số tín chỉ: ${item.credits}",
-              Colors.grey[700],
-            ),
-            const Divider(height: 24, thickness: 1),
-            const Text(
-              "Kết quả học tập:",
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Colors.blueAccent,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Icon(Icons.event_busy, size: 20, color: absenceColor),
-                const SizedBox(width: 8),
-                Text(
-                  "Vắng: ",
-                  style: TextStyle(fontSize: 15, color: Colors.grey[800]),
-                ),
-                Text(
-                  "${item.currentAbsences} / ${item.maxAbsences} tiết",
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    color: absenceColor,
-                  ),
-                ),
-                if (isAbsenceWarning)
-                  const Text(
-                    " (Cấm thi!)",
-                    style: TextStyle(
-                      color: Colors.red,
-                      fontSize: 12,
-                      fontStyle: FontStyle.italic,
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            if (showMidterm) _buildScoreRow("Điểm giữa kỳ:", item.midtermScore),
-            if (showMidterm) const SizedBox(height: 10),
-            _buildScoreRow("Điểm cuối kỳ:", item.finalScore),
-            const SizedBox(height: 20),
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey.shade300),
-              ),
-              child: const Row(
-                children: [
-                  Icon(Icons.info_outline, size: 16, color: Colors.grey),
-                  SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      "Dữ liệu được cập nhật từ giảng viên.",
-                      style: TextStyle(
-                        fontStyle: FontStyle.italic,
-                        color: Colors.grey,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text("Đóng", style: TextStyle(fontSize: 16)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildScoreRow(String label, double? score) {
-    Color scoreColor = Colors.black87;
-    String scoreText = "Chưa cập nhật";
-
-    if (score != null) {
-      scoreText = score.toString();
-      if (score < 4.0) {
-        scoreColor = Colors.red;
-      } else if (score >= 8.5) {
-        scoreColor = Colors.green[700]!;
-      }
-    }
-
-    return Row(
+    return Column(
       children: [
-        Icon(Icons.grade, size: 20, color: Colors.orange[700]),
-        const SizedBox(width: 8),
-        Text(label, style: TextStyle(fontSize: 15, color: Colors.grey[800])),
-        const Spacer(),
-        Text(
-          scoreText,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: scoreColor,
+        Container(
+          margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+          decoration: BoxDecoration(
+            color: cardColor,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.12 : 0.06),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: SizedBox(
+              height: 340,
+              child: SfCalendar(
+                controller: widget.calendarController,
+                view: CalendarView.month,
+                firstDayOfWeek: 1,
+                dataSource: ScheduleDataSource(widget.appointments),
+                backgroundColor: cardColor,
+                todayHighlightColor: AppColors.primary,
+                cellBorderColor: Colors.transparent,
+                selectionDecoration: BoxDecoration(
+                  border: Border.all(color: AppColors.primary, width: 2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                headerStyle: CalendarHeaderStyle(
+                  textAlign: TextAlign.center,
+                  backgroundColor: cardColor,
+                  textStyle: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: textColor,
+                  ),
+                ),
+                viewHeaderStyle: ViewHeaderStyle(
+                  backgroundColor: cardColor,
+                  dayTextStyle: TextStyle(
+                    fontSize: 12,
+                    color: subColor,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                todayTextStyle: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  fontSize: 13,
+                ),
+                monthViewSettings: MonthViewSettings(
+                  showAgenda: false,
+                  appointmentDisplayMode: MonthAppointmentDisplayMode.indicator,
+                  monthCellStyle: MonthCellStyle(
+                    textStyle: TextStyle(
+                      fontSize: 13,
+                      color: textColor,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    trailingDatesTextStyle: TextStyle(
+                      fontSize: 13,
+                      color: isDark ? Colors.grey[700] : Colors.grey[350],
+                    ),
+                    leadingDatesTextStyle: TextStyle(
+                      fontSize: 13,
+                      color: isDark ? Colors.grey[700] : Colors.grey[350],
+                    ),
+                  ),
+                ),
+                onTap: (CalendarTapDetails details) {
+                  if (details.date != null) {
+                    setState(() => _selectedDate = details.date!);
+                  }
+                },
+              ),
+            ),
+          ),
+        ),
+
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+          child: Row(
+            children: [
+              Text(
+                'Hôm nay',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: textColor,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '${_todayAppointments.length} tiết học',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        Expanded(
+          child: _todayAppointments.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.event_available_rounded,
+                        size: 48,
+                        color: AppColors.primary.withValues(alpha: 0.3),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Không có lịch học',
+                        style: TextStyle(
+                          color: subColor,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: _todayAppointments.length,
+                  itemBuilder: (context, index) {
+                    return _buildClassCard(
+                      _todayAppointments[index],
+                      isDark,
+                      cardColor,
+                      textColor,
+                      subColor,
+                    );
+                  },
+                ),
         ),
       ],
     );
   }
 
+  Widget _buildClassCard(
+    ScheduleEntity item,
+    bool isDark,
+    Color cardColor,
+    Color textColor,
+    Color subColor,
+  ) {
+    final timeFormat = DateFormat('HH:mm');
+    final timeStr =
+        '${timeFormat.format(item.start)} – ${timeFormat.format(item.end)}';
+
+    final accentColor = item.type == ScheduleType.exam
+        ? AppColors.error
+        : AppColors.primary;
+
+    return GestureDetector(
+      onTap: () {
+        if (item.classCode != null && item.classCode!.isNotEmpty) {
+          _showReadOnlyDialog(context, item);
+        } else {
+          _showActionBottomSheet(context, item);
+        }
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          color: cardColor,
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDark ? 0.1 : 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: IntrinsicHeight(
+          child: Row(
+            children: [
+              Container(
+                width: 5,
+                decoration: BoxDecoration(
+                  color: accentColor,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(14),
+                    bottomLeft: Radius.circular(14),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.access_time_rounded,
+                            size: 14,
+                            color: accentColor,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            timeStr,
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: accentColor,
+                            ),
+                          ),
+                          const Spacer(),
+                          if (item.classCode != null &&
+                              item.classCode!.isNotEmpty)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 3,
+                              ),
+                              decoration: BoxDecoration(
+                                color: accentColor.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                item.classCode!,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: accentColor,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        item.subject,
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: textColor,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      if (item.room.isNotEmpty)
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.location_on_outlined,
+                              size: 14,
+                              color: subColor,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              item.room,
+                              style: TextStyle(fontSize: 12, color: subColor),
+                            ),
+                          ],
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showReadOnlyDialog(BuildContext context, ScheduleEntity item) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final dateFormat = DateFormat('dd/MM/yyyy');
+    final timeFormat = DateFormat('HH:mm');
+
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 4,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          item.subject,
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: isDark ? Colors.white : Colors.black87,
+                          ),
+                        ),
+                        if (item.classCode != null)
+                          Text(
+                            item.classCode!,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: isDark
+                                  ? Colors.grey[400]
+                                  : Colors.grey[600],
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              _buildInfoRow(
+                Icons.calendar_today_rounded,
+                dateFormat.format(item.start),
+                isDark ? Colors.grey[300] : Colors.grey[700],
+              ),
+              const SizedBox(height: 12),
+              _buildInfoRow(
+                Icons.access_time_rounded,
+                '${timeFormat.format(item.start)} - ${timeFormat.format(item.end)}',
+                isDark ? Colors.grey[300] : Colors.grey[700],
+              ),
+              if (item.room.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                _buildInfoRow(
+                  Icons.location_on_outlined,
+                  item.room,
+                  isDark ? Colors.grey[300] : Colors.grey[700],
+                ),
+              ],
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    elevation: 0,
+                  ),
+                  child: const Text(
+                    'Đóng',
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   void _showActionBottomSheet(BuildContext context, ScheduleEntity item) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showModalBottomSheet(
       context: context,
-      builder: (ctx) => Wrap(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            child: Row(
+      backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[400],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Row(
               children: [
-                const Icon(Icons.edit_calendar, color: Colors.blue),
-                const SizedBox(width: 10),
-                Text(
-                  item.subject,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.edit_calendar_rounded,
+                    color: AppColors.primary,
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Text(
+                    item.subject,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                      color: isDark ? Colors.white : Colors.black87,
+                    ),
                   ),
                 ),
               ],
             ),
-          ),
-          const Divider(),
-          ListTile(
-            leading: const Icon(Icons.edit, color: Colors.blue),
-            title: const Text('Chỉnh sửa'),
-            onTap: () {
-              Navigator.pop(ctx);
-              onEdit(item);
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.delete, color: Colors.red),
-            title: const Text('Xóa lịch này'),
-            onTap: () {
-              Navigator.pop(ctx);
-              onDelete(item);
-            },
-          ),
-        ],
+            const SizedBox(height: 16),
+            Divider(color: isDark ? Colors.grey[800] : Colors.grey[200]),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.info.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.edit_rounded,
+                  color: AppColors.info,
+                  size: 20,
+                ),
+              ),
+              title: const Text('Chỉnh sửa'),
+              onTap: () {
+                Navigator.pop(ctx);
+                widget.onEdit(item);
+              },
+            ),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.error.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.delete_rounded,
+                  color: AppColors.error,
+                  size: 20,
+                ),
+              ),
+              title: const Text('Xóa lịch này'),
+              onTap: () {
+                Navigator.pop(ctx);
+                widget.onDelete(item);
+              },
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
       ),
     );
   }
@@ -260,9 +529,23 @@ class ScheduleCalendarView extends StatelessWidget {
   Widget _buildInfoRow(IconData icon, String text, Color? color) {
     return Row(
       children: [
-        Icon(icon, size: 16, color: color),
-        const SizedBox(width: 8),
-        Text(text, style: const TextStyle(fontSize: 14)),
+        Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: AppColors.primary.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, size: 16, color: AppColors.primary),
+        ),
+        const SizedBox(width: 12),
+        Text(
+          text,
+          style: TextStyle(
+            fontSize: 14,
+            color: color,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
       ],
     );
   }
