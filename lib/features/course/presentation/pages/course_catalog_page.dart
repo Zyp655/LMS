@@ -70,27 +70,30 @@ class _CourseCatalogPageState extends State<CourseCatalogPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: RefreshIndicator(
-        onRefresh: _onRefresh,
-        color: AppColors.primary,
-        child: CustomScrollView(
-          controller: _scrollController,
-          slivers: [
-            _buildSliverAppBar(context),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                child: SemesterSelectorWidget(
-                  selectedSemesterId: _selectedSemesterId,
-                  onSemesterChanged: (id) {
-                    setState(() => _selectedSemesterId = id);
-                    _onRefreshCourses();
-                  },
+      body: SafeArea(
+        top: false,
+        child: RefreshIndicator(
+          onRefresh: _onRefresh,
+          color: AppColors.primary,
+          child: CustomScrollView(
+            controller: _scrollController,
+            slivers: [
+              _buildSliverAppBar(context),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                  child: SemesterSelectorWidget(
+                    selectedSemesterId: _selectedSemesterId,
+                    onSemesterChanged: (id) {
+                      setState(() => _selectedSemesterId = id);
+                      _onRefreshCourses();
+                    },
+                  ),
                 ),
               ),
-            ),
-            _buildCourseList(),
-          ],
+              _buildCourseList(),
+            ],
+          ),
         ),
       ),
     );
@@ -169,6 +172,8 @@ class _CourseCatalogPageState extends State<CourseCatalogPage> {
 
   Widget _buildCourseList() {
     return BlocBuilder<MyCoursesBloc, MyCoursesState>(
+      buildWhen: (prev, curr) =>
+          prev.runtimeType != curr.runtimeType || prev != curr,
       builder: (context, state) {
         if (state is MyCoursesInitial || state is MyCoursesLoading) {
           return SliverPadding(

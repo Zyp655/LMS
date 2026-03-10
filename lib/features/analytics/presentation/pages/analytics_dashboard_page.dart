@@ -58,7 +58,7 @@ class _AnalyticsDashboardPageState extends State<AnalyticsDashboardPage> {
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                    content: Text('Đang chuẩn bị báo cáo...'),
+                  content: Text('Đang chuẩn bị báo cáo...'),
                   duration: Duration(seconds: 2),
                 ),
               );
@@ -67,6 +67,8 @@ class _AnalyticsDashboardPageState extends State<AnalyticsDashboardPage> {
         ],
       ),
       body: BlocBuilder<AnalyticsBloc, AnalyticsState>(
+        buildWhen: (prev, curr) =>
+            prev.runtimeType != curr.runtimeType || prev != curr,
         builder: (context, state) {
           if (state is AnalyticsLoading) {
             return const Center(

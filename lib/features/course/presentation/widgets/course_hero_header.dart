@@ -1,4 +1,5 @@
 ﻿import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../domain/entities/course_entity.dart';
 import '../bloc/course_detail_state.dart';
@@ -74,10 +75,13 @@ class CourseHeroHeader extends StatelessWidget {
           fit: StackFit.expand,
           children: [
             course.thumbnailUrl != null
-                ? Image.network(
-                    course.thumbnailUrl!,
+                ? CachedNetworkImage(
+                    imageUrl: course.thumbnailUrl!,
                     fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => _buildGradientPlaceholder(),
+                    width: double.infinity,
+                    height: double.infinity,
+                    placeholder: (_, __) => _buildGradientPlaceholder(),
+                    errorWidget: (_, __, ___) => _buildGradientPlaceholder(),
                   )
                 : _buildGradientPlaceholder(),
             Container(

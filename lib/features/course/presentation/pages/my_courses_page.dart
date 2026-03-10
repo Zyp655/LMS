@@ -128,6 +128,8 @@ class _MyCoursesViewState extends State<MyCoursesView> {
 
               SliverToBoxAdapter(
                 child: BlocBuilder<MyCoursesBloc, MyCoursesState>(
+                  buildWhen: (prev, curr) =>
+                      prev.runtimeType != curr.runtimeType || prev != curr,
                   builder: (context, state) {
                     if (state is MyCoursesLoading ||
                         state is MyCoursesInitial) {
@@ -208,8 +210,9 @@ class _MyCoursesViewState extends State<MyCoursesView> {
   }
 
   Widget _buildGreetingHeader(bool isDark, Color textColor, Color subColor) {
+    final topPadding = MediaQuery.of(context).padding.top;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 4),
+      padding: EdgeInsets.fromLTRB(20, topPadding + 12, 20, 4),
       child: Row(
         children: [
           Container(

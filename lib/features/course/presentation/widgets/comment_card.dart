@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../domain/entities/comment_entity.dart';
 
 class CommentCard extends StatelessWidget {
@@ -59,7 +60,7 @@ class CommentCard extends StatelessWidget {
                     ? cs.primary
                     : cs.surfaceContainerHighest,
                 backgroundImage: comment.userAvatarUrl != null
-                    ? NetworkImage(comment.userAvatarUrl!)
+                    ? CachedNetworkImageProvider(comment.userAvatarUrl!)
                     : null,
                 child: comment.userAvatarUrl == null
                     ? Text(

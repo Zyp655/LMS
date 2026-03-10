@@ -38,6 +38,8 @@ class CourseSubmissionsPage extends StatelessWidget {
           ),
         ),
         body: BlocBuilder<SubmissionBloc, SubmissionState>(
+          buildWhen: (prev, curr) =>
+              prev.runtimeType != curr.runtimeType || prev != curr,
           builder: (context, state) {
             if (state is SubmissionLoading) {
               return const Center(child: CircularProgressIndicator());
