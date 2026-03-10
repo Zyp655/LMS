@@ -583,11 +583,16 @@ class CourseClasses extends Table {
       integer().references(AcademicCourses, #id)();
   IntColumn get semesterId => integer().references(Semesters, #id)();
   IntColumn get teacherId => integer().nullable().references(Users, #id)();
-  TextColumn get classCode => text().unique()();
+  TextColumn get classCode => text()();
   IntColumn get maxStudents => integer().withDefault(const Constant(50))();
   TextColumn get room => text().nullable()();
   TextColumn get schedule => text().nullable()();
   DateTimeColumn get createdAt => dateTime()();
+
+  @override
+  List<Set<Column>> get uniqueKeys => [
+        {classCode, academicCourseId},
+      ];
 }
 
 class CourseClassEnrollments extends Table {
@@ -694,6 +699,118 @@ class PersonalRoadmapItems extends Table {
   PersonalRoadmaps,
   PersonalRoadmapItems,
 ])
+class DailyLearningLogs extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  @ReferenceName('dailyLogStudent')
+  IntColumn get studentId => integer().references(Users, #id)();
+  IntColumn get scheduleId => integer().references(Schedules, #id)();
+  DateTimeColumn get date => dateTime()();
+  IntColumn get totalWatchSeconds => integer().withDefault(const Constant(0))();
+  IntColumn get requiredWatchSeconds =>
+      integer().withDefault(const Constant(0))();
+  RealColumn get watchPercentage => real().withDefault(const Constant(0.0))();
+  BoolColumn get quizCompleted =>
+      boolean().withDefault(const Constant(false))();
+  RealColumn get quizScore => real().nullable()();
+  DateTimeColumn get firstAccessAt => dateTime().nullable()();
+  DateTimeColumn get lastAccessAt => dateTime().nullable()();
+  TextColumn get status => text().withDefault(const Constant('pending'))();
+  TextColumn get absenceReason => text().nullable()();
+  DateTimeColumn get finalizedAt => dateTime().nullable()();
+}
+
+class AiNotificationLogs extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  @ReferenceName('aiNotifStudent')
+  IntColumn get studentId => integer().references(Users, #id)();
+  IntColumn get scheduleId => integer().nullable().references(Schedules, #id)();
+  DateTimeColumn get date => dateTime()();
+  TextColumn get notificationType => text()();
+  DateTimeColumn get sentAt => dateTime()();
+  TextColumn get message => text()();
+}
+
+class VideoSegments extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  @ReferenceName('segmentLesson')
+  IntColumn get lessonId => integer().references(Lessons, #id)();
+  IntColumn get segmentIndex => integer()();
+  RealColumn get startTimestamp => real()();
+  RealColumn get endTimestamp => real()();
+  TextColumn get transcript => text()();
+  TextColumn get summary => text().nullable()();
+  TextColumn get quizQuestion => text()();
+  DateTimeColumn get createdAt => dateTime()();
+}
+
+class SegmentQuizAttempts extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  @ReferenceName('segmentQuizStudent')
+  IntColumn get studentId => integer().references(Users, #id)();
+  @ReferenceName('segmentQuizSegment')
+  IntColumn get segmentId => integer().references(VideoSegments, #id)();
+  IntColumn get attemptCount => integer().withDefault(const Constant(0))();
+  BoolColumn get passed => boolean().withDefault(const Constant(false))();
+  DateTimeColumn get lastAttemptAt => dateTime().nullable()();
+}
+
+@DriftDatabase(tables: [
+  Users,
+  StudentProfiles,
+  Schedules,
+  Classes,
+  Subjects,
+  Assignments,
+  StudentAssignments,
+  Notifications,
+  Submissions,
+  Attendances,
+  Tasks,
+  Quizzes,
+  QuizQuestions,
+  QuizAttempts,
+  QuizStatistics,
+  QuizRooms,
+  RoomPlayers,
+  Leaderboards,
+  UserStreaks,
+  Achievements,
+  UserAchievements,
+  QuizCache,
+  Courses,
+  Modules,
+  Lessons,
+  Enrollments,
+  LessonProgress,
+  CourseFiles,
+  Comments,
+  Roadmaps,
+  RoadmapNodes,
+  RoadmapEdges,
+  StudentActivityLogs,
+  CourseReviews,
+  Majors,
+  StudyPlans,
+  ScheduledLessons,
+  LearningActivities,
+  CommentVotes,
+  CommentMentions,
+  ChatConversations,
+  ChatMessages,
+  TeacherApplications,
+  Departments,
+  Semesters,
+  AcademicCourses,
+  CourseClasses,
+  CourseClassEnrollments,
+  EnrollmentImports,
+  PersonalRoadmaps,
+  PersonalRoadmapItems,
+  DailyLearningLogs,
+  AiNotificationLogs,
+  VideoSegments,
+  SegmentQuizAttempts,
+])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_createDatabase());
 
@@ -713,7 +830,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 25;
+  int get schemaVersion => 29;
 
   @override
   MigrationStrategy get migration {
@@ -908,6 +1025,82 @@ class AppDatabase extends _$AppDatabase {
         if (from < 25) {
           await m.issueCustomQuery(
             'ALTER TABLE course_classes ALTER COLUMN teacher_id DROP NOT NULL',
+          );
+        }
+
+        if (from < 26) {
+          await m.issueCustomQuery(
+            'ALTER TABLE course_classes DROP CONSTRAINT IF EXISTS course_classes_class_code_key',
+          );
+          await m.issueCustomQuery(
+            'ALTER TABLE course_classes ADD CONSTRAINT course_classes_code_course_unique UNIQUE (class_code, academic_course_id)',
+          );
+        }
+
+        if (from < 27) {
+          await m.issueCustomQuery('''
+            CREATE TABLE IF NOT EXISTS daily_learning_logs (
+              id SERIAL PRIMARY KEY,
+              student_id INTEGER NOT NULL REFERENCES users(id),
+              schedule_id INTEGER NOT NULL REFERENCES schedules(id),
+              date TIMESTAMPTZ NOT NULL,
+              total_watch_seconds INTEGER NOT NULL DEFAULT 0,
+              required_watch_seconds INTEGER NOT NULL DEFAULT 0,
+              watch_percentage DOUBLE PRECISION NOT NULL DEFAULT 0.0,
+              quiz_completed BOOLEAN NOT NULL DEFAULT FALSE,
+              quiz_score DOUBLE PRECISION,
+              first_access_at TIMESTAMPTZ,
+              last_access_at TIMESTAMPTZ,
+              status TEXT NOT NULL DEFAULT 'pending',
+              absence_reason TEXT,
+              finalized_at TIMESTAMPTZ
+            )
+          ''');
+          await m.issueCustomQuery('''
+            CREATE TABLE IF NOT EXISTS ai_notification_logs (
+              id SERIAL PRIMARY KEY,
+              student_id INTEGER NOT NULL REFERENCES users(id),
+              schedule_id INTEGER REFERENCES schedules(id),
+              date TIMESTAMPTZ NOT NULL,
+              notification_type TEXT NOT NULL,
+              sent_at TIMESTAMPTZ NOT NULL,
+              message TEXT NOT NULL
+            )
+          ''');
+          await m.issueCustomQuery(
+            'CREATE INDEX IF NOT EXISTS idx_daily_logs_student_date ON daily_learning_logs(student_id, date)',
+          );
+          await m.issueCustomQuery(
+            'CREATE INDEX IF NOT EXISTS idx_daily_logs_status ON daily_learning_logs(status, date)',
+          );
+        }
+
+        if (from < 28) {
+          await m.issueCustomQuery('''
+            CREATE TABLE IF NOT EXISTS video_segments (
+              id SERIAL PRIMARY KEY,
+              lesson_id INTEGER NOT NULL REFERENCES lessons(id),
+              segment_index INTEGER NOT NULL,
+              start_timestamp DOUBLE PRECISION NOT NULL,
+              end_timestamp DOUBLE PRECISION NOT NULL,
+              transcript TEXT NOT NULL,
+              summary TEXT,
+              quiz_question TEXT NOT NULL,
+              created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )
+          ''');
+          await m.issueCustomQuery('''
+            CREATE TABLE IF NOT EXISTS segment_quiz_attempts (
+              id SERIAL PRIMARY KEY,
+              student_id INTEGER NOT NULL REFERENCES users(id),
+              segment_id INTEGER NOT NULL REFERENCES video_segments(id),
+              attempt_count INTEGER NOT NULL DEFAULT 0,
+              passed BOOLEAN NOT NULL DEFAULT FALSE,
+              last_attempt_at TIMESTAMPTZ
+            )
+          ''');
+          await m.issueCustomQuery(
+            'CREATE INDEX IF NOT EXISTS idx_video_segments_lesson ON video_segments(lesson_id, segment_index)',
           );
         }
       },

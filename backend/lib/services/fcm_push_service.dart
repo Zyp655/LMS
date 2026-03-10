@@ -103,30 +103,48 @@ class FcmPushService {
     List<int> data,
     List<int> privateKeyDer,
   ) async {
-    final process = await Process.start('openssl', [
-      'dgst',
-      '-sha256',
-      '-sign',
-      '/dev/stdin',
-    ]);
+    final tempDir = Directory.systemTemp;
+    final keyFile = File(
+        '${tempDir.path}/fcm_key_${DateTime.now().millisecondsSinceEpoch}.pem');
+    final dataFile = File(
+        '${tempDir.path}/fcm_data_${DateTime.now().millisecondsSinceEpoch}.bin');
+    final sigFile = File(
+        '${tempDir.path}/fcm_sig_${DateTime.now().millisecondsSinceEpoch}.bin');
 
-    final pemKey = '-----BEGIN PRIVATE KEY-----\n'
-        '${base64.encode(privateKeyDer)}\n'
-        '-----END PRIVATE KEY-----\n';
+    try {
+      final pemKey = '-----BEGIN PRIVATE KEY-----\n'
+          '${base64.encode(privateKeyDer)}\n'
+          '-----END PRIVATE KEY-----\n';
 
-    process.stdin.add(utf8.encode(pemKey));
-    await process.stdin.close();
+      await keyFile.writeAsString(pemKey);
+      await dataFile.writeAsBytes(data);
 
-    process.stdin.add(data);
+      final result = await Process.run('openssl', [
+        'dgst',
+        '-sha256',
+        '-sign',
+        keyFile.path,
+        '-out',
+        sigFile.path,
+        dataFile.path,
+      ]);
 
-    final result = await process.stdout.toList();
-    final exitCode = await process.exitCode;
+      if (result.exitCode != 0) {
+        throw Exception('openssl signing failed: ${result.stderr}');
+      }
 
-    if (exitCode != 0) {
-      throw Exception('openssl signing failed');
+      return await sigFile.readAsBytes();
+    } finally {
+      try {
+        await keyFile.delete();
+      } catch (_) {}
+      try {
+        await dataFile.delete();
+      } catch (_) {}
+      try {
+        await sigFile.delete();
+      } catch (_) {}
     }
-
-    return result.expand((e) => e).toList();
   }
 
   static Future<void> sendChatNotification({
@@ -141,10 +159,18 @@ class FcmPushService {
             ..where((u) => u.id.equals(recipientId)))
           .getSingleOrNull();
 
-      if (user == null || user.fcmToken == null) return;
+      if (user == null || user.fcmToken == null) {
+        print('[FCM] No user or fcmToken for recipientId=$recipientId');
+        return;
+      }
+      print(
+          '[FCM] Sending to recipientId=$recipientId, token=${user.fcmToken!.substring(0, 20)}...');
 
       final accessToken = await _getAccessToken();
-      if (accessToken == null || _projectId == null) return;
+      if (accessToken == null || _projectId == null) {
+        print('[FCM] Failed to get access token or projectId');
+        return;
+      }
 
       final messageBody = {
         'message': {
@@ -172,6 +198,51 @@ class FcmPushService {
         },
       };
 
+      final response = await http.post(
+        Uri.parse(
+          'https://fcm.googleapis.com/v1/projects/$_projectId/messages:send',
+        ),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $accessToken',
+        },
+        body: jsonEncode(messageBody),
+      );
+      print('[FCM] Response: ${response.statusCode} ${response.body}');
+    } catch (e) {
+      print('FCM push error: $e');
+    }
+  }
+
+  static Future<void> sendToToken({
+    required String token,
+    required String title,
+    required String body,
+    Map<String, String>? data,
+  }) async {
+    try {
+      final accessToken = await _getAccessToken();
+      if (accessToken == null || _projectId == null) return;
+
+      final messageBody = {
+        'message': {
+          'token': token,
+          'notification': {
+            'title': title,
+            'body': body.length > 200 ? '${body.substring(0, 200)}...' : body,
+          },
+          if (data != null) 'data': data,
+          'android': {
+            'priority': 'HIGH',
+            'notification': {
+              'channel_id': 'ai_attendance',
+              'sound': 'default',
+              'click_action': 'FLUTTER_NOTIFICATION_CLICK',
+            },
+          },
+        },
+      };
+
       await http.post(
         Uri.parse(
           'https://fcm.googleapis.com/v1/projects/$_projectId/messages:send',
@@ -183,7 +254,7 @@ class FcmPushService {
         body: jsonEncode(messageBody),
       );
     } catch (e) {
-      print('FCM push error: $e');
+      print('FCM sendToToken error: $e');
     }
   }
 }

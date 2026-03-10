@@ -401,7 +401,10 @@ Trả về kết quả dạng JSON (KHÔNG Markdown):
   }) async {
     const baseUrl = 'https://api.openai.com/v1/chat/completions';
 
-    final systemPrompt = '''
+    final hasContent = textContent.trim().isNotEmpty;
+
+    final systemPrompt = hasContent
+        ? '''
 Bạn là trợ lý học tập AI thông minh. Nhiệm vụ: trả lời câu hỏi của sinh viên DỰA TRÊN nội dung bài học được cung cấp bên dưới.
 
 Bài học: "$lessonTitle"
@@ -412,10 +415,23 @@ $textContent
 
 Quy tắc:
 1. LUÔN trả lời bằng tiếng Việt.
-2. CHỈ trả lời dựa trên nội dung bài học. Nếu câu hỏi ngoài phạm vi, hãy nói rõ.
+2. Ưu tiên trả lời dựa trên nội dung bài học. Nếu câu hỏi liên quan đến chủ đề bài học nhưng không có trong nội dung, hãy dùng kiến thức chuyên môn để trả lời và ghi chú rằng đây là kiến thức bổ sung.
 3. Giải thích rõ ràng, dễ hiểu, có ví dụ khi cần.
 4. Dùng markdown formatting (bold, bullet list, code block) để câu trả lời dễ đọc.
 5. Ngắn gọn nhưng đầy đủ thông tin.
+'''
+        : '''
+Bạn là trợ lý học tập AI thông minh. Nhiệm vụ: trả lời câu hỏi của sinh viên về bài học "$lessonTitle".
+
+Lưu ý: Nội dung chi tiết của bài học (transcript/văn bản) chưa có sẵn. Hãy sử dụng kiến thức chuyên môn của bạn về chủ đề "$lessonTitle" và các chủ đề liên quan để trả lời.
+
+Quy tắc:
+1. LUÔN trả lời bằng tiếng Việt.
+2. Trả lời mọi câu hỏi liên quan đến chủ đề bài học và các chủ đề liên quan trong khóa học (ví dụ: nếu bài học về Java fullstack thì các câu hỏi về Spring Boot, React, HTML, CSS, database, API... đều hợp lệ).
+3. Giải thích rõ ràng, dễ hiểu, có ví dụ khi cần.
+4. Dùng markdown formatting (bold, bullet list, code block) để câu trả lời dễ đọc.
+5. Ngắn gọn nhưng đầy đủ thông tin.
+6. Chỉ từ chối các câu hỏi hoàn toàn không liên quan đến học tập.
 ''';
 
     final messages = <Map<String, String>>[
@@ -441,6 +457,101 @@ Quy tắc:
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       return data['choices'][0]['message']['content'] as String;
+    } else {
+      throw Exception(
+          'OpenAI API Error: ${response.statusCode} - ${response.body}');
+    }
+  }
+
+  Future<Map<String, dynamic>> generateVerifyQuestion({
+    required String lessonTitle,
+    required int currentMinute,
+    required int totalMinutes,
+    String? textContent,
+  }) async {
+    const baseUrl = 'https://api.openai.com/v1/chat/completions';
+
+    final fromMinute = (currentMinute - 10).clamp(0, totalMinutes);
+
+    String contentContext = '';
+    if (textContent != null && textContent.trim().isNotEmpty) {
+      final words = textContent.split(RegExp(r'\s+'));
+      final totalWords = words.length;
+      if (totalMinutes > 0 && totalWords > 20) {
+        final wordsPerMinute = totalWords / totalMinutes;
+        final startWord =
+            (fromMinute * wordsPerMinute).round().clamp(0, totalWords);
+        final endWord =
+            (currentMinute * wordsPerMinute).round().clamp(0, totalWords);
+        if (endWord > startWord) {
+          contentContext = words.sublist(startWord, endWord).join(' ');
+        }
+      }
+      if (contentContext.isEmpty) contentContext = textContent;
+    }
+
+    final hasContent = contentContext.isNotEmpty;
+
+    final prompt = hasContent
+        ? '''
+Bạn là hệ thống xác minh sinh viên đang xem video bài học.
+Bài học: "$lessonTitle"
+Nội dung phút $fromMinute - $currentMinute (tổng $totalMinutes phút):
+"""
+$contentContext
+"""
+Tạo 1 câu hỏi trắc nghiệm đơn giản để xác minh sinh viên vừa xem đoạn này.
+Câu hỏi phải dễ trả lời nếu đã xem, nhưng khó đoán nếu không xem.
+'''
+        : '''
+Bạn là hệ thống xác minh sinh viên đang xem video bài học.
+Bài học: "$lessonTitle"
+Sinh viên đang xem tại phút $currentMinute / $totalMinutes.
+Đoạn vừa xem: phút $fromMinute đến phút $currentMinute.
+Tạo 1 câu hỏi trắc nghiệm về nội dung có thể được dạy trong khoảng thời gian này của bài "$lessonTitle".
+Câu hỏi nên ở mức cơ bản, kiểm tra kiến thức nền tảng về chủ đề.
+''';
+
+    final fullPrompt = '''
+$prompt
+Trả về JSON (CHỈ JSON, KHÔNG text khác):
+{
+  "question": "Nội dung câu hỏi bằng tiếng Việt?",
+  "options": ["Đáp án A", "Đáp án B", "Đáp án C", "Đáp án D"],
+  "correctIndex": 0
+}
+Yêu cầu:
+- Câu hỏi bằng tiếng Việt
+- 4 đáp án
+- correctIndex là 0-3
+''';
+
+    final response = await http.post(
+      Uri.parse(baseUrl),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $openaiApiKey',
+      },
+      body: jsonEncode({
+        'model': 'gpt-4o-mini',
+        'messages': [
+          {
+            'role': 'system',
+            'content':
+                'You are a student verification system. Always respond with valid JSON only, no markdown.'
+          },
+          {'role': 'user', 'content': fullPrompt}
+        ],
+        'temperature': 0.7,
+        'max_tokens': 512,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      final text = data['choices'][0]['message']['content'] as String;
+      final jsonStr = _extractJson(text);
+      return jsonDecode(jsonStr) as Map<String, dynamic>;
     } else {
       throw Exception(
           'OpenAI API Error: ${response.statusCode} - ${response.body}');

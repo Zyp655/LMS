@@ -1,5 +1,5 @@
 import 'package:backend/database/database.dart';
-import 'package:bcrypt/bcrypt.dart';
+import 'package:backend/utils/isolate_utils.dart';
 import 'package:drift/drift.dart';
 
 class UserRepository {
@@ -9,7 +9,7 @@ class UserRepository {
 
   Future<User> createUser(
       {required String email, required String password}) async {
-    final hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt());
+    final hashedPassword = await IsolateUtils.hashPassword(password);
 
     return await db.into(db.users).insertReturning(UsersCompanion.insert(
           email: email,
@@ -22,8 +22,8 @@ class UserRepository {
         .getSingleOrNull();
   }
 
-  bool verifyPassword(String rawPassword, String hashedPassword) {
-    return BCrypt.checkpw(rawPassword, hashedPassword);
+  Future<bool> verifyPassword(String rawPassword, String hashedPassword) async {
+    return IsolateUtils.checkPassword(rawPassword, hashedPassword);
   }
 
   Future<void> saveResetToken(String email, String token) async {
