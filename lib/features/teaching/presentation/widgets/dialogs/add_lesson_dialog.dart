@@ -7,6 +7,7 @@ import '../../../../course/presentation/bloc/course_detail_bloc.dart';
 import '../../../../course/presentation/bloc/course_detail_event.dart';
 import '../../../../course/presentation/bloc/course_detail_state.dart';
 import '../file_upload_box.dart';
+import '../../../../../core/theme/app_colors.dart';
 
 class AddLessonDialog {
   static void show(BuildContext mainContext, int moduleId) {
@@ -31,13 +32,13 @@ class AddLessonDialog {
                 children: [
                   TextField(
                     controller: titleController,
-                    decoration: const InputDecoration(labelText: 'Tên bài học'),
+                    decoration: InputDecoration(labelText: 'Tên bài học'),
                     autofocus: true,
                   ),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<String>(
                     value: type,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'Loại bài học',
                       border: OutlineInputBorder(),
                     ),
@@ -74,7 +75,7 @@ class AddLessonDialog {
                     if (videoSource == 'url')
                       TextField(
                         controller: urlController,
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           labelText: 'URL Video (YouTube, Vimeo...)',
                           hintText: 'https://youtube.com/watch?v=...',
                           border: OutlineInputBorder(),
@@ -156,8 +157,8 @@ class AddLessonDialog {
                     : () async {
                         if (titleController.text.isEmpty) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Vui lòng nhập tên bài học'),
+                            SnackBar(
+                    content: Text('Vui lòng nhập tên bài học'),
                             ),
                           );
                           return;
@@ -168,8 +169,8 @@ class AddLessonDialog {
                         if (type == 'video' && videoSource == 'url') {
                           if (urlController.text.isEmpty) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Vui lòng nhập URL Video'),
+                              SnackBar(
+                    content: Text('Vui lòng nhập URL Video'),
                               ),
                             );
                             return;
@@ -208,7 +209,7 @@ class AddLessonDialog {
                                   content: Text(
                                     result.errorMessage ?? 'Lỗi upload',
                                   ),
-                                  backgroundColor: Colors.red,
+                                  backgroundColor: AppColors.error,
                                 ),
                               );
                             }
@@ -261,7 +262,7 @@ class AddLessonDialog {
               padding: const EdgeInsets.symmetric(vertical: 12),
               decoration: BoxDecoration(
                 color: videoSource == 'url'
-                    ? const Color(0xFFFF6636)
+                    ? AppColors.accent
                     : Colors.grey[200],
                 borderRadius: const BorderRadius.horizontal(
                   left: Radius.circular(8),
@@ -299,7 +300,7 @@ class AddLessonDialog {
               padding: const EdgeInsets.symmetric(vertical: 12),
               decoration: BoxDecoration(
                 color: videoSource == 'upload'
-                    ? const Color(0xFFFF6636)
+                    ? AppColors.accent
                     : Colors.grey[200],
                 borderRadius: const BorderRadius.horizontal(
                   right: Radius.circular(8),

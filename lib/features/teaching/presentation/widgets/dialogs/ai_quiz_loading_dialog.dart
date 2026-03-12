@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../../../../core/services/content_analyzer_service.dart';
 import 'ai_quiz_editor_dialog.dart';
+import '../../../../../core/theme/app_colors.dart';
 
 class AIQuizLoadingDialog extends StatefulWidget {
   final int moduleId;
@@ -59,6 +60,17 @@ class _AIQuizLoadingDialogState extends State<AIQuizLoadingDialog> {
       Navigator.pop(context);
 
       if (result != null && result['questions'] != null) {
+        final questions = result['questions'] as List;
+        if (questions.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Không tạo được câu hỏi. Hãy thêm nội dung cho bài học.',
+              ),
+            ),
+          );
+          return;
+        }
         final saved = await showDialog<bool>(
           context: context,
           barrierDismissible: false,
@@ -69,11 +81,12 @@ class _AIQuizLoadingDialogState extends State<AIQuizLoadingDialog> {
           Navigator.of(context, rootNavigator: true).pop(true);
         }
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Không thể tạo quiz. Vui lòng thử lại.'),
-          ),
-        );
+        final errorMsg =
+            result?['error'] as String? ??
+            'Không thể tạo quiz. Hãy thêm bài học có nội dung trước.';
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(errorMsg)));
       }
     } catch (e) {
       if (!mounted) return;
@@ -92,7 +105,7 @@ class _AIQuizLoadingDialogState extends State<AIQuizLoadingDialog> {
         mainAxisSize: MainAxisSize.min,
         children: [
           const SizedBox(height: 16),
-          const CircularProgressIndicator(color: Color(0xFFFF6636)),
+          const CircularProgressIndicator(color: AppColors.accent),
           const SizedBox(height: 24),
           Text(
             _status,

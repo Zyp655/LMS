@@ -5,6 +5,7 @@ import '../../domain/entities/student_entity.dart';
 import '../bloc/teacher_bloc.dart';
 import '../bloc/teacher_event.dart';
 import '../bloc/teacher_state.dart';
+import '../../../../core/theme/app_colors.dart';
 
 class TakeAttendancePage extends StatefulWidget {
   final int classId;
@@ -60,15 +61,15 @@ class _TakeAttendancePageState extends State<TakeAttendancePage> {
     return Scaffold(
       appBar: AppBar(
         title: Text("Điểm danh: ${widget.subjectName}"),
-        actions: [IconButton(icon: const Icon(Icons.save), onPressed: _submit)],
+        actions: [IconButton(icon: Icon(Icons.save), onPressed: _submit)],
       ),
       body: BlocListener<TeacherBloc, TeacherState>(
         listener: (context, state) {
           if (state is AttendanceMarkedSuccess) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text("Đã lưu điểm danh thành công!"),
-                backgroundColor: Colors.green,
+              SnackBar(
+                    content: Text("Đã lưu điểm danh thành công!"),
+                backgroundColor: AppColors.success,
               ),
             );
             Navigator.pop(context);
@@ -76,7 +77,7 @@ class _TakeAttendancePageState extends State<TakeAttendancePage> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text("Lỗi: ${state.message}"),
-                backgroundColor: Colors.red,
+                backgroundColor: AppColors.error,
               ),
             );
           }
@@ -86,7 +87,7 @@ class _TakeAttendancePageState extends State<TakeAttendancePage> {
             ListTile(
               title: const Text("Ngày điểm danh"),
               subtitle: Text(DateFormat('dd/MM/yyyy').format(_selectedDate)),
-              trailing: const Icon(Icons.calendar_today),
+              trailing: Icon(Icons.calendar_today),
               onTap: () async {
                 final date = await showDatePicker(
                   context: context,

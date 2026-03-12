@@ -8,6 +8,7 @@ import '../widgets/grade_submission_dialog.dart';
 import '../bloc/teacher_bloc.dart';
 import '../bloc/teacher_event.dart';
 import '../bloc/teacher_state.dart';
+import '../../../../core/theme/app_colors.dart';
 
 class SubmissionsListPage extends StatefulWidget {
   final AssignmentEntity assignment;
@@ -70,7 +71,7 @@ class _SubmissionsListPageState extends State<SubmissionsListPage> {
         title: const Text('Danh Sách Bài Nộp'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: Icon(Icons.refresh),
             onPressed: _loadSubmissions,
           ),
         ],
@@ -81,14 +82,14 @@ class _SubmissionsListPageState extends State<SubmissionsListPage> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.message),
-                backgroundColor: Colors.red,
+                backgroundColor: AppColors.error,
               ),
             );
           } else if (state is SubmissionGradedSuccess) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Chấm bài thành công'),
-                backgroundColor: Colors.green,
+              SnackBar(
+                    content: Text('Chấm bài thành công'),
+                backgroundColor: AppColors.success,
               ),
             );
             _loadSubmissions();
@@ -100,7 +101,7 @@ class _SubmissionsListPageState extends State<SubmissionsListPage> {
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
-                color: Colors.blue.withOpacity(0.1),
+                color: AppColors.info.withValues(alpha: 0.1),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -231,12 +232,12 @@ class _SubmissionsListPageState extends State<SubmissionsListPage> {
                       vertical: 2,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.red.withOpacity(0.1),
+                      color: AppColors.error.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: const Text(
                       'Trễ',
-                      style: TextStyle(fontSize: 10, color: Colors.red),
+                      style: TextStyle(fontSize: 10, color: AppColors.error),
                     ),
                   ),
                 ],
@@ -247,14 +248,14 @@ class _SubmissionsListPageState extends State<SubmissionsListPage> {
                 padding: const EdgeInsets.only(top: 4),
                 child: Row(
                   children: [
-                    const Icon(Icons.star, size: 14, color: Colors.amber),
+                    Icon(Icons.star, size: 14, color: AppColors.warning),
                     const SizedBox(width: 4),
                     Text(
                       'Điểm: ${submission['grade']}/${submission['maxGrade'] ?? 10}',
                       style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
-                        color: Colors.green,
+                        color: AppColors.success,
                       ),
                     ),
                   ],

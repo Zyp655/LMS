@@ -48,7 +48,7 @@ class FileUploadBox extends StatelessWidget {
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.close, size: 20),
+                  icon: Icon(Icons.close, size: 20),
                   onPressed: onClear,
                 ),
               ],
@@ -60,7 +60,7 @@ class FileUploadBox extends StatelessWidget {
             width: double.infinity,
             child: ElevatedButton.icon(
               onPressed: onPick,
-              icon: const Icon(Icons.upload_file),
+              icon: Icon(Icons.upload_file),
               label: Text('Chọn tệp ($extensionsText)'),
             ),
           ),

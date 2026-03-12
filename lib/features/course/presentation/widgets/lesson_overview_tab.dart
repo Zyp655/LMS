@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:video_player/video_player.dart';
@@ -95,6 +95,7 @@ class LessonOverviewTab extends StatelessWidget {
                         lessonTitle: lesson.title,
                         textContent: lesson.textContent ?? '',
                         contentUrl: lesson.contentUrl,
+                        lessonId: lesson.id,
                       ),
                     ),
                   );

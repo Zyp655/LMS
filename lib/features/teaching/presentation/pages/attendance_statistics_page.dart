@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/api/api_constants.dart';
 
 class AttendanceStatisticsPage extends StatefulWidget {
   final int classId;
@@ -36,7 +38,7 @@ class _AttendanceStatisticsPageState extends State<AttendanceStatisticsPage> {
 
     try {
       final url = Uri.parse(
-        'http://localhost:8080/teacher/attendance/statistics?classId=${widget.classId}',
+        '${ApiConstants.baseUrl}/teacher/attendance/statistics?classId=${widget.classId}',
       );
 
       final response = await http.get(url);
@@ -65,7 +67,7 @@ class _AttendanceStatisticsPageState extends State<AttendanceStatisticsPage> {
         title: const Text('Thống Kê Điểm Danh'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: Icon(Icons.refresh),
             onPressed: _loadStatistics,
           ),
         ],
@@ -75,7 +77,7 @@ class _AttendanceStatisticsPageState extends State<AttendanceStatisticsPage> {
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
-            color: Colors.purple.withOpacity(0.1),
+            color: AppColors.secondary.withValues(alpha: 0.1),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -111,7 +113,7 @@ class _AttendanceStatisticsPageState extends State<AttendanceStatisticsPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline, size: 64, color: Colors.red),
+            Icon(Icons.error_outline, size: 64, color: AppColors.error),
             const SizedBox(height: 16),
             Text('Lỗi: $_error'),
             const SizedBox(height: 16),

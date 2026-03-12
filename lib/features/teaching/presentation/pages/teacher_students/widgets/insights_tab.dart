@@ -1,5 +1,6 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import '../../../../../../core/theme/app_colors.dart';
 
 class InsightsTab extends StatelessWidget {
   final bool isLoading;
@@ -13,9 +14,9 @@ class InsightsTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const cardBg = Color(0xFF1F1F35);
-    const inputBg = Color(0xFF2E2E48);
-    const primaryOrange = Color(0xFFFF6636);
+    const cardBg = AppColors.darkSurface;
+    const inputBg = AppColors.darkSurfaceVariant;
+    const primaryOrange = AppColors.accent;
 
     if (isLoading) {
       return const Center(
@@ -49,17 +50,17 @@ class InsightsTab extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [Color(0xFF2E2E48), cardBg],
+                colors: [AppColors.darkSurfaceVariant, cardBg],
               ),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFF6C63FF).withAlpha(100)),
+              border: Border.all(color: AppColors.primary.withAlpha(100)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: const [
-                    Icon(Icons.auto_awesome, color: Color(0xFF6C63FF)),
+                    Icon(Icons.auto_awesome, color: AppColors.primary),
                     SizedBox(width: 8),
                     Text(
                       'AI Data Scientist',
@@ -97,7 +98,7 @@ class InsightsTab extends StatelessWidget {
                         children: [
                           const Text(
                             '• ',
-                            style: TextStyle(color: Color(0xFF6C63FF)),
+                            style: TextStyle(color: AppColors.primary),
                           ),
                           Expanded(
                             child: Text(
@@ -264,7 +265,7 @@ class InsightsTab extends StatelessWidget {
                             Text(
                               'Avg Quiz: ${stat['avgQuizScore'] ?? 'N/A'}',
                               style: const TextStyle(
-                                color: Colors.amber,
+                                color: AppColors.warning,
                                 fontSize: 12,
                               ),
                             ),

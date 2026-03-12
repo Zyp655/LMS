@@ -6,6 +6,7 @@ import '../../../schedule/presentation/bloc/schedule_state.dart';
 import '../../../../injection_container.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../widgets/teacher_update_dialog.dart';
+import '../../../../core/theme/app_colors.dart';
 
 class TeacherSchedulePage extends StatefulWidget {
   const TeacherSchedulePage({super.key});
@@ -35,12 +36,10 @@ class _TeacherSchedulePageState extends State<TeacherSchedulePage> {
     return BlocProvider(
       create: (_) => sl<ScheduleBloc>()..add(LoadSchedules()),
       child: Scaffold(
-        appBar: AppBar(
-          title: const Text("Quản lý Lớp Học (GV)"),
-          backgroundColor: Colors.blueAccent,
-          foregroundColor: Colors.white,
-        ),
+        appBar: AppBar(title: const Text("Quản lý Lớp Học (GV)")),
         body: BlocBuilder<ScheduleBloc, ScheduleState>(
+          buildWhen: (prev, curr) =>
+              prev.runtimeType != curr.runtimeType || prev != curr,
           builder: (context, state) {
             if (state is ScheduleLoading) {
               return const Center(child: CircularProgressIndicator());
@@ -66,9 +65,9 @@ class _TeacherSchedulePageState extends State<TeacherSchedulePage> {
                         "Vắng: ${item.currentAbsences} | Điểm: ${item.currentScore ?? '--'}",
                       ),
                       trailing: IconButton(
-                        icon: const Icon(
+                        icon: Icon(
                           Icons.edit_note,
-                          color: Colors.blue,
+                          color: AppColors.primary,
                           size: 30,
                         ),
                         onPressed: () {

@@ -18,7 +18,7 @@ class RatingSectionWidget extends StatelessWidget {
     return Container(
       padding: AppSpacing.paddingXl,
       decoration: BoxDecoration(
-        color: AppColors.darkSurface,
+        color: AppColors.cardColor(context),
         borderRadius: AppSpacing.borderRadiusLg,
       ),
       child: Row(
@@ -55,8 +55,8 @@ class _AverageRatingDisplay extends StatelessWidget {
       children: [
         Text(
           rating.toStringAsFixed(1),
-          style: const TextStyle(
-            color: AppColors.textPrimaryDark,
+          style: TextStyle(
+            color: AppColors.textPrimary(context),
             fontSize: 48,
             fontWeight: FontWeight.bold,
           ),
@@ -66,7 +66,7 @@ class _AverageRatingDisplay extends StatelessWidget {
           children: List.generate(5, (i) {
             return Icon(
               i < rating.round() ? Icons.star : Icons.star_border,
-              color: Colors.amber,
+              color: AppColors.warning,
               size: 20,
             );
           }),
@@ -74,7 +74,10 @@ class _AverageRatingDisplay extends StatelessWidget {
         AppSpacing.gapV4,
         Text(
           '$totalReviews đánh giá',
-          style: TextStyle(color: Colors.grey[400], fontSize: 12),
+          style: TextStyle(
+            color: AppColors.textSecondary(context),
+            fontSize: 12,
+          ),
         ),
       ],
     );
@@ -104,18 +107,21 @@ class _RatingDistribution extends StatelessWidget {
             children: [
               Text(
                 '$star',
-                style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                style: TextStyle(
+                  color: AppColors.textSecondary(context),
+                  fontSize: 12,
+                ),
               ),
               const SizedBox(width: 4),
-              const Icon(Icons.star, color: Colors.amber, size: 12),
+              Icon(Icons.star, color: AppColors.warning, size: 12),
               const SizedBox(width: 8),
               Expanded(
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(2),
                   child: LinearProgressIndicator(
                     value: percent,
-                    backgroundColor: AppColors.darkSurfaceVariant,
-                    valueColor: const AlwaysStoppedAnimation(Colors.amber),
+                    backgroundColor: AppColors.border(context),
+                    valueColor: AlwaysStoppedAnimation(AppColors.warningLight),
                     minHeight: 6,
                   ),
                 ),
@@ -123,7 +129,10 @@ class _RatingDistribution extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 '$count',
-                style: TextStyle(color: Colors.grey[400], fontSize: 11),
+                style: TextStyle(
+                  color: AppColors.textSecondary(context),
+                  fontSize: 11,
+                ),
               ),
             ],
           ),

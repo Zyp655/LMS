@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
 
 class NotificationDialogWidget extends StatefulWidget {
   final List<String> studentNames;
@@ -42,18 +43,15 @@ class _NotificationDialogWidgetState extends State<NotificationDialogWidget> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      backgroundColor: const Color(0xFF16213E),
+      backgroundColor: AppColors.cardColor(context),
       title: Row(
         children: [
           if (widget.isAiGenerated)
             const Padding(
               padding: EdgeInsets.only(right: 8.0),
-              child: Icon(Icons.auto_awesome, color: Color(0xFF6C63FF)),
+              child: Icon(Icons.auto_awesome, color: AppColors.primary),
             ),
-          Text(
-            widget.isAiGenerated ? 'AI Soạn tin nhắn' : 'Gửi thông báo',
-            style: const TextStyle(color: Colors.white),
-          ),
+          Text(widget.isAiGenerated ? 'AI Soạn tin nhắn' : 'Gửi thông báo'),
         ],
       ),
       content: SizedBox(
@@ -64,17 +62,19 @@ class _NotificationDialogWidgetState extends State<NotificationDialogWidget> {
           children: [
             Text(
               'Gửi đến: ${widget.studentNames.length} sinh viên',
-              style: TextStyle(color: Colors.grey[400], fontSize: 12),
+              style: TextStyle(
+                color: AppColors.textSecondary(context),
+                fontSize: 12,
+              ),
             ),
             const SizedBox(height: 16),
             TextField(
               controller: _titleController,
-              style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
                 labelText: 'Tiêu đề',
-                labelStyle: TextStyle(color: Colors.grey[400]),
+                labelStyle: TextStyle(color: AppColors.textSecondary(context)),
                 filled: true,
-                fillColor: const Color(0xFF0F3460),
+                fillColor: AppColors.surface(context),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
                   borderSide: BorderSide.none,
@@ -84,13 +84,12 @@ class _NotificationDialogWidgetState extends State<NotificationDialogWidget> {
             const SizedBox(height: 12),
             TextField(
               controller: _messageController,
-              style: const TextStyle(color: Colors.white),
               maxLines: 4,
               decoration: InputDecoration(
                 labelText: 'Nội dung',
-                labelStyle: TextStyle(color: Colors.grey[400]),
+                labelStyle: TextStyle(color: AppColors.textSecondary(context)),
                 filled: true,
-                fillColor: const Color(0xFF0F3460),
+                fillColor: AppColors.surface(context),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
                   borderSide: BorderSide.none,
@@ -103,9 +102,12 @@ class _NotificationDialogWidgetState extends State<NotificationDialogWidget> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: Text('Hủy', style: TextStyle(color: Colors.grey[400])),
+          child: Text(
+            'Hủy',
+            style: TextStyle(color: AppColors.textSecondary(context)),
+          ),
         ),
-        ElevatedButton.icon(
+        FilledButton.icon(
           onPressed: () {
             if (_titleController.text.isNotEmpty &&
                 _messageController.text.isNotEmpty) {
@@ -113,20 +115,16 @@ class _NotificationDialogWidgetState extends State<NotificationDialogWidget> {
               widget.onSend(_titleController.text, _messageController.text);
             }
           },
-          style: ElevatedButton.styleFrom(
+          style: FilledButton.styleFrom(
             backgroundColor: widget.isAiGenerated
-                ? const Color(0xFF6C63FF)
-                : const Color(0xFFFF6636),
+                ? AppColors.primary
+                : AppColors.accent,
           ),
           icon: Icon(
             widget.isAiGenerated ? Icons.auto_awesome : Icons.send,
             size: 18,
-            color: Colors.white,
           ),
-          label: Text(
-            widget.isAiGenerated ? 'Gửi AI Nudge' : 'Gửi',
-            style: const TextStyle(color: Colors.white),
-          ),
+          label: Text(widget.isAiGenerated ? 'Gửi AI Nudge' : 'Gửi'),
         ),
       ],
     );

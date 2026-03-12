@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
 
 class CustomSearchBar extends StatelessWidget {
   final TextEditingController controller;
@@ -20,21 +21,27 @@ class CustomSearchBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: fillColor ?? const Color(0xFF2E2E48),
+        color: fillColor ?? AppColors.surface(context),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white10),
+        border: Border.all(color: AppColors.border(context)),
       ),
       child: TextField(
         controller: controller,
-        style: const TextStyle(color: Colors.white),
         onChanged: onChanged,
         decoration: InputDecoration(
           hintText: hintText,
-          hintStyle: TextStyle(color: Colors.grey[400]),
-          prefixIcon: Icon(Icons.search, color: Colors.grey[400]),
+          hintStyle: TextStyle(color: AppColors.textSecondary(context)),
+          prefixIcon: Icon(
+            Icons.search,
+            color: AppColors.textSecondary(context),
+          ),
           suffixIcon: controller.text.isNotEmpty
               ? IconButton(
-                  icon: Icon(Icons.clear, color: Colors.grey[400], size: 20),
+                  icon: Icon(
+                    Icons.clear,
+                    color: AppColors.textSecondary(context),
+                    size: 20,
+                  ),
                   onPressed: onClear,
                 )
               : null,

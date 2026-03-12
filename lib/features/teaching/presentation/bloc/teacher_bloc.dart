@@ -18,6 +18,7 @@ import '../../domain/usecases/grade_submission_usecase.dart';
 import '../../domain/usecases/mark_attendance_usecase.dart';
 import '../../domain/usecases/get_attendance_records_usecase.dart';
 import '../../domain/usecases/get_attendance_statistics_usecase.dart';
+import '../../domain/repositories/teacher_repository.dart';
 import 'teacher_event.dart';
 import 'teacher_state.dart';
 
@@ -39,6 +40,7 @@ class TeacherBloc extends Bloc<TeacherEvent, TeacherState> {
   final MarkAttendanceUseCase markAttendance;
   final GetAttendanceRecordsUseCase getAttendanceRecords;
   final GetAttendanceStatisticsUseCase getAttendanceStatistics;
+  final TeacherRepository teacherRepository;
 
   final GetSubjectsUseCase getSubjects;
   final CreateSubjectUseCase createSubject;
@@ -63,6 +65,7 @@ class TeacherBloc extends Bloc<TeacherEvent, TeacherState> {
     required this.markAttendance,
     required this.getAttendanceRecords,
     required this.getAttendanceStatistics,
+    required this.teacherRepository,
   }) : super(TeacherInitial()) {
     on<LoadSubjects>((event, emit) async {
       emit(TeacherLoading());
@@ -258,6 +261,25 @@ class TeacherBloc extends Bloc<TeacherEvent, TeacherState> {
       result.fold(
         (failure) => emit(TeacherError(failure.message)),
         (statistics) => emit(AttendanceStatisticsLoaded(statistics)),
+      );
+    });
+
+    on<EnrollStudentsByFile>((event, emit) async {
+      emit(TeacherLoading());
+      final result = await teacherRepository.enrollStudentsByIdentifier(
+        event.classId,
+        event.teacherId,
+        event.identifiers,
+      );
+      result.fold(
+        (failure) => emit(TeacherError(failure.message)),
+        (data) => emit(
+          EnrollmentImportResult(
+            enrolled: List.from(data['enrolled'] ?? []),
+            notFound: List.from(data['notFound'] ?? []),
+            alreadyEnrolled: List.from(data['alreadyEnrolled'] ?? []),
+          ),
+        ),
       );
     });
   }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../../core/services/content_analyzer_service.dart';
+import '../../../../../core/theme/app_colors.dart';
 
 class AIQuizEditorDialog extends StatefulWidget {
   final Map<String, dynamic> data;
@@ -51,23 +52,23 @@ class _AIQuizEditorDialogState extends State<AIQuizEditorDialog> {
       if (result != null && result['success'] == true) {
         Navigator.pop(context, true);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Đã lưu bài Quiz thành công!'),
-            backgroundColor: Color(0xFF4CAF50),
+          SnackBar(
+                    content: Text('Đã lưu bài Quiz thành công!'),
+            backgroundColor: AppColors.success,
           ),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Không thể lưu quiz. Vui lòng thử lại.'),
-            backgroundColor: Colors.red,
+          SnackBar(
+                    content: Text('Không thể lưu quiz. Vui lòng thử lại.'),
+            backgroundColor: AppColors.error,
           ),
         );
       }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Lỗi: $e'), backgroundColor: Colors.red),
+        SnackBar(content: Text('Lỗi: $e'), backgroundColor: AppColors.error),
       );
     } finally {
       if (mounted) {
@@ -97,7 +98,7 @@ class _AIQuizEditorDialogState extends State<AIQuizEditorDialog> {
                 children: [
                   TextField(
                     controller: questionController,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'Câu hỏi',
                       border: OutlineInputBorder(),
                     ),
@@ -125,13 +126,13 @@ class _AIQuizEditorDialogState extends State<AIQuizEditorDialog> {
                       groupValue: correctIndex,
                       onChanged: (val) =>
                           setDialogState(() => correctIndex = val!),
-                      activeColor: const Color(0xFFFF6636),
+                      activeColor: AppColors.accent,
                     );
                   }),
                   const SizedBox(height: 16),
                   TextField(
                     controller: explanationController,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'Giải thích đáp án',
                       border: OutlineInputBorder(),
                     ),
@@ -147,7 +148,7 @@ class _AIQuizEditorDialogState extends State<AIQuizEditorDialog> {
               ),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFF6636),
+                  backgroundColor: AppColors.accent,
                 ),
                 child: const Text('Lưu thay đổi'),
                 onPressed: () {
@@ -187,7 +188,7 @@ class _AIQuizEditorDialogState extends State<AIQuizEditorDialog> {
           children: [
             Row(
               children: [
-                const Icon(Icons.edit_note, color: Color(0xFFFF6636), size: 28),
+                Icon(Icons.edit_note, color: AppColors.accent, size: 28),
                 const SizedBox(width: 12),
                 const Expanded(
                   child: Text(
@@ -196,7 +197,7 @@ class _AIQuizEditorDialogState extends State<AIQuizEditorDialog> {
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.close),
+                  icon: Icon(Icons.close),
                   onPressed: () => Navigator.pop(context),
                 ),
               ],
@@ -232,9 +233,9 @@ class _AIQuizEditorDialogState extends State<AIQuizEditorDialog> {
                                 ),
                               ),
                               IconButton(
-                                icon: const Icon(
+                                icon: Icon(
                                   Icons.edit,
-                                  color: Color(0xFFFF6636),
+                                  color: AppColors.accent,
                                 ),
                                 onPressed: () => _showEditQuestionDialog(index),
                               ),
@@ -252,19 +253,19 @@ class _AIQuizEditorDialogState extends State<AIQuizEditorDialog> {
                           Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFFFF3E0),
+                              color: AppColors.warning.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(
-                                color: const Color(0xFFFFE0B2),
+                                color: AppColors.warningLight,
                               ),
                             ),
                             child: Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Icon(
+                                Icon(
                                   Icons.lightbulb,
                                   size: 16,
-                                  color: Color(0xFFF57C00),
+                                  color: AppColors.warningDark,
                                 ),
                                 const SizedBox(width: 8),
                                 Expanded(
@@ -272,7 +273,7 @@ class _AIQuizEditorDialogState extends State<AIQuizEditorDialog> {
                                     'Giải thích: ${q['explanation']}',
                                     style: const TextStyle(
                                       fontSize: 13,
-                                      color: Color(0xFFE65100),
+                                      color: AppColors.accent,
                                     ),
                                   ),
                                 ),
@@ -300,10 +301,10 @@ class _AIQuizEditorDialogState extends State<AIQuizEditorDialog> {
                           color: Colors.white,
                         ),
                       )
-                    : const Icon(Icons.save),
+                    : Icon(Icons.save),
                 label: Text(_isSaving ? 'Đang lưu...' : 'Xác nhận & Lưu'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFF6636),
+                  backgroundColor: AppColors.accent,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   textStyle: const TextStyle(
@@ -326,7 +327,7 @@ class _AIQuizEditorDialogState extends State<AIQuizEditorDialog> {
         children: [
           Icon(
             isCorrect ? Icons.check_circle : Icons.radio_button_unchecked,
-            color: isCorrect ? const Color(0xFF00C853) : Colors.grey[400],
+            color: isCorrect ? AppColors.success : Colors.grey[400],
             size: 20,
           ),
           const SizedBox(width: 8),
@@ -335,7 +336,7 @@ class _AIQuizEditorDialogState extends State<AIQuizEditorDialog> {
               text,
               style: TextStyle(
                 fontWeight: isCorrect ? FontWeight.w600 : FontWeight.normal,
-                color: isCorrect ? const Color(0xFF2E7D32) : Colors.black87,
+                color: isCorrect ? AppColors.successDark : Colors.black87,
               ),
             ),
           ),

@@ -21,13 +21,13 @@ class StudentStatusChart extends StatelessWidget {
       return Container(
         padding: AppSpacing.paddingXl,
         decoration: BoxDecoration(
-          color: AppColors.darkSurface,
+          color: AppColors.cardColor(context),
           borderRadius: AppSpacing.borderRadiusLg,
         ),
         child: Center(
           child: Text(
             'Chưa có học viên',
-            style: TextStyle(color: Colors.grey[400]),
+            style: TextStyle(color: AppColors.textSecondary(context)),
           ),
         ),
       );
@@ -36,16 +36,16 @@ class StudentStatusChart extends StatelessWidget {
     return Container(
       padding: AppSpacing.paddingXl,
       decoration: BoxDecoration(
-        color: AppColors.darkSurface,
+        color: AppColors.cardColor(context),
         borderRadius: AppSpacing.borderRadiusLg,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Trạng thái học viên',
             style: TextStyle(
-              color: AppColors.textPrimaryDark,
+              color: AppColors.textPrimary(context),
               fontSize: 16,
               fontWeight: FontWeight.bold,
             ),
@@ -100,7 +100,10 @@ class _StatusBar extends StatelessWidget {
           width: 80,
           child: Text(
             label,
-            style: TextStyle(color: Colors.grey[400], fontSize: 12),
+            style: TextStyle(
+              color: AppColors.textSecondary(context),
+              fontSize: 12,
+            ),
           ),
         ),
         Expanded(
@@ -108,7 +111,7 @@ class _StatusBar extends StatelessWidget {
             borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(
               value: percent,
-              backgroundColor: AppColors.darkSurfaceVariant,
+              backgroundColor: AppColors.border(context),
               valueColor: AlwaysStoppedAnimation(color),
               minHeight: 8,
             ),
@@ -119,8 +122,8 @@ class _StatusBar extends StatelessWidget {
           width: 30,
           child: Text(
             '$value',
-            style: const TextStyle(
-              color: AppColors.textPrimaryDark,
+            style: TextStyle(
+              color: AppColors.textPrimary(context),
               fontWeight: FontWeight.bold,
             ),
             textAlign: TextAlign.right,

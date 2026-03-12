@@ -33,7 +33,7 @@ class TeacherUpdateDialog {
             children: [
               TextField(
                 controller: absenceCtrl,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: "Số buổi nghỉ",
                   border: OutlineInputBorder(),
                 ),
@@ -42,7 +42,7 @@ class TeacherUpdateDialog {
               const SizedBox(height: 12),
               TextField(
                 controller: midtermCtrl,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: "Điểm Giữa Kỳ",
                   border: OutlineInputBorder(),
                 ),
@@ -53,7 +53,7 @@ class TeacherUpdateDialog {
               const SizedBox(height: 12),
               TextField(
                 controller: finalCtrl,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: "Điểm Cuối Kỳ",
                   border: OutlineInputBorder(),
                 ),
@@ -122,7 +122,7 @@ class TeacherUpdateDialog {
             children: [
               TextField(
                 controller: absenceCtrl,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: "Số buổi nghỉ",
                   border: OutlineInputBorder(),
                 ),
@@ -132,7 +132,7 @@ class TeacherUpdateDialog {
                 const SizedBox(height: 12),
                 TextField(
                   controller: midtermCtrl,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: "Điểm Giữa Kỳ",
                     border: OutlineInputBorder(),
                   ),
@@ -144,7 +144,7 @@ class TeacherUpdateDialog {
               const SizedBox(height: 12),
               TextField(
                 controller: finalCtrl,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: "Điểm Cuối Kỳ",
                   border: OutlineInputBorder(),
                 ),

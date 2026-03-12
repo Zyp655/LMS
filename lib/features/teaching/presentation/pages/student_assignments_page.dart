@@ -10,6 +10,7 @@ import '../bloc/student_event.dart';
 import '../bloc/student_state.dart';
 import '../../../../core/services/notification_service.dart';
 import 'submit_assignment_page.dart';
+import '../../../../core/theme/app_colors.dart';
 
 class StudentAssignmentsPage extends StatelessWidget {
   const StudentAssignmentsPage({super.key});
@@ -65,7 +66,7 @@ class _StudentAssignmentsViewState extends State<StudentAssignmentsView> {
         title: const Text('Bài Tập Của Tôi'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: Icon(Icons.refresh),
             onPressed: _loadAssignments,
           ),
         ],
@@ -101,7 +102,7 @@ class _StudentAssignmentsViewState extends State<StudentAssignmentsView> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                  Icon(Icons.error_outline, size: 48, color: AppColors.error),
                   const SizedBox(height: 16),
                   Text('Lỗi: ${state.message}'),
                   const SizedBox(height: 16),
@@ -185,7 +186,7 @@ class _StudentAssignmentsViewState extends State<StudentAssignmentsView> {
                                     vertical: 4,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: statusColor.withOpacity(0.1),
+                                    color: statusColor.withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(4),
                                     border: Border.all(color: statusColor),
                                   ),
@@ -212,7 +213,7 @@ class _StudentAssignmentsViewState extends State<StudentAssignmentsView> {
                             const SizedBox(height: 4),
                             Row(
                               children: [
-                                const Icon(
+                                Icon(
                                   Icons.access_time,
                                   size: 16,
                                   color: Colors.grey,

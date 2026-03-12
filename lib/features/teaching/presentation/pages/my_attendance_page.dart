@@ -5,6 +5,8 @@ import 'package:intl/intl.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/api/api_constants.dart';
 
 class MyAttendancePage extends StatefulWidget {
   final int? classId;
@@ -39,7 +41,7 @@ class _MyAttendancePageState extends State<MyAttendancePage> {
 
     try {
       String url =
-          'http://localhost:8080/student/attendance?userId=${authState.user!.id}';
+          '${ApiConstants.baseUrl}/student/attendance?userId=${authState.user!.id}';
       if (widget.classId != null) {
         url += '&classId=${widget.classId}';
       }
@@ -95,7 +97,7 @@ class _MyAttendancePageState extends State<MyAttendancePage> {
         title: Text(widget.className ?? 'Điểm Danh Của Tôi'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: Icon(Icons.refresh),
             onPressed: _loadAttendance,
           ),
         ],
@@ -114,7 +116,7 @@ class _MyAttendancePageState extends State<MyAttendancePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline, size: 64, color: Colors.red),
+            Icon(Icons.error_outline, size: 64, color: AppColors.error),
             const SizedBox(height: 16),
             Text('Lỗi: $_error'),
             const SizedBox(height: 16),

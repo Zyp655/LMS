@@ -93,4 +93,10 @@ abstract class TeacherRepository {
   Future<Either<Failure, List<Map<String, dynamic>>>> getAttendanceStatistics(
     int classId,
   );
+
+  Future<Either<Failure, Map<String, dynamic>>> enrollStudentsByIdentifier(
+    int classId,
+    int teacherId,
+    List<String> identifiers,
+  );
 }

@@ -1,14 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'core/common/theme_cubit.dart';
-import 'core/route/app_route.dart';
-import 'core/route/route_generator.dart';
+import 'core/route/app_router.dart';
 import 'core/services/notification_service.dart';
+import 'core/theme/app_theme.dart';
 import 'injection_container.dart' as di;
 import 'features/auth/presentation/bloc/auth_bloc.dart';
+import 'features/schedule/presentation/bloc/schedule_bloc.dart';
+import 'features/user/presentation/bloc/user_bloc.dart';
+import 'features/task/presentation/bloc/task_bloc.dart';
+import 'features/notifications/presentation/bloc/notification_bloc.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.dark,
+      statusBarBrightness: Brightness.light,
+    ),
+  );
+  await Firebase.initializeApp();
   await di.init();
   await NotificationService().init();
   runApp(const MyApp());
@@ -23,38 +37,20 @@ class MyApp extends StatelessWidget {
       providers: [
         BlocProvider(create: (_) => di.sl<AuthBloc>()),
         BlocProvider(create: (_) => di.sl<ThemeCubit>()),
+        BlocProvider(create: (_) => di.sl<ScheduleBloc>()),
+        BlocProvider(create: (_) => di.sl<UserBloc>()),
+        BlocProvider(create: (_) => di.sl<TaskBloc>()),
+        BlocProvider(create: (_) => di.sl<NotificationBloc>()),
       ],
       child: BlocBuilder<ThemeCubit, ThemeMode>(
         builder: (context, themeMode) {
-          return MaterialApp(
-            title: 'Alarm App',
+          return MaterialApp.router(
+            title: 'EduAlarm',
             debugShowCheckedModeBanner: false,
-
-            theme: ThemeData(
-              brightness: Brightness.light,
-              primarySwatch: Colors.blue,
-              scaffoldBackgroundColor: Colors.grey[100],
-              appBarTheme: const AppBarTheme(
-                backgroundColor: Colors.blueAccent,
-                foregroundColor: Colors.white,
-              ),
-            ),
-
-            darkTheme: ThemeData(
-              brightness: Brightness.dark,
-              primarySwatch: Colors.blue,
-              scaffoldBackgroundColor: const Color(0xFF121212),
-              appBarTheme: const AppBarTheme(
-                backgroundColor: Color(0xFF1E1E1E),
-                foregroundColor: Colors.white,
-              ),
-              cardColor: const Color(0xFF1E1E1E),
-            ),
-
+            theme: AppTheme.lightTheme,
+            darkTheme: AppTheme.darkTheme,
             themeMode: themeMode,
-
-            initialRoute: AppRoutes.login,
-            onGenerateRoute: RouteGenerator.generateRoute,
+            routerConfig: appRouter,
           );
         },
       ),

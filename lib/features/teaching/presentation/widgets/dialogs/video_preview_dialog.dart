@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'package:chewie/chewie.dart';
@@ -23,7 +24,7 @@ class _VideoPreviewDialogState extends State<VideoPreviewDialog> {
 
   Future<void> _initializePlayer() async {
     var url = widget.videoUrl;
-    if (Platform.isAndroid && url.contains('localhost')) {
+    if (!kIsWeb && Platform.isAndroid && url.contains('localhost')) {
       url = url.replaceFirst('localhost', '10.0.2.2');
     }
     _videoPlayerController = VideoPlayerController.networkUrl(Uri.parse(url));
@@ -62,7 +63,7 @@ class _VideoPreviewDialogState extends State<VideoPreviewDialog> {
             top: 40,
             right: 20,
             child: IconButton(
-              icon: const Icon(Icons.close, color: Colors.white, size: 30),
+              icon: Icon(Icons.close, color: Colors.white, size: 30),
               onPressed: () => Navigator.pop(context),
             ),
           ),

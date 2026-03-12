@@ -6,6 +6,7 @@ import '../../../schedule/presentation/widgets/schedule_data_source.dart';
 import '../bloc/teacher_bloc.dart';
 import '../bloc/teacher_event.dart';
 import 'teacher_student_list_page.dart';
+import '../../../../core/theme/app_colors.dart';
 
 class TeacherCalendarTab extends StatelessWidget {
   final String subjectName;
@@ -61,7 +62,7 @@ class TeacherCalendarTab extends StatelessWidget {
       builder: (ctx) => Wrap(
         children: [
           ListTile(
-            leading: const Icon(Icons.people, color: Colors.blue),
+            leading: Icon(Icons.people, color: AppColors.info),
             title: const Text('Quản lý Sinh viên / Điểm danh'),
             subtitle: Text('${schedule.subject} - ${schedule.room}'),
             onTap: () {
@@ -86,7 +87,7 @@ class TeacherCalendarTab extends StatelessWidget {
           ),
           const Divider(),
           ListTile(
-            leading: const Icon(Icons.edit, color: Colors.orange),
+            leading: Icon(Icons.edit, color: AppColors.warning),
             title: const Text('Sửa thông tin lớp (Phòng, Giờ)'),
             onTap: () {
               Navigator.pop(ctx);
@@ -94,7 +95,7 @@ class TeacherCalendarTab extends StatelessWidget {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.delete, color: Colors.red),
+            leading: Icon(Icons.delete, color: AppColors.error),
             title: const Text('Xóa lịch học này'),
             onTap: () {
               Navigator.pop(ctx);
@@ -120,7 +121,7 @@ class TeacherCalendarTab extends StatelessWidget {
             child: const Text("Hủy"),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
             onPressed: () {
               context.read<TeacherBloc>().add(
                 DeleteClassRequested(schedule.id!, teacherId),
@@ -166,14 +167,14 @@ class TeacherCalendarTab extends StatelessWidget {
               children: [
                 TextField(
                   controller: roomController,
-                  decoration: const InputDecoration(labelText: "Phòng học"),
+                  decoration: InputDecoration(labelText: "Phòng học"),
                 ),
                 const SizedBox(height: 10),
                 GestureDetector(
                   onTap: () => pickTime(true),
                   child: AbsorbPointer(
                     child: TextField(
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: "Giờ bắt đầu",
                       ),
                       controller: TextEditingController(
@@ -188,7 +189,7 @@ class TeacherCalendarTab extends StatelessWidget {
                   onTap: () => pickTime(false),
                   child: AbsorbPointer(
                     child: TextField(
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: "Giờ kết thúc",
                       ),
                       controller: TextEditingController(

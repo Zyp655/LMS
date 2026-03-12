@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:intl/intl.dart';
@@ -7,10 +7,11 @@ import '../../../../core/api/api_constants.dart';
 import '../widgets/custom_search_bar.dart';
 import '../widgets/filter_chip_group.dart';
 import '../widgets/notification_dialog_widget.dart';
-import 'teacher_students/widgets/students_stats_overview.dart';
+
 import 'teacher_students/widgets/student_progress_card.dart';
 import 'teacher_students/widgets/student_detail_sheet.dart';
 import 'teacher_students/widgets/insights_tab.dart';
+import '../../../../core/theme/app_colors.dart';
 
 class TeacherStudentsPage extends StatefulWidget {
   final int teacherId;
@@ -47,11 +48,6 @@ class _TeacherStudentsPageState extends State<TeacherStudentsPage>
   late TabController _tabController;
   Set<int> _selectedStudentIds = {};
   final _searchController = TextEditingController();
-
-  static const primaryOrange = Color(0xFFFF6636);
-  static const darkBg = Color(0xFF0F172A);
-  static const cardBg = Color(0xFF1E293B);
-  static const inputBg = Color(0xFF334155);
 
   @override
   void initState() {
@@ -101,7 +97,6 @@ class _TeacherStudentsPageState extends State<TeacherStudentsPage>
 
   Future<void> _loadStudents() async {
     if (_selectedCourseId == null) return;
-
     setState(() => _isLoading = true);
 
     try {
@@ -162,89 +157,52 @@ class _TeacherStudentsPageState extends State<TeacherStudentsPage>
 
   @override
   Widget build(BuildContext context) {
+    final isDark = AppColors.isDark(context);
+
     return Scaffold(
-      backgroundColor: darkBg,
-      appBar: AppBar(
-        title: _isMultiSelectMode
-            ? Text('Đã chọn: ${_selectedStudentIds.length}')
-            : const Text(
-                'Quản lý Sinh viên',
-                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 20),
-              ),
-        backgroundColor: Colors.transparent,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: false,
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: primaryOrange,
-          indicatorWeight: 3,
-          labelColor: primaryOrange,
-          labelStyle: const TextStyle(fontWeight: FontWeight.bold),
-          unselectedLabelColor: Colors.grey[400],
-          tabs: const [
-            Tab(text: 'Danh sách', icon: Icon(Icons.list_alt_rounded)),
-            Tab(text: 'Insights', icon: Icon(Icons.insights_rounded)),
+      backgroundColor: AppColors.background(context),
+      body: ScrollConfiguration(
+        behavior: ScrollConfiguration.of(
+          context,
+        ).copyWith(overscroll: false, physics: const ClampingScrollPhysics()),
+        child: NestedScrollView(
+          headerSliverBuilder: (context, innerBoxIsScrolled) => [
+            _buildSliverAppBar(isDark, innerBoxIsScrolled),
           ],
-        ),
-        actions: [
-          if (_isMultiSelectMode) ...[
-            IconButton(
-              icon: const Icon(Icons.close),
-              onPressed: () => setState(() {
-                _isMultiSelectMode = false;
-                _selectedStudentIds.clear();
-              }),
-            ),
-          ] else ...[
-            IconButton(
-              icon: const Icon(Icons.settings),
-              onPressed: _showConfigDialog,
-              tooltip: 'Cấu hình cảnh báo',
-            ),
-            IconButton(
-              icon: const Icon(Icons.download_outlined),
-              onPressed: _exportData,
-              tooltip: 'Xuất dữ liệu',
-            ),
-          ],
-        ],
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          Column(
+          body: TabBarView(
+            controller: _tabController,
             children: [
-              if (_stats != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 16),
-                  child: StudentsStatsOverview(
-                    totalStudents: _stats!['totalStudents'] ?? 0,
-                    atRiskCount: _stats!['atRiskCount'] ?? 0,
-                    averageScore: (_stats!['avgProgress'] ?? 0).toDouble(),
-                    activeCount: _stats!['byStatus'] != null
-                        ? (_stats!['byStatus']['in_progress'] ?? 0)
-                        : 0,
-                  ),
-                ),
-              _buildFilters(),
-              Expanded(child: _buildStudentList()),
+              Column(
+                children: [
+                  _buildFilters(isDark),
+                  Expanded(child: _buildStudentList(isDark)),
+                ],
+              ),
+              InsightsTab(
+                isLoading: _isLoadingInsights,
+                insightsData: _insightsData,
+              ),
             ],
           ),
-
-          InsightsTab(
-            isLoading: _isLoadingInsights,
-            insightsData: _insightsData,
-          ),
-        ],
+        ),
       ),
       floatingActionButton: _isMultiSelectMode && _selectedStudentIds.isNotEmpty
           ? FloatingActionButton.extended(
-              backgroundColor: primaryOrange,
-              icon: const Icon(Icons.send, color: Colors.white),
-              label: const Text(
-                'Gửi thông báo',
-                style: TextStyle(color: Colors.white),
+              backgroundColor: AppColors.primary,
+              icon: const Icon(
+                Icons.send_rounded,
+                color: Colors.white,
+                size: 20,
+              ),
+              label: Text(
+                'Gửi thông báo (${_selectedStudentIds.length})',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
               ),
               onPressed: _sendBatchNotification,
             )
@@ -252,33 +210,197 @@ class _TeacherStudentsPageState extends State<TeacherStudentsPage>
     );
   }
 
+  Widget _buildSliverAppBar(bool isDark, bool innerBoxIsScrolled) {
+    return SliverAppBar(
+      expandedHeight: 160,
+      floating: false,
+      pinned: true,
+      elevation: 0,
+      backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
+      surfaceTintColor: Colors.transparent,
+      forceElevated: innerBoxIsScrolled,
+      leading: Navigator.canPop(context)
+          ? IconButton(
+              icon: Icon(
+                Icons.arrow_back_ios_rounded,
+                color: Colors.white,
+                size: 20,
+              ),
+              onPressed: () => Navigator.pop(context),
+            )
+          : null,
+      automaticallyImplyLeading: false,
+      actions: [
+        if (_isMultiSelectMode)
+          IconButton(
+            icon: Icon(
+              Icons.close,
+              color: isDark ? Colors.white : Colors.black87,
+            ),
+            onPressed: () => setState(() {
+              _isMultiSelectMode = false;
+              _selectedStudentIds.clear();
+            }),
+          )
+        else ...[
+          IconButton(
+            icon: Icon(Icons.tune_rounded, size: 22, color: Colors.white),
+            onPressed: _showConfigDialog,
+            tooltip: 'Cấu hình',
+          ),
+          IconButton(
+            icon: Icon(Icons.download_rounded, size: 22, color: Colors.white),
+            onPressed: _exportData,
+            tooltip: 'Xuất dữ liệu',
+          ),
+        ],
+      ],
+      flexibleSpace: FlexibleSpaceBar(
+        background: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: isDark
+                  ? [
+                      const Color(0xFF00B894).withAlpha(40),
+                      const Color(0xFF00CEC9).withAlpha(20),
+                      AppColors.darkSurface,
+                    ]
+                  : [
+                      const Color(0xFF00B894),
+                      const Color(0xFF00CEC9),
+                      const Color(0xFF55EFC4),
+                    ],
+              stops: const [0.0, 0.5, 1.0],
+            ),
+          ),
+          child: SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(56, 8, 20, 56),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Text(
+                    _isMultiSelectMode
+                        ? 'Đã chọn: ${_selectedStudentIds.length}'
+                        : 'Quản lý Sinh viên',
+                    style: TextStyle(
+                      color: isDark ? Colors.white : Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  if (!_isMultiSelectMode) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      '${_students.length} sinh viên đang theo dõi',
+                      style: TextStyle(
+                        color: isDark
+                            ? Colors.white70
+                            : Colors.white.withAlpha(200),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+      bottom: PreferredSize(
+        preferredSize: const Size.fromHeight(48),
+        child: Container(
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.darkSurface : Colors.white,
+            border: Border(
+              bottom: BorderSide(color: AppColors.border(context), width: 0.5),
+            ),
+          ),
+          child: TabBar(
+            controller: _tabController,
+            indicatorColor: AppColors.primary,
+            indicatorWeight: 3,
+            indicatorSize: TabBarIndicatorSize.label,
+            labelColor: AppColors.primary,
+            labelStyle: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 13,
+            ),
+            unselectedLabelColor: AppColors.textSecondary(context),
+            tabs: const [
+              Tab(
+                text: 'Danh sách',
+                icon: Icon(Icons.list_alt_rounded, size: 18),
+              ),
+              Tab(
+                text: 'Insights',
+                icon: Icon(Icons.insights_rounded, size: 18),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   void _showConfigDialog() {
+    final isDark = AppColors.isDark(context);
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: cardBg,
-        title: const Text(
-          'Cấu hình cảnh báo',
-          style: TextStyle(color: Colors.white),
+        backgroundColor: AppColors.cardColor(context),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withAlpha(20),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(
+                Icons.tune_rounded,
+                color: AppColors.primary,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Text('Cấu hình cảnh báo'),
+          ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Ngưỡng cảnh báo vắng mặt:',
-              style: TextStyle(color: Colors.white70),
+              style: TextStyle(
+                color: AppColors.textSecondary(context),
+                fontSize: 13,
+              ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
             DropdownButtonFormField<int>(
               value: _riskThreshold,
-              dropdownColor: inputBg,
-              style: const TextStyle(color: Colors.white),
+              dropdownColor: AppColors.surface(context),
               decoration: InputDecoration(
                 filled: true,
-                fillColor: inputBg,
+                fillColor: isDark
+                    ? AppColors.darkSurfaceVariant
+                    : Colors.grey.shade50,
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: AppColors.border(context)),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: AppColors.border(context)),
                 ),
               ),
               items: const [
@@ -301,16 +423,25 @@ class _TeacherStudentsPageState extends State<TeacherStudentsPage>
     );
   }
 
-  Widget _buildFilters() {
+  Widget _buildFilters(bool isDark) {
+    final surfaceColor = isDark
+        ? AppColors.darkSurfaceVariant
+        : Colors.grey.shade50;
+    final borderColor = AppColors.border(context);
+
     return Container(
-      padding: const EdgeInsets.all(16),
-      color: Colors.transparent,
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           CustomSearchBar(
             controller: _searchController,
             hintText: 'Tìm kiếm theo tên, email...',
-            onChanged: (value) {},
+            fillColor: surfaceColor,
+            onChanged: (value) {
+              setState(() => _searchQuery = value);
+              _loadStudents();
+            },
             onClear: () {
               _searchController.clear();
               setState(() => _searchQuery = '');
@@ -322,114 +453,168 @@ class _TeacherStudentsPageState extends State<TeacherStudentsPage>
           Row(
             children: [
               Expanded(
-                flex: 2,
-                child: DropdownButtonFormField<int>(
-                  value: _selectedCourseId,
-                  dropdownColor: inputBg,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: InputDecoration(
-                    labelText: 'Khóa học',
-                    labelStyle: TextStyle(color: Colors.grey[400]),
-                    filled: true,
-                    fillColor: inputBg,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide.none,
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
+                flex: 5,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: surfaceColor,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: borderColor),
                   ),
-                  items: _courses.map<DropdownMenuItem<int>>((course) {
-                    return DropdownMenuItem(
-                      value: course['id'] as int,
-                      child: Text(
-                        course['title'] as String,
-                        overflow: TextOverflow.ellipsis,
+                  child: DropdownButtonFormField<int>(
+                    value: _selectedCourseId,
+                    dropdownColor: AppColors.surface(context),
+                    style: TextStyle(
+                      color: AppColors.textPrimary(context),
+                      fontSize: 13,
+                    ),
+                    icon: Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      color: AppColors.textSecondary(context),
+                      size: 20,
+                    ),
+                    decoration: InputDecoration(
+                      labelText: 'Khóa học',
+                      labelStyle: TextStyle(
+                        color: AppColors.textSecondary(context),
+                        fontSize: 12,
                       ),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    setState(() => _selectedCourseId = value);
-                    _loadStudents();
-                    _loadInsights();
-                  },
+                      filled: true,
+                      fillColor: Colors.transparent,
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                    ),
+                    items: _courses.map<DropdownMenuItem<int>>((course) {
+                      return DropdownMenuItem(
+                        value: course['id'] as int,
+                        child: Text(
+                          course['title'] as String,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() => _selectedCourseId = value);
+                      _loadStudents();
+                      _loadInsights();
+                    },
+                  ),
                 ),
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: DropdownButtonFormField<String>(
-                  value: _sortBy,
-                  dropdownColor: inputBg,
-                  isExpanded: true,
-                  style: const TextStyle(color: Colors.white, fontSize: 13),
-                  decoration: InputDecoration(
-                    labelText: 'Sắp xếp',
-                    labelStyle: TextStyle(
-                      color: Colors.grey[400],
-                      fontSize: 12,
-                    ),
-                    filled: true,
-                    fillColor: inputBg,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide.none,
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 8,
-                    ),
+                flex: 3,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: surfaceColor,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: borderColor),
                   ),
-                  items: const [
-                    DropdownMenuItem(
-                      value: 'name',
-                      child: Text('Tên', overflow: TextOverflow.ellipsis),
+                  child: DropdownButtonFormField<String>(
+                    value: _sortBy,
+                    dropdownColor: AppColors.surface(context),
+                    isExpanded: true,
+                    style: TextStyle(
+                      color: AppColors.textPrimary(context),
+                      fontSize: 13,
                     ),
-                    DropdownMenuItem(
-                      value: 'progress',
-                      child: Text('Tiến độ', overflow: TextOverflow.ellipsis),
+                    icon: Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      color: AppColors.textSecondary(context),
+                      size: 20,
                     ),
-                    DropdownMenuItem(
-                      value: 'quizScore',
-                      child: Text('Điểm', overflow: TextOverflow.ellipsis),
+                    decoration: InputDecoration(
+                      labelText: 'Sắp xếp',
+                      labelStyle: TextStyle(
+                        color: AppColors.textSecondary(context),
+                        fontSize: 12,
+                      ),
+                      filled: true,
+                      fillColor: Colors.transparent,
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 8,
+                      ),
                     ),
-                    DropdownMenuItem(
-                      value: 'risk',
-                      child: Text('Ưu tiên', overflow: TextOverflow.ellipsis),
-                    ),
-                  ],
-                  onChanged: (value) {
-                    setState(() => _sortBy = value!);
-                    _loadStudents();
-                  },
+                    items: const [
+                      DropdownMenuItem(
+                        value: 'name',
+                        child: Text('Tên', overflow: TextOverflow.ellipsis),
+                      ),
+                      DropdownMenuItem(
+                        value: 'progress',
+                        child: Text('Tiến độ', overflow: TextOverflow.ellipsis),
+                      ),
+                      DropdownMenuItem(
+                        value: 'quizScore',
+                        child: Text('Điểm', overflow: TextOverflow.ellipsis),
+                      ),
+                      DropdownMenuItem(
+                        value: 'risk',
+                        child: Text('Ưu tiên', overflow: TextOverflow.ellipsis),
+                      ),
+                    ],
+                    onChanged: (value) {
+                      setState(() => _sortBy = value!);
+                      _loadStudents();
+                    },
+                  ),
                 ),
               ),
-              IconButton(
-                icon: Icon(
-                  _sortOrder == 'asc'
-                      ? Icons.arrow_upward
-                      : Icons.arrow_downward,
-                  color: primaryOrange,
+              const SizedBox(width: 6),
+              Material(
+                color: surfaceColor,
+                borderRadius: BorderRadius.circular(12),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(12),
+                  onTap: () {
+                    setState(
+                      () => _sortOrder = _sortOrder == 'asc' ? 'desc' : 'asc',
+                    );
+                    _loadStudents();
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: borderColor),
+                    ),
+                    child: Icon(
+                      _sortOrder == 'asc'
+                          ? Icons.arrow_upward_rounded
+                          : Icons.arrow_downward_rounded,
+                      color: AppColors.primary,
+                      size: 20,
+                    ),
+                  ),
                 ),
-                onPressed: () {
-                  setState(
-                    () => _sortOrder = _sortOrder == 'asc' ? 'desc' : 'asc',
-                  );
-                  _loadStudents();
-                },
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
 
+          Padding(
+            padding: const EdgeInsets.only(left: 2, bottom: 8),
+            child: Text(
+              'TRẠNG THÁI',
+              style: TextStyle(
+                color: AppColors.textSecondary(context),
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.8,
+              ),
+            ),
+          ),
           FilterChipGroup<String?>(
             options: [
               FilterOption(label: 'Tất cả', value: null),
-              FilterOption(label: '⚠️ Cần chú ý', value: 'at_risk'),
-              FilterOption(label: '⏳ Chưa học', value: 'not_started'),
-              FilterOption(label: '📖 Đang học', value: 'in_progress'),
-              FilterOption(label: '✅ Hoàn thành', value: 'completed'),
+              FilterOption(label: 'Cần chú ý', value: 'at_risk'),
+              FilterOption(label: 'Chưa học', value: 'not_started'),
+              FilterOption(label: 'Đang học', value: 'in_progress'),
+              FilterOption(label: 'Hoàn thành', value: 'completed'),
             ],
             selectedValue: _selectedStatus,
             onSelected: (value) {
@@ -437,8 +622,20 @@ class _TeacherStudentsPageState extends State<TeacherStudentsPage>
               _loadStudents();
             },
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
 
+          Padding(
+            padding: const EdgeInsets.only(left: 2, bottom: 8),
+            child: Text(
+              'TIẾN ĐỘ',
+              style: TextStyle(
+                color: AppColors.textSecondary(context),
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.8,
+              ),
+            ),
+          ),
           FilterChipGroup<String?>(
             options: [
               FilterOption(label: 'Tất cả', value: null),
@@ -451,33 +648,39 @@ class _TeacherStudentsPageState extends State<TeacherStudentsPage>
               setState(() => _selectedProgress = value);
               _loadStudents();
             },
-            selectedColor: Colors.blueAccent,
+            selectedColor: AppColors.info,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildStudentList() {
+  Widget _buildStudentList(bool isDark) {
     if (_isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(color: primaryOrange),
-      );
+      return _buildShimmerLoading(isDark);
     }
 
     if (_courses.isEmpty) {
       return _buildEmptyState(
         Icons.school_outlined,
         'Bạn chưa có khóa học nào',
+        'Liên hệ quản trị viên để được gán khóa học',
+        isDark,
       );
     }
 
     if (_students.isEmpty) {
-      return _buildEmptyState(Icons.people_outline, 'Chưa có sinh viên nào');
+      return _buildEmptyState(
+        Icons.people_outline,
+        'Chưa có sinh viên nào',
+        'Sinh viên sẽ xuất hiện sau khi enrollment',
+        isDark,
+      );
     }
 
     return RefreshIndicator(
-      color: primaryOrange,
+      color: Colors.white,
+      backgroundColor: AppColors.primary,
       onRefresh: _loadStudents,
       child: ListView.builder(
         padding: const EdgeInsets.all(16),
@@ -507,16 +710,155 @@ class _TeacherStudentsPageState extends State<TeacherStudentsPage>
     );
   }
 
-  Widget _buildEmptyState(IconData icon, String message) {
+  Widget _buildEmptyState(
+    IconData icon,
+    String title,
+    String subtitle,
+    bool isDark,
+  ) {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(28),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    const Color(0xFF00B894).withAlpha(15),
+                    const Color(0xFF00A383).withAlpha(10),
+                  ],
+                ),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icon,
+                size: 56,
+                color: const Color(0xFF00B894).withAlpha(180),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              title,
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+                color: isDark ? Colors.white : Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              subtitle,
+              style: TextStyle(
+                color: AppColors.textSecondary(context),
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildShimmerLoading(bool isDark) {
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: 4,
+      itemBuilder: (context, index) {
+        return TweenAnimationBuilder<double>(
+          tween: Tween(begin: 0.3, end: 0.7),
+          duration: Duration(milliseconds: 800 + (index * 100)),
+          curve: Curves.easeInOut,
+          builder: (context, value, child) {
+            return Opacity(opacity: value, child: _buildShimmerCard(isDark));
+          },
+          onEnd: () {},
+        );
+      },
+    );
+  }
+
+  Widget _buildShimmerCard(bool isDark) {
+    final shimmerBase = isDark
+        ? Colors.white.withAlpha(10)
+        : Colors.grey.shade200;
+    final shimmerHighlight = isDark
+        ? Colors.white.withAlpha(20)
+        : Colors.grey.shade300;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkCard : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border(context)),
+      ),
+      child: Row(
         children: [
-          Icon(icon, size: 64, color: Colors.grey[600]),
-          const SizedBox(height: 16),
-          Text(
-            message,
-            style: TextStyle(color: Colors.grey[400], fontSize: 16),
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: shimmerBase,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  height: 14,
+                  width: 160,
+                  decoration: BoxDecoration(
+                    color: shimmerHighlight,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: shimmerBase,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Container(
+                      height: 10,
+                      width: 60,
+                      decoration: BoxDecoration(
+                        color: shimmerBase,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Container(
+                      height: 10,
+                      width: 50,
+                      decoration: BoxDecoration(
+                        color: shimmerBase,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          Container(
+            height: 24,
+            width: 60,
+            decoration: BoxDecoration(
+              color: shimmerBase,
+              borderRadius: BorderRadius.circular(8),
+            ),
           ),
         ],
       ),
@@ -526,20 +868,29 @@ class _TeacherStudentsPageState extends State<TeacherStudentsPage>
   void _showStudentDetails(dynamic student) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: cardBg,
+      backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (_) => StudentDetailSheet(
-        student: student,
-        formatTime: _formatTime,
-        onSendNotification: () => _sendNotificationToStudent(student),
-        onViewHistory: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Đang tải lịch sử hoạt động...')),
-          );
-        },
+      builder: (_) => Container(
+        decoration: BoxDecoration(
+          color: AppColors.cardColor(context),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: StudentDetailSheet(
+          student: student,
+          formatTime: _formatTime,
+          onSendNotification: () => _sendNotificationToStudent(student),
+          onViewHistory: () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text('Đang tải lịch sử hoạt động...'),
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            );
+          },
+        ),
       ),
     );
   }
@@ -553,19 +904,48 @@ class _TeacherStudentsPageState extends State<TeacherStudentsPage>
       barrierDismissible: false,
       builder: (_) => Center(
         child: Container(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(24),
+          margin: const EdgeInsets.all(32),
           decoration: BoxDecoration(
-            color: cardBg,
-            borderRadius: BorderRadius.circular(16),
+            color: AppColors.cardColor(context),
+            borderRadius: BorderRadius.circular(18),
+            boxShadow: [
+              BoxShadow(color: Colors.black.withAlpha(40), blurRadius: 20),
+            ],
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            children: const [
-              CircularProgressIndicator(color: Color(0xFF6C63FF)),
-              SizedBox(height: 16),
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF6C5CE7), Color(0xFFA29BFE)],
+                  ),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(
+                  Icons.auto_awesome,
+                  color: Colors.white,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(height: 16),
               Text(
                 'AI đang soạn tin nhắn...',
-                style: TextStyle(color: Colors.white),
+                style: TextStyle(
+                  color: AppColors.textPrimary(context),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: AppColors.primary,
+                ),
               ),
             ],
           ),
@@ -606,9 +986,13 @@ class _TeacherStudentsPageState extends State<TeacherStudentsPage>
 
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Đã gửi nhắc nhở AI thành công!'),
-                      backgroundColor: Color(0xFF6C63FF),
+                    SnackBar(
+                      content: const Text('Đã gửi nhắc nhở AI thành công!'),
+                      backgroundColor: AppColors.primary,
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
                   );
                   _loadStudents();
@@ -625,7 +1009,14 @@ class _TeacherStudentsPageState extends State<TeacherStudentsPage>
       if (Navigator.canPop(context)) Navigator.pop(context);
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Lỗi: $e'), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text('Lỗi: $e'),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
       );
     }
   }
@@ -639,7 +1030,11 @@ class _TeacherStudentsPageState extends State<TeacherStudentsPage>
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Đã gửi thông báo cho ${student['fullName']}'),
-              backgroundColor: Colors.green,
+              backgroundColor: AppColors.success,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
             ),
           );
         },
@@ -663,7 +1058,11 @@ class _TeacherStudentsPageState extends State<TeacherStudentsPage>
               content: Text(
                 'Đã gửi thông báo cho ${_selectedStudentIds.length} sinh viên',
               ),
-              backgroundColor: Colors.green,
+              backgroundColor: AppColors.success,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
             ),
           );
           setState(() {
@@ -676,62 +1075,126 @@ class _TeacherStudentsPageState extends State<TeacherStudentsPage>
   }
 
   void _exportData() {
+    final isDark = AppColors.isDark(context);
     showModalBottomSheet(
       context: context,
-      backgroundColor: cardBg,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.darkSurface : Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.border(context),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  'Xuất dữ liệu sinh viên',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _exportOption(
+                  icon: Icons.table_chart_rounded,
+                  color: const Color(0xFF00B894),
+                  title: 'Xuất Excel (.xlsx)',
+                  isDark: isDark,
+                  onTap: () {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: const Text('Đang xuất file Excel...'),
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 8),
+                _exportOption(
+                  icon: Icons.description_rounded,
+                  color: AppColors.info,
+                  title: 'Xuất CSV (.csv)',
+                  isDark: isDark,
+                  onTap: () {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: const Text('Đang xuất file CSV...'),
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
-      builder: (context) => Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey[700],
-                borderRadius: BorderRadius.circular(2),
+    );
+  }
+
+  Widget _exportOption({
+    required IconData icon,
+    required Color color,
+    required String title,
+    required bool isDark,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: isDark ? AppColors.darkSurfaceVariant : Colors.grey.shade50,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: color.withAlpha(isDark ? 40 : 20),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: color, size: 22),
               ),
-            ),
-            const SizedBox(height: 20),
-            const Text(
-              'Xuất dữ liệu sinh viên',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+              const SizedBox(width: 14),
+              Text(
+                title,
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                  color: isDark ? Colors.white : Colors.black87,
+                ),
               ),
-            ),
-            const SizedBox(height: 20),
-            ListTile(
-              leading: const Icon(Icons.table_chart, color: Colors.green),
-              title: const Text(
-                'Xuất Excel (.xlsx)',
-                style: TextStyle(color: Colors.white),
+              const Spacer(),
+              Icon(
+                Icons.arrow_forward_ios_rounded,
+                size: 16,
+                color: AppColors.textSecondary(context),
               ),
-              onTap: () {
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Đang xuất file Excel...')),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.description, color: Colors.blue),
-              title: const Text(
-                'Xuất CSV (.csv)',
-                style: TextStyle(color: Colors.white),
-              ),
-              onTap: () {
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Đang xuất file CSV...')),
-                );
-              },
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

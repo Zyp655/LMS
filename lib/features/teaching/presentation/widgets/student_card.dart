@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../domain/entities/student_entity.dart';
+import '../../../../core/theme/app_colors.dart';
 
 class StudentCard extends StatelessWidget {
   final StudentEntity student;
@@ -39,8 +40,8 @@ class StudentCard extends StatelessWidget {
             ListTile(
               contentPadding: const EdgeInsets.symmetric(horizontal: 16),
               leading: CircleAvatar(
-                backgroundColor: Colors.blue.shade100,
-                foregroundColor: Colors.blue.shade800,
+                backgroundColor: AppColors.info.withValues(alpha: 0.15),
+                foregroundColor: AppColors.info,
                 child: Text("${index + 1}"),
               ),
               title: Text(
@@ -49,7 +50,7 @@ class StudentCard extends StatelessWidget {
               ),
               subtitle: Text("ID: ${student.studentId}"),
               trailing: IconButton(
-                icon: const Icon(Icons.edit_note, color: Colors.blue),
+                icon: Icon(Icons.edit_note, color: AppColors.info),
                 onPressed: onEdit,
               ),
             ),
@@ -87,7 +88,7 @@ class StudentCard extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.green.withOpacity(0.1),
+                      color: AppColors.success.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(
@@ -101,7 +102,7 @@ class StudentCard extends StatelessWidget {
                           total.toStringAsFixed(2),
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
-                            color: Colors.green,
+                            color: AppColors.success,
                             fontSize: 16,
                           ),
                         ),

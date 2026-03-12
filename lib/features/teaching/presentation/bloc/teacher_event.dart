@@ -259,3 +259,18 @@ class LoadAttendanceStatistics extends TeacherEvent {
   @override
   List<Object> get props => [classId];
 }
+
+class EnrollStudentsByFile extends TeacherEvent {
+  final int classId;
+  final int teacherId;
+  final List<String> identifiers;
+
+  const EnrollStudentsByFile({
+    required this.classId,
+    required this.teacherId,
+    required this.identifiers,
+  });
+
+  @override
+  List<Object> get props => [classId, teacherId, identifiers];
+}

@@ -5,6 +5,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/api/api_constants.dart';
 
 class MarkAttendancePage extends StatefulWidget {
   final int classId;
@@ -44,7 +46,7 @@ class _MarkAttendancePageState extends State<MarkAttendancePage> {
 
     try {
       final url = Uri.parse(
-        'http://localhost:8080/teacher/classes/${widget.classId}/students',
+        '${ApiConstants.baseUrl}/teacher/classes/${widget.classId}/students',
       );
 
       final response = await http.get(url);
@@ -67,7 +69,7 @@ class _MarkAttendancePageState extends State<MarkAttendancePage> {
       setState(() => _isLoading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text('Lỗi: $e'), backgroundColor: AppColors.error),
         );
       }
     }
@@ -77,7 +79,7 @@ class _MarkAttendancePageState extends State<MarkAttendancePage> {
     try {
       final dateStr = DateFormat('yyyy-MM-dd').format(_selectedDate);
       final url = Uri.parse(
-        'http://localhost:8080/teacher/attendance/records?classId=${widget.classId}&date=$dateStr',
+        '${ApiConstants.baseUrl}/teacher/attendance/records?classId=${widget.classId}&date=$dateStr',
       );
 
       final response = await http.get(url);
@@ -112,7 +114,7 @@ class _MarkAttendancePageState extends State<MarkAttendancePage> {
         };
       }).toList();
 
-      final url = Uri.parse('http://localhost:8080/teacher/attendance/mark');
+      final url = Uri.parse('${ApiConstants.baseUrl}/teacher/attendance/mark');
 
       final response = await http.post(
         url,
@@ -128,9 +130,9 @@ class _MarkAttendancePageState extends State<MarkAttendancePage> {
       if (response.statusCode == 201) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Lưu điểm danh thành công!'),
-              backgroundColor: Colors.green,
+            SnackBar(
+                    content: Text('Lưu điểm danh thành công!'),
+              backgroundColor: AppColors.success,
             ),
           );
           Navigator.pop(context, true);
@@ -141,7 +143,7 @@ class _MarkAttendancePageState extends State<MarkAttendancePage> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text('Lỗi: $e'), backgroundColor: AppColors.error),
         );
       }
     } finally {
@@ -179,7 +181,7 @@ class _MarkAttendancePageState extends State<MarkAttendancePage> {
         actions: [
           if (!_isSaving)
             IconButton(
-              icon: const Icon(Icons.save),
+              icon: Icon(Icons.save),
               onPressed: _saveAttendance,
               tooltip: 'Lưu điểm danh',
             ),
@@ -202,7 +204,7 @@ class _MarkAttendancePageState extends State<MarkAttendancePage> {
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
-            color: Colors.blue.withOpacity(0.1),
+            color: AppColors.info.withValues(alpha: 0.1),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -225,7 +227,7 @@ class _MarkAttendancePageState extends State<MarkAttendancePage> {
                     const SizedBox(width: 8),
                     TextButton.icon(
                       onPressed: _pickDate,
-                      icon: const Icon(Icons.calendar_today, size: 16),
+                      icon: Icon(Icons.calendar_today, size: 16),
                       label: const Text('Đổi ngày'),
                     ),
                   ],
@@ -279,7 +281,7 @@ class _MarkAttendancePageState extends State<MarkAttendancePage> {
               color: Colors.grey[100],
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black.withValues(alpha: 0.1),
                   blurRadius: 4,
                   offset: const Offset(0, -2),
                 ),
@@ -427,7 +429,7 @@ class _MarkAttendancePageState extends State<MarkAttendancePage> {
               Padding(
                 padding: const EdgeInsets.only(top: 8),
                 child: TextField(
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Ghi chú (tùy chọn)',
                     isDense: true,
                     border: OutlineInputBorder(),

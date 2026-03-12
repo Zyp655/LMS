@@ -19,7 +19,7 @@ class ReviewCardWidget extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: AppSpacing.paddingLg,
       decoration: BoxDecoration(
-        color: AppColors.darkSurface,
+        color: AppColors.cardColor(context),
         borderRadius: AppSpacing.borderRadiusMd,
       ),
       child: Column(
@@ -29,7 +29,7 @@ class ReviewCardWidget extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 16,
-                backgroundColor: const Color(0xFF6C63FF),
+                backgroundColor: AppColors.primary,
                 child: Text(
                   userName.isNotEmpty ? userName[0].toUpperCase() : 'U',
                   style: const TextStyle(color: Colors.white, fontSize: 12),
@@ -42,8 +42,8 @@ class ReviewCardWidget extends StatelessWidget {
                   children: [
                     Text(
                       userName.isNotEmpty ? userName : 'Anonymous',
-                      style: const TextStyle(
-                        color: AppColors.textPrimaryDark,
+                      style: TextStyle(
+                        color: AppColors.textPrimary(context),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -57,7 +57,10 @@ class ReviewCardWidget extends StatelessWidget {
             AppSpacing.gapV12,
             Text(
               comment!,
-              style: TextStyle(color: Colors.grey[300], fontSize: 13),
+              style: TextStyle(
+                color: AppColors.textSecondary(context),
+                fontSize: 13,
+              ),
             ),
           ],
         ],
@@ -78,7 +81,7 @@ class _StarRating extends StatelessWidget {
       children: List.generate(5, (i) {
         return Icon(
           i < rating ? Icons.star : Icons.star_border,
-          color: Colors.amber,
+          color: AppColors.warning,
           size: 14,
         );
       }),

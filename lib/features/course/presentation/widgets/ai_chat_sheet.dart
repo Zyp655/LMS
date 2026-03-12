@@ -1,4 +1,4 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -15,12 +15,14 @@ class AiChatSheet extends StatefulWidget {
   final String lessonTitle;
   final String textContent;
   final String? contentUrl;
+  final int? lessonId;
 
   const AiChatSheet({
     super.key,
     required this.lessonTitle,
     required this.textContent,
     this.contentUrl,
+    this.lessonId,
   });
 
   @override
@@ -103,10 +105,12 @@ class _AiChatSheetState extends State<AiChatSheet> {
           return;
         }
       } else {
+        final reqBody = <String, dynamic>{'videoUrl': url};
+        if (widget.lessonId != null) reqBody['lessonId'] = widget.lessonId;
         final response = await http.post(
           Uri.parse('${ApiConstants.baseUrl}/ai/transcribe-video'),
           headers: {'Content-Type': 'application/json'},
-          body: jsonEncode({'videoUrl': url}),
+          body: jsonEncode(reqBody),
         );
 
         if (response.statusCode == 200) {

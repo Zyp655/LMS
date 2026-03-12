@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
 
 class GradeSubmissionDialog extends StatefulWidget {
   final String studentName;
@@ -45,16 +46,16 @@ class _GradeSubmissionDialogState extends State<GradeSubmissionDialog> {
       if (mounted) {
         Navigator.pop(context, true);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Đã lưu điểm thành công'),
-            backgroundColor: Colors.green,
+          SnackBar(
+                    content: Text('Đã lưu điểm thành công'),
+            backgroundColor: AppColors.success,
           ),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text('Lỗi: $e'), backgroundColor: AppColors.error),
         );
       }
     } finally {
@@ -69,7 +70,7 @@ class _GradeSubmissionDialogState extends State<GradeSubmissionDialog> {
     return AlertDialog(
       title: Row(
         children: [
-          const Icon(Icons.grade, color: Colors.blue),
+          Icon(Icons.grade, color: AppColors.info),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
@@ -96,7 +97,7 @@ class _GradeSubmissionDialogState extends State<GradeSubmissionDialog> {
               const SizedBox(height: 16),
               TextFormField(
                 controller: _gradeController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Điểm *',
                   hintText: '0.0 - 10.0',
                   prefixIcon: Icon(Icons.star),
@@ -123,7 +124,7 @@ class _GradeSubmissionDialogState extends State<GradeSubmissionDialog> {
               const SizedBox(height: 16),
               TextFormField(
                 controller: _feedbackController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Nhận xét (tùy chọn)',
                   hintText: 'Viết nhận xét cho sinh viên...',
                   prefixIcon: Icon(Icons.comment),
@@ -149,7 +150,7 @@ class _GradeSubmissionDialogState extends State<GradeSubmissionDialog> {
                   height: 16,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : const Icon(Icons.save),
+              : Icon(Icons.save),
           label: const Text('Lưu Điểm'),
         ),
       ],

@@ -11,6 +11,8 @@ import '../bloc/teacher_state.dart';
 import '../widgets/student_card.dart';
 import '../widgets/teacher_update_dialog.dart';
 import 'take_attendance_page.dart';
+import 'teacher_enrollment_import_page.dart';
+import '../../../../core/theme/app_colors.dart';
 
 class TeacherStudentListPage extends StatefulWidget {
   final String subjectName;
@@ -58,7 +60,7 @@ class _TeacherStudentListPageState extends State<TeacherStudentListPage> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text("Lỗi: ${state.message}"),
-              backgroundColor: Colors.red,
+              backgroundColor: AppColors.error,
             ),
           );
         }
@@ -69,9 +71,9 @@ class _TeacherStudentListPageState extends State<TeacherStudentListPage> {
           currentSourceData = state.schedules;
         }
 
-        final classItem = currentSourceData.cast<ScheduleEntity>().firstWhere(
+        final classItem = currentSourceData.firstWhere(
           (s) => s.subject == widget.subjectName,
-          orElse: () => currentSourceData.first as ScheduleEntity,
+          orElse: () => currentSourceData.first,
         );
 
         return _StudentListContent(
@@ -134,7 +136,7 @@ class _StudentListContentState extends State<_StudentListContent> {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(state.message),
-                        backgroundColor: Colors.green,
+                        backgroundColor: AppColors.success,
                       ),
                     );
                   }
@@ -145,7 +147,7 @@ class _StudentListContentState extends State<_StudentListContent> {
                   ),
                   title: const Row(
                     children: [
-                      Icon(Icons.vpn_key, color: Colors.blueAccent),
+                      Icon(Icons.vpn_key, color: AppColors.info),
                       SizedBox(width: 10),
                       Text("Mã Lớp Học"),
                     ],
@@ -165,9 +167,11 @@ class _StudentListContentState extends State<_StudentListContent> {
                           horizontal: 24,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.blue.shade50,
+                          color: AppColors.info.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.blue.shade200),
+                          border: Border.all(
+                            color: AppColors.info.withValues(alpha: 0.25),
+                          ),
                         ),
                         child: Column(
                           children: [
@@ -184,7 +188,7 @@ class _StudentListContentState extends State<_StudentListContent> {
                               style: const TextStyle(
                                 fontSize: 32,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.blue,
+                                color: AppColors.info,
                                 letterSpacing: 1.5,
                               ),
                             ),
@@ -201,12 +205,10 @@ class _StudentListContentState extends State<_StudentListContent> {
                                 ClipboardData(text: currentCode),
                               );
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text("Đã sao chép mã!"),
-                                ),
+                                SnackBar(content: Text("Đã sao chép mã!")),
                               );
                             },
-                            icon: const Icon(Icons.copy, size: 20),
+                            icon: Icon(Icons.copy, size: 20),
                             label: const Text("Sao chép"),
                           ),
                           TextButton.icon(
@@ -219,14 +221,14 @@ class _StudentListContentState extends State<_StudentListContent> {
                                 ),
                               );
                             },
-                            icon: const Icon(
+                            icon: Icon(
                               Icons.refresh,
-                              color: Colors.red,
+                              color: AppColors.error,
                               size: 20,
                             ),
                             label: const Text(
                               "Làm mới",
-                              style: TextStyle(color: Colors.red),
+                              style: TextStyle(color: AppColors.error),
                             ),
                           ),
                         ],
@@ -266,18 +268,18 @@ class _StudentListContentState extends State<_StudentListContent> {
               ),
           ],
         ),
-        backgroundColor: Colors.blueAccent,
+        backgroundColor: AppColors.info,
         foregroundColor: Colors.white,
         actions: [
           IconButton(
-            icon: const Icon(Icons.vpn_key),
+            icon: Icon(Icons.vpn_key),
             tooltip: "Quản lý Mã Lớp",
             onPressed: () {
               _showClassCodeManager(context);
             },
           ),
           IconButton(
-            icon: const Icon(Icons.checklist),
+            icon: Icon(Icons.checklist),
             tooltip: "Điểm danh nhanh",
             onPressed: () {
               if (widget.teacherId != null && _students.isNotEmpty) {
@@ -299,8 +301,37 @@ class _StudentListContentState extends State<_StudentListContent> {
                 );
               } else {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Chưa có danh sách sinh viên")),
+                  SnackBar(content: Text("Chưa có danh sách sinh viên")),
                 );
+              }
+            },
+          ),
+          IconButton(
+            icon: Icon(Icons.upload_file),
+            tooltip: "Import ghi danh từ Excel",
+            onPressed: () {
+              final classId = widget.classItem.id ?? widget.classItem.classId;
+              if (widget.teacherId != null && classId != null) {
+                final teacherBloc = context.read<TeacherBloc>();
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => BlocProvider.value(
+                      value: teacherBloc,
+                      child: TeacherEnrollmentImportPage(
+                        classId: classId,
+                        teacherId: widget.teacherId!,
+                        className: widget.subjectName,
+                      ),
+                    ),
+                  ),
+                ).then((_) {
+                  if (classId != 0) {
+                    context.read<TeacherBloc>().add(
+                      GetStudentsInClass(classId),
+                    );
+                  }
+                });
               }
             },
           ),
@@ -318,9 +349,9 @@ class _StudentListContentState extends State<_StudentListContent> {
             if (idToUse != null) {
               context.read<TeacherBloc>().add(GetStudentsInClass(idToUse));
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
+                SnackBar(
                   content: Text("Cập nhật thành công!"),
-                  backgroundColor: Colors.green,
+                  backgroundColor: AppColors.success,
                 ),
               );
             }

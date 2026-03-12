@@ -19,12 +19,12 @@ class ModuleDialogs {
           children: [
             TextField(
               controller: titleController,
-              decoration: const InputDecoration(labelText: 'Tên chương'),
+              decoration: InputDecoration(labelText: 'Tên chương'),
               autofocus: true,
             ),
             TextField(
               controller: descriptionController,
-              decoration: const InputDecoration(labelText: 'Mô tả (tùy chọn)'),
+              decoration: InputDecoration(labelText: 'Mô tả (tùy chọn)'),
             ),
           ],
         ),
@@ -72,12 +72,12 @@ class ModuleDialogs {
           children: [
             TextField(
               controller: titleController,
-              decoration: const InputDecoration(labelText: 'Tên chương'),
+              decoration: InputDecoration(labelText: 'Tên chương'),
               autofocus: true,
             ),
             TextField(
               controller: descriptionController,
-              decoration: const InputDecoration(labelText: 'Mô tả (tùy chọn)'),
+              decoration: InputDecoration(labelText: 'Mô tả (tùy chọn)'),
             ),
           ],
         ),
@@ -90,7 +90,7 @@ class ModuleDialogs {
             onPressed: () {
               if (titleController.text.isNotEmpty) {
                 ScaffoldMessenger.of(mainContext).showSnackBar(
-                  const SnackBar(
+                  SnackBar(
                     content: Text(
                       'Tính năng cập nhật đang được hoàn thiện backend',
                     ),

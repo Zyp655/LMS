@@ -12,6 +12,7 @@ import '../widgets/create_task_dialog.dart';
 import '../widgets/edit_task_dialog.dart';
 
 import '../../../../injection_container.dart' as di;
+import '../../../../core/theme/app_colors.dart';
 
 class TeacherTasksPage extends StatefulWidget {
   const TeacherTasksPage({super.key});
@@ -41,7 +42,7 @@ class _TeacherTasksPageState extends State<TeacherTasksPage> {
             onPressed: () => Navigator.pop(dialogContext),
             child: const Text("Hủy"),
           ),
-          ElevatedButton(
+          FilledButton(
             onPressed: () {
               final authState = context.read<AuthBloc>().state;
               if (authState is AuthSuccess && authState.user != null) {
@@ -51,7 +52,7 @@ class _TeacherTasksPageState extends State<TeacherTasksPage> {
               }
               Navigator.pop(dialogContext);
             },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            style: FilledButton.styleFrom(backgroundColor: AppColors.error),
             child: const Text("Xóa"),
           ),
         ],
@@ -73,15 +74,15 @@ class _TeacherTasksPageState extends State<TeacherTasksPage> {
                 ).showSnackBar(SnackBar(content: Text(state.message)));
               } else if (state is AssignmentCreatedSuccess) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Tạo bài tập thành công!")),
+                  SnackBar(content: Text("Tạo bài tập thành công!")),
                 );
               } else if (state is AssignmentUpdatedSuccess) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Cập nhật bài tập thành công!")),
+                  SnackBar(content: Text("Cập nhật bài tập thành công!")),
                 );
               } else if (state is AssignmentDeletedSuccess) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Xóa bài tập thành công!")),
+                  SnackBar(content: Text("Xóa bài tập thành công!")),
                 );
               }
             },
@@ -105,7 +106,7 @@ class _TeacherTasksPageState extends State<TeacherTasksPage> {
                           child: Icon(
                             Icons.assignment,
                             size: 80,
-                            color: Colors.grey[400],
+                            color: AppColors.textSecondary(context),
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -115,7 +116,7 @@ class _TeacherTasksPageState extends State<TeacherTasksPage> {
                             "Chưa có bài tập nào.",
                             style: TextStyle(
                               fontSize: 18,
-                              color: Colors.grey[600],
+                              color: AppColors.textSecondary(context),
                             ),
                           ),
                         ),
@@ -164,9 +165,9 @@ class _TeacherTasksPageState extends State<TeacherTasksPage> {
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     IconButton(
-                                      icon: const Icon(
+                                      icon: Icon(
                                         Icons.edit,
-                                        color: Colors.blue,
+                                        color: AppColors.primary,
                                       ),
                                       onPressed: () {
                                         final assignmentBloc = context
@@ -185,9 +186,9 @@ class _TeacherTasksPageState extends State<TeacherTasksPage> {
                                       },
                                     ),
                                     IconButton(
-                                      icon: const Icon(
+                                      icon: Icon(
                                         Icons.delete,
-                                        color: Colors.red,
+                                        color: AppColors.error,
                                       ),
                                       onPressed: () {
                                         _showDeleteConfirmation(
@@ -213,7 +214,7 @@ class _TeacherTasksPageState extends State<TeacherTasksPage> {
                     children: [
                       Text("Lỗi: ${state.message}"),
                       const SizedBox(height: 16),
-                      ElevatedButton(
+                      FilledButton(
                         onPressed: () {
                           final authState = context.read<AuthBloc>().state;
                           if (authState is AuthSuccess &&
@@ -244,7 +245,7 @@ class _TeacherTasksPageState extends State<TeacherTasksPage> {
                 ),
               );
             },
-            child: const Icon(Icons.add),
+            child: Icon(Icons.add),
           ),
         );
       },

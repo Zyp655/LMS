@@ -81,6 +81,12 @@ abstract class TeacherRemoteDataSource {
     required DateTime date,
   });
   Future<List<Map<String, dynamic>>> getAttendanceStatistics(int classId);
+
+  Future<Map<String, dynamic>> enrollStudentsByIdentifier(
+    int classId,
+    int teacherId,
+    List<String> identifiers,
+  );
 }
 
 class TeacherRemoteDataSourceImpl implements TeacherRemoteDataSource {
@@ -427,8 +433,7 @@ class TeacherRemoteDataSourceImpl implements TeacherRemoteDataSource {
       url,
       headers: headers,
       body: jsonEncode({
-        'classId':
-            classId,
+        'classId': classId,
         'teacherId': teacherId,
         'date': date.toIso8601String(),
         'attendances': attendances,
@@ -478,6 +483,29 @@ class TeacherRemoteDataSourceImpl implements TeacherRemoteDataSource {
       throw ServerException(
         "Lỗi tải thống kê điểm danh: ${response.statusCode}",
       );
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> enrollStudentsByIdentifier(
+    int classId,
+    int teacherId,
+    List<String> identifiers,
+  ) async {
+    final url = Uri.parse(
+      '${ApiConstants.baseUrl}/teacher/classes/$classId/enroll-by-identifier',
+    );
+    final headers = await _getHeaders();
+    final response = await client.post(
+      url,
+      headers: headers,
+      body: jsonEncode({'teacherId': teacherId, 'identifiers': identifiers}),
+    );
+
+    if (response.statusCode == 200) {
+      return Map<String, dynamic>.from(jsonDecode(response.body));
+    } else {
+      throw ServerException("Lỗi ghi danh: ${response.body}");
     }
   }
 }

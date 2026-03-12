@@ -10,6 +10,7 @@ import '../bloc/student_bloc.dart';
 import '../bloc/student_event.dart';
 import '../bloc/student_state.dart';
 import '../../../../injection_container.dart' as di;
+import '../../../../core/theme/app_colors.dart';
 
 class SubmitAssignmentPage extends StatelessWidget {
   final AssignmentEntity assignment;
@@ -72,21 +73,24 @@ class _SubmitAssignmentViewState extends State<SubmitAssignmentView> {
     if (_submissionType == 'file' && _selectedFile == null) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Vui lòng chọn file')));
+      ).showSnackBar(SnackBar(
+                    content: Text('Vui lòng chọn file')));
       return;
     }
 
     if (_submissionType == 'link' && _linkController.text.trim().isEmpty) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Vui lòng nhập link')));
+      ).showSnackBar(SnackBar(
+                    content: Text('Vui lòng nhập link')));
       return;
     }
 
     if (_submissionType == 'text' && _textController.text.trim().isEmpty) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Vui lòng nhập nội dung')));
+      ).showSnackBar(SnackBar(
+                    content: Text('Vui lòng nhập nội dung')));
       return;
     }
 
@@ -94,7 +98,8 @@ class _SubmitAssignmentViewState extends State<SubmitAssignmentView> {
     if (authState is! AuthSuccess || authState.user == null) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Chưa đăng nhập')));
+      ).showSnackBar(SnackBar(
+                    content: Text('Chưa đăng nhập')));
       return;
     }
 
@@ -125,7 +130,7 @@ class _SubmitAssignmentViewState extends State<SubmitAssignmentView> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.message),
-                backgroundColor: Colors.green,
+                backgroundColor: AppColors.success,
               ),
             );
             Navigator.pop(context, true);
@@ -133,7 +138,7 @@ class _SubmitAssignmentViewState extends State<SubmitAssignmentView> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.message),
-                backgroundColor: Colors.red,
+                backgroundColor: AppColors.error,
               ),
             );
           }
@@ -190,7 +195,7 @@ class _SubmitAssignmentViewState extends State<SubmitAssignmentView> {
                                 vertical: 6,
                               ),
                               decoration: BoxDecoration(
-                                color: Colors.red.withOpacity(0.1),
+                                color: AppColors.error.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: const Row(
@@ -199,13 +204,13 @@ class _SubmitAssignmentViewState extends State<SubmitAssignmentView> {
                                   Icon(
                                     Icons.warning,
                                     size: 16,
-                                    color: Colors.red,
+                                    color: AppColors.error,
                                   ),
                                   SizedBox(width: 4),
                                   Text(
                                     'Đã quá hạn nộp bài',
                                     style: TextStyle(
-                                      color: Colors.red,
+                                      color: AppColors.error,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
@@ -257,7 +262,7 @@ class _SubmitAssignmentViewState extends State<SubmitAssignmentView> {
                 if (_submissionType == 'file') ...[
                   ElevatedButton.icon(
                     onPressed: _pickFile,
-                    icon: const Icon(Icons.folder_open),
+                    icon: Icon(Icons.folder_open),
                     label: const Text('Chọn File'),
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(
@@ -270,13 +275,13 @@ class _SubmitAssignmentViewState extends State<SubmitAssignmentView> {
                     const SizedBox(height: 12),
                     Card(
                       child: ListTile(
-                        leading: const Icon(Icons.insert_drive_file),
+                        leading: Icon(Icons.insert_drive_file),
                         title: Text(_selectedFile!.path.split('/').last),
                         subtitle: Text(
                           '${(_selectedFile!.lengthSync() / 1024).toStringAsFixed(2)} KB',
                         ),
                         trailing: IconButton(
-                          icon: const Icon(Icons.close),
+                          icon: Icon(Icons.close),
                           onPressed: () => setState(() => _selectedFile = null),
                         ),
                       ),
@@ -290,7 +295,7 @@ class _SubmitAssignmentViewState extends State<SubmitAssignmentView> {
                 ] else if (_submissionType == 'link') ...[
                   TextField(
                     controller: _linkController,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'Link bài làm',
                       hintText: 'https://drive.google.com/...',
                       prefixIcon: Icon(Icons.link),
@@ -304,7 +309,7 @@ class _SubmitAssignmentViewState extends State<SubmitAssignmentView> {
                   TextField(
                     controller: _textController,
                     maxLines: 10,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'Nội dung bài làm',
                       hintText: 'Nhập nội dung bài làm của bạn...',
                       border: OutlineInputBorder(),

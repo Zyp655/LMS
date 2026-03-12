@@ -9,6 +9,7 @@ import '../../../auth/presentation/bloc/auth_state.dart';
 import '../../domain/entities/assignment_entity.dart';
 import '../../../schedule/domain/enitities/schedule_entity.dart';
 import '../../domain/entities/subject_entity.dart';
+import '../../../../core/theme/app_colors.dart';
 
 class EditTaskDialog extends StatefulWidget {
   final AssignmentEntity assignment;
@@ -139,7 +140,7 @@ class _EditTaskDialogState extends State<EditTaskDialog> {
                       padding: EdgeInsets.only(bottom: 16.0),
                       child: Text(
                         "Chưa có môn học nào. Vui lòng tạo môn học trước.",
-                        style: TextStyle(color: Colors.red),
+                        style: TextStyle(color: AppColors.error),
                       ),
                     )
                   else
@@ -159,7 +160,7 @@ class _EditTaskDialogState extends State<EditTaskDialog> {
                           _selectedClassId = null;
                         });
                       },
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: "Chọn Môn Học",
                       ),
                       validator: (val) =>
@@ -173,7 +174,7 @@ class _EditTaskDialogState extends State<EditTaskDialog> {
                       padding: EdgeInsets.only(top: 8.0),
                       child: Text(
                         "Chưa có lớp học nào cho môn này.",
-                        style: TextStyle(color: Colors.orange, fontSize: 12),
+                        style: TextStyle(color: AppColors.warning, fontSize: 12),
                       ),
                     )
                   else if (displayClasses.isNotEmpty)
@@ -192,24 +193,24 @@ class _EditTaskDialogState extends State<EditTaskDialog> {
                           _selectedClassId = val;
                         });
                       },
-                      decoration: const InputDecoration(labelText: "Chọn Lớp"),
+                      decoration: InputDecoration(labelText: "Chọn Lớp"),
                       validator: (val) =>
                           val == null ? "Vui lòng chọn lớp" : null,
                     ),
 
                   TextFormField(
                     controller: _titleController,
-                    decoration: const InputDecoration(labelText: "Tiêu đề"),
+                    decoration: InputDecoration(labelText: "Tiêu đề"),
                     validator: (val) => val!.isEmpty ? "Nhập tiêu đề" : null,
                   ),
                   TextFormField(
                     controller: _descriptionController,
-                    decoration: const InputDecoration(labelText: "Mô tả"),
+                    decoration: InputDecoration(labelText: "Mô tả"),
                     maxLines: 3,
                   ),
                   TextFormField(
                     controller: _pointsController,
-                    decoration: const InputDecoration(labelText: "Điểm thưởng"),
+                    decoration: InputDecoration(labelText: "Điểm thưởng"),
                     keyboardType: TextInputType.number,
                   ),
                   const SizedBox(height: 16),
@@ -217,7 +218,7 @@ class _EditTaskDialogState extends State<EditTaskDialog> {
                     children: [
                       const Text("Hạn nộp: "),
                       TextButton.icon(
-                        icon: const Icon(Icons.calendar_today, size: 18),
+                        icon: Icon(Icons.calendar_today, size: 18),
                         label: Text(
                           DateFormat('dd/MM/yyyy').format(_selectedDate),
                         ),
@@ -244,7 +245,7 @@ class _EditTaskDialogState extends State<EditTaskDialog> {
                         },
                       ),
                       TextButton.icon(
-                        icon: const Icon(Icons.access_time, size: 18),
+                        icon: Icon(Icons.access_time, size: 18),
                         label: Text(DateFormat('HH:mm').format(_selectedDate)),
                         onPressed: () async {
                           final time = await showTimePicker(

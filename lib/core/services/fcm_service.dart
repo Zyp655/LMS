@@ -2,10 +2,12 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import '../api/api_constants.dart';
+import '../route/app_route.dart';
+import '../route/app_router.dart';
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -31,7 +33,7 @@ class FcmService {
         'chat_messages',
         'Tin nhắn Chat',
         description: 'Thông báo khi có tin nhắn mới',
-        importance: Importance.high,
+        importance: Importance.max,
         playSound: true,
       );
 
@@ -106,8 +108,9 @@ class FcmService {
             _chatChannel.name,
             channelDescription: _chatChannel.description,
             icon: '@mipmap/ic_launcher',
-            importance: Importance.high,
-            priority: Priority.high,
+            importance: Importance.max,
+            priority: Priority.max,
+            fullScreenIntent: true,
           ),
         ),
         payload: jsonEncode(data),
@@ -139,17 +142,15 @@ class FcmService {
     }
   }
 
-  static final GlobalKey<NavigatorState> navigatorKey =
-      GlobalKey<NavigatorState>();
-
   void _navigateToChat(int conversationId, String recipientName) {
-    final context = navigatorKey.currentContext;
+    final context = appRouter.routerDelegate.navigatorKey.currentContext;
     if (context != null) {
-      Navigator.of(context).pushNamed(
-        '/chat/room',
-        arguments: {
+      GoRouter.of(context).push(
+        AppRoutes.chatRoom,
+        extra: {
           'conversationId': conversationId,
-          'recipientName': recipientName,
+          'participantName': recipientName,
+          'isTeacher': false,
         },
       );
     }

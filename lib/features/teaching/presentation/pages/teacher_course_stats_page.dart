@@ -97,13 +97,8 @@ class _TeacherCourseStatsPageState extends State<TeacherCourseStatsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.darkBackground,
-      appBar: AppBar(
-        title: const Text('Thống kê Khóa học'),
-        backgroundColor: AppColors.darkSurface,
-        foregroundColor: AppColors.textPrimaryDark,
-        elevation: 0,
-      ),
+      backgroundColor: AppColors.background(context),
+      appBar: AppBar(title: const Text('Thống kê Khóa học'), elevation: 0),
       body: Column(
         children: [
           _buildCourseSelector(),
@@ -116,13 +111,14 @@ class _TeacherCourseStatsPageState extends State<TeacherCourseStatsPage> {
   Widget _buildCourseSelector() {
     return Container(
       padding: AppSpacing.paddingLg,
-      color: AppColors.darkSurface,
+      color: AppColors.surface(context),
       child: DropdownButtonFormField<int>(
         value: _selectedCourseId,
-        dropdownColor: AppColors.darkSurfaceVariant,
-        style: const TextStyle(color: AppColors.textPrimaryDark),
-        decoration: AppDecorations.darkInputDecoration(
+        dropdownColor: AppColors.surface(context),
+        style: TextStyle(color: AppColors.textPrimary(context)),
+        decoration: InputDecoration(
           labelText: 'Chọn khóa học',
+          labelStyle: TextStyle(color: AppColors.textSecondary(context)),
         ),
         items: _courses.map<DropdownMenuItem<int>>((course) {
           return DropdownMenuItem(
@@ -143,7 +139,7 @@ class _TeacherCourseStatsPageState extends State<TeacherCourseStatsPage> {
   Widget _buildContent() {
     if (_isLoading) {
       return const Center(
-        child: CircularProgressIndicator(color: AppColors.textPrimaryDark),
+        child: CircularProgressIndicator(color: AppColors.primary),
       );
     }
 
@@ -152,11 +148,18 @@ class _TeacherCourseStatsPageState extends State<TeacherCourseStatsPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.school_outlined, size: 64, color: Colors.grey[600]),
+            Icon(
+              Icons.school_outlined,
+              size: 64,
+              color: AppColors.textSecondary(context),
+            ),
             AppSpacing.gapV16,
             Text(
               'Bạn chưa có khóa học nào',
-              style: TextStyle(color: Colors.grey[400], fontSize: 16),
+              style: TextStyle(
+                color: AppColors.textSecondary(context),
+                fontSize: 16,
+              ),
             ),
           ],
         ),
@@ -164,8 +167,11 @@ class _TeacherCourseStatsPageState extends State<TeacherCourseStatsPage> {
     }
 
     if (_stats == null) {
-      return const Center(
-        child: Text('Không có dữ liệu', style: TextStyle(color: Colors.grey)),
+      return Center(
+        child: Text(
+          'Không có dữ liệu',
+          style: TextStyle(color: AppColors.textSecondary(context)),
+        ),
       );
     }
 
@@ -200,7 +206,7 @@ class _TeacherCourseStatsPageState extends State<TeacherCourseStatsPage> {
       children: [
         StatCardWidget(
           icon: Icons.people,
-          iconColor: const Color(0xFF6C63FF),
+          iconColor: AppColors.primary,
           value: '${_stats!['totalEnrollments']}',
           label: 'Học viên',
         ),
@@ -218,7 +224,7 @@ class _TeacherCourseStatsPageState extends State<TeacherCourseStatsPage> {
         ),
         StatCardWidget(
           icon: Icons.star,
-          iconColor: Colors.amber,
+          iconColor: AppColors.warningLight,
           value: '${_stats!['rating']['average']}',
           label: '${_stats!['rating']['totalReviews']} đánh giá',
         ),
@@ -256,13 +262,13 @@ class _TeacherCourseStatsPageState extends State<TeacherCourseStatsPage> {
       return Container(
         padding: AppSpacing.paddingXl,
         decoration: BoxDecoration(
-          color: AppColors.darkSurface,
+          color: AppColors.cardColor(context),
           borderRadius: AppSpacing.borderRadiusLg,
         ),
         child: Center(
           child: Text(
             'Chưa có đánh giá',
-            style: TextStyle(color: Colors.grey[400]),
+            style: TextStyle(color: AppColors.textSecondary(context)),
           ),
         ),
       );
@@ -271,10 +277,10 @@ class _TeacherCourseStatsPageState extends State<TeacherCourseStatsPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Đánh giá gần đây',
           style: TextStyle(
-            color: AppColors.textPrimaryDark,
+            color: AppColors.textPrimary(context),
             fontSize: 16,
             fontWeight: FontWeight.bold,
           ),

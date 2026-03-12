@@ -1,19 +1,20 @@
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_colors.dart';
 
 class FilterChipGroup<T> extends StatelessWidget {
   final List<FilterOption<T>> options;
   final T selectedValue;
   final ValueChanged<T> onSelected;
   final Color selectedColor;
-  final Color unselectedColor;
+  final Color? unselectedColor;
 
   const FilterChipGroup({
     super.key,
     required this.options,
     required this.selectedValue,
     required this.onSelected,
-    this.selectedColor = const Color(0xFFFF6636),
-    this.unselectedColor = const Color(0xFF2E2E48),
+    this.selectedColor = AppColors.accent,
+    this.unselectedColor,
   });
 
   @override
@@ -24,28 +25,34 @@ class FilterChipGroup<T> extends StatelessWidget {
         children: options.map((option) {
           final isSelected = selectedValue == option.value;
           return Container(
-            margin: const EdgeInsets.only(right: 12),
+            margin: const EdgeInsets.only(right: 8),
             child: FilterChip(
               label: Text(
                 option.label,
                 style: TextStyle(
-                  color: isSelected ? Colors.white : Colors.grey[400],
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                  fontSize: 13,
+                  color: isSelected
+                      ? Colors.white
+                      : AppColors.textSecondary(context),
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                  fontSize: 12,
                 ),
               ),
               selected: isSelected,
               onSelected: (_) => onSelected(option.value),
-              backgroundColor: Colors.white.withOpacity(0.05),
+              backgroundColor: AppColors.surface(context),
               selectedColor: selectedColor,
               checkmarkColor: Colors.white,
+              visualDensity: VisualDensity.compact,
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(12),
                 side: BorderSide(
-                  color: isSelected ? Colors.transparent : Colors.white10,
+                  color: isSelected
+                      ? Colors.transparent
+                      : AppColors.border(context),
                 ),
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
             ),
           );
         }).toList(),

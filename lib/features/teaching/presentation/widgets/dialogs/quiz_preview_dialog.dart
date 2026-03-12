@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../../core/theme/app_colors.dart';
 
 class QuizPreviewDialog extends StatelessWidget {
   final Map<String, dynamic> quizData;
@@ -27,7 +28,7 @@ class QuizPreviewDialog extends StatelessWidget {
           children: [
             Row(
               children: [
-                const Icon(Icons.quiz, color: Color(0xFFFF6636), size: 28),
+                Icon(Icons.quiz, color: AppColors.accent, size: 28),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -48,7 +49,7 @@ class QuizPreviewDialog extends StatelessWidget {
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.close),
+                  icon: Icon(Icons.close),
                   onPressed: () => Navigator.pop(context),
                 ),
               ],
@@ -92,7 +93,7 @@ class QuizPreviewDialog extends StatelessWidget {
                                         ? Icons.check_circle
                                         : Icons.radio_button_unchecked,
                                     color: isCorrect
-                                        ? const Color(0xFF00C853)
+                                        ? AppColors.success
                                         : Colors.grey[400],
                                     size: 20,
                                   ),
@@ -105,7 +106,7 @@ class QuizPreviewDialog extends StatelessWidget {
                                             ? FontWeight.w600
                                             : FontWeight.normal,
                                         color: isCorrect
-                                            ? const Color(0xFF2E7D32)
+                                            ? AppColors.successDark
                                             : Colors.black87,
                                       ),
                                     ),
@@ -119,16 +120,16 @@ class QuizPreviewDialog extends StatelessWidget {
                             Container(
                               padding: const EdgeInsets.all(10),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFFFF3E0),
+                                color: AppColors.warning.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Row(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Icon(
+                                  Icon(
                                     Icons.lightbulb,
                                     size: 16,
-                                    color: Color(0xFFF57C00),
+                                    color: AppColors.warningDark,
                                   ),
                                   const SizedBox(width: 8),
                                   Expanded(
@@ -136,7 +137,7 @@ class QuizPreviewDialog extends StatelessWidget {
                                       q['explanation'].toString(),
                                       style: const TextStyle(
                                         fontSize: 13,
-                                        color: Color(0xFFE65100),
+                                        color: AppColors.accent,
                                       ),
                                     ),
                                   ),
@@ -157,7 +158,7 @@ class QuizPreviewDialog extends StatelessWidget {
               child: ElevatedButton(
                 onPressed: () => Navigator.pop(context),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFF6636),
+                  backgroundColor: AppColors.accent,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),

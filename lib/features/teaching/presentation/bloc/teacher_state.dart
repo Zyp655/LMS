@@ -102,3 +102,18 @@ class AttendanceStatisticsLoaded extends TeacherState {
   @override
   List<Object> get props => [statistics];
 }
+
+class EnrollmentImportResult extends TeacherState {
+  final List<dynamic> enrolled;
+  final List<dynamic> notFound;
+  final List<dynamic> alreadyEnrolled;
+
+  const EnrollmentImportResult({
+    required this.enrolled,
+    required this.notFound,
+    required this.alreadyEnrolled,
+  });
+
+  @override
+  List<Object> get props => [enrolled, notFound, alreadyEnrolled];
+}

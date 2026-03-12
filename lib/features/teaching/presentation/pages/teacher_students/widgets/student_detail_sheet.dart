@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../../../core/theme/app_colors.dart';
 
 class StudentDetailSheet extends StatelessWidget {
   final Map<String, dynamic> student;
@@ -16,7 +17,7 @@ class StudentDetailSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const primaryOrange = Color(0xFFFF6636);
+    const primaryOrange = AppColors.accent;
 
     return DraggableScrollableSheet(
       initialChildSize: 0.6,
@@ -104,7 +105,7 @@ class StudentDetailSheet extends StatelessWidget {
                   ),
                   child: Row(
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.warning_amber,
                         color: Colors.redAccent,
                         size: 20,
@@ -133,11 +134,11 @@ class StudentDetailSheet extends StatelessWidget {
                       Navigator.pop(context);
                       onSendNotification();
                     },
-                    icon: const Icon(Icons.notifications_outlined),
+                    icon: Icon(Icons.notifications_outlined),
                     label: const Text('Gửi thông báo'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: primaryOrange,
-                      side: const BorderSide(color: primaryOrange),
+                      side: BorderSide(color: primaryOrange),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -152,7 +153,7 @@ class StudentDetailSheet extends StatelessWidget {
                       Navigator.pop(context);
                       onViewHistory();
                     },
-                    icon: const Icon(Icons.history),
+                    icon: Icon(Icons.history),
                     label: const Text('Lịch sử'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: primaryOrange,

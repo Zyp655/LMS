@@ -9,6 +9,7 @@ import '../../../../course/presentation/bloc/course_detail_event.dart';
 import '../../../../course/presentation/bloc/course_detail_state.dart';
 import '../file_upload_box.dart';
 import 'add_lesson_dialog.dart';
+import '../../../../../core/theme/app_colors.dart';
 
 class EditLessonDialog {
   static void show(BuildContext mainContext, LessonEntity lesson) {
@@ -37,13 +38,13 @@ class EditLessonDialog {
                 children: [
                   TextField(
                     controller: titleController,
-                    decoration: const InputDecoration(labelText: 'Tên bài học'),
+                    decoration: InputDecoration(labelText: 'Tên bài học'),
                     autofocus: true,
                   ),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<String>(
                     value: type,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'Loại bài học',
                       border: OutlineInputBorder(),
                     ),
@@ -76,7 +77,7 @@ class EditLessonDialog {
                     if (videoSource == 'url')
                       TextField(
                         controller: urlController,
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           labelText: 'URL Video',
                           hintText: 'https://youtube.com/watch?v=...',
                           border: OutlineInputBorder(),
@@ -156,8 +157,8 @@ class EditLessonDialog {
                     : () async {
                         if (titleController.text.isEmpty) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Vui lòng nhập tên bài học'),
+                            SnackBar(
+                    content: Text('Vui lòng nhập tên bài học'),
                             ),
                           );
                           return;
@@ -187,7 +188,7 @@ class EditLessonDialog {
                                     content: Text(
                                       result.errorMessage ?? 'Lỗi upload',
                                     ),
-                                    backgroundColor: Colors.red,
+                                    backgroundColor: AppColors.error,
                                   ),
                                 );
                               }

@@ -314,4 +314,22 @@ class TeacherRepositoryImpl implements TeacherRepository {
       return Left(ServerFailure(e.message));
     }
   }
+
+  @override
+  Future<Either<Failure, Map<String, dynamic>>> enrollStudentsByIdentifier(
+    int classId,
+    int teacherId,
+    List<String> identifiers,
+  ) async {
+    try {
+      final result = await remoteDataSource.enrollStudentsByIdentifier(
+        classId,
+        teacherId,
+        identifiers,
+      );
+      return Right(result);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    }
+  }
 }
