@@ -8,11 +8,8 @@ class ApiConstants {
   static const String _productionUrl = 'https://lms-production-c546.up.railway.app';
 
   static String get baseUrl {
-    if (_productionUrl.isNotEmpty) {
-      return _productionUrl;
-    }
     if (kIsWeb) {
-      return 'http://localhost:$_port';
+      return _productionUrl;
     }
     final host = defaultTargetPlatform == TargetPlatform.android
         ? _localIP
