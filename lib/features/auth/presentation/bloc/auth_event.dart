@@ -29,3 +29,5 @@ class ResetPasswordRequested extends AuthEvent {
     required this.newPassword,
   });
 }
+
+class CheckAuthStatus extends AuthEvent {}

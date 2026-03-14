@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../injection_container.dart';
+import '../../../../core/api/api_client.dart';
 
 import '../../../../features/schedule/presentation/bloc/schedule_bloc.dart';
 import '../../../../features/schedule/presentation/bloc/schedule_event.dart';
@@ -8,6 +9,7 @@ import '../../domain/usecases/login_usercase.dart';
 import '../../domain/usecases/signup_usecase.dart';
 import '../../domain/usecases/forgot_password_usecase.dart';
 import '../../domain/usecases/reset_password_usecase.dart';
+import '../../data/models/user_model.dart';
 import 'auth_event.dart';
 import 'auth_state.dart';
 import '../../../../core/services/fcm_service.dart';
@@ -29,6 +31,37 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<ForgotPasswordRequested>(_onForgotPassword);
     on<ResetPasswordRequested>(_onResetPassword);
     on<LogoutRequested>(_onLogout);
+    on<CheckAuthStatus>(_onCheckAuthStatus);
+  }
+
+  Future<void> _onCheckAuthStatus(
+    CheckAuthStatus event,
+    Emitter<AuthState> emit,
+  ) async {
+    final prefs = sl<SharedPreferences>();
+    final token = prefs.getString('token');
+    final userId = prefs.getInt('userId') ?? prefs.getInt('current_user_id');
+
+    if (token == null || userId == null) {
+      emit(AuthInitial());
+      return;
+    }
+
+    try {
+      final apiClient = sl<ApiClient>();
+      final response = await apiClient.get('/users/$userId');
+      final user = UserModel.fromJson({
+        ...response as Map<String, dynamic>,
+        'token': token,
+      });
+      await prefs.setInt('current_user_id', user.id);
+      emit(AuthSuccess(user));
+    } catch (_) {
+      await prefs.remove('token');
+      await prefs.remove('userId');
+      await prefs.remove('current_user_id');
+      emit(AuthInitial());
+    }
   }
 
   Future<void> _onLogin(LoginRequested event, Emitter<AuthState> emit) async {
@@ -83,6 +116,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
   Future<void> _onLogout(LogoutRequested event, Emitter<AuthState> emit) async {
     await sl<SharedPreferences>().remove('current_user_id');
+    await sl<SharedPreferences>().remove('token');
+    await sl<SharedPreferences>().remove('userId');
     try {
       if (sl.isRegistered<ScheduleBloc>()) {
         sl<ScheduleBloc>().add(ResetSchedule());
@@ -91,3 +126,4 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     emit(AuthInitial());
   }
 }
+

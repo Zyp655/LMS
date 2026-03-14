@@ -10,6 +10,7 @@ import 'core/services/notification_service.dart';
 import 'core/theme/app_theme.dart';
 import 'injection_container.dart' as di;
 import 'features/auth/presentation/bloc/auth_bloc.dart';
+import 'features/auth/presentation/bloc/auth_event.dart';
 import 'features/schedule/presentation/bloc/schedule_bloc.dart';
 import 'features/user/presentation/bloc/user_bloc.dart';
 import 'features/task/presentation/bloc/task_bloc.dart';
@@ -41,7 +42,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
-        BlocProvider(create: (_) => di.sl<AuthBloc>()),
+        BlocProvider(create: (_) => di.sl<AuthBloc>()..add(CheckAuthStatus())),
         BlocProvider(create: (_) => di.sl<ThemeCubit>()),
         BlocProvider(create: (_) => di.sl<ScheduleBloc>()),
         BlocProvider(create: (_) => di.sl<UserBloc>()),
