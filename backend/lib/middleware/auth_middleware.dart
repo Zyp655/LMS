@@ -31,7 +31,7 @@ Handler authMiddleware(Handler handler) {
     final token = authHeader.substring(7);
 
     try {
-      final env = DotEnv()..load();
+      final env = DotEnv(includePlatformEnvironment: true)..load();
       final jwtSecret = env['JWT_SECRET'] ?? 'my_secret_key_123';
       final jwt = JWT.verify(token, SecretKey(jwtSecret));
       final payload = jwt.payload as Map<String, dynamic>;

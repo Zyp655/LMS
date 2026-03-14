@@ -1,4 +1,4 @@
-﻿import 'dart:math';
+import 'dart:math';
 import 'package:backend/database/database.dart';
 import 'package:dart_frog/dart_frog.dart';
 import 'package:drift/drift.dart';
@@ -35,7 +35,7 @@ Future<Response> onRequest(RequestContext context) async {
     return Response(
         statusCode: 400,
         body:
-            'Thiếu thông tin (className, teacherId, room, subjectName, startTime, endTime, startDate)');
+            'Thi?u th�ng tin (className, teacherId, room, subjectName, startTime, endTime, startDate)');
   }
   DateTime baseStartTime;
   DateTime baseEndTime;
@@ -46,11 +46,11 @@ Future<Response> onRequest(RequestContext context) async {
     startDate = DateTime.parse(startDateStr);
   } catch (e) {
     return Response(
-        statusCode: 400, body: 'Định dạng thời gian/ngày không hợp lệ');
+        statusCode: 400, body: '�?nh d?ng th?i gian/ng�y kh�ng h?p l?');
   }
   if (baseEndTime.isBefore(baseStartTime) ||
       baseEndTime.isAtSameMomentAs(baseStartTime)) {
-    return Response(statusCode: 400, body: 'Giờ kết thúc phải sau giờ bắt đầu');
+    return Response(statusCode: 400, body: 'Gi? k?t th�c ph?i sau gi? b?t d?u');
   }
   final code = _generateClassCode();
   final classId = await db.into(db.classes).insert(ClassesCompanion.insert(
@@ -86,7 +86,7 @@ Future<Response> onRequest(RequestContext context) async {
         return Response(
             statusCode: 409,
             body:
-                'Xung đột lịch tại bộ: Tuần ${i + 1} ($currentDate). Phòng "$room" có lớp kết thúc lúc $existingEnd và bạn bắt đầu lúc $startDateTime.');
+                'Xung d?t l?ch t?i b?: Tu?n ${i + 1} ($currentDate). Ph�ng "$room" c� l?p k?t th�c l�c $existingEnd v� b?n b?t d?u l�c $startDateTime.');
       }
     }
     await db.into(db.schedules).insert(SchedulesCompanion.insert(
@@ -96,14 +96,14 @@ Future<Response> onRequest(RequestContext context) async {
           room: Value(room),
           startTime: startDateTime,
           endTime: endDateTime,
-          note: Value('Lớp: $className - Tuần ${i + 1}'),
+          note: Value('L?p: $className - Tu?n ${i + 1}'),
           notificationMinutes: Value(notificationMinutes),
           credits: Value(credits),
           maxAbsences: Value(maxAbsences),
         ));
   }
   return Response.json(body: {
-    'message': 'Tạo lớp thành công',
+    'message': 'T?o l?p th�nh c�ng',
     'classCode': code,
     'className': className,
     'room': room,

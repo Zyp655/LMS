@@ -1,4 +1,4 @@
-﻿import 'package:backend/database/database.dart';
+import 'package:backend/database/database.dart';
 import 'package:dart_frog/dart_frog.dart';
 
 Future<Response> onRequest(RequestContext context) async {

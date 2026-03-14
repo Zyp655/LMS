@@ -31,7 +31,7 @@ Future<Response> onRequest(RequestContext context) async {
             {'error': 'Number of questions must be between 1 and 20'}),
       );
     }
-    final env = DotEnv()..load();
+    final env = DotEnv(includePlatformEnvironment: true)..load();
     final openaiApiKey = env['OPENAI_API_KEY'];
     if (openaiApiKey == null || openaiApiKey.isEmpty) {
       return Response(

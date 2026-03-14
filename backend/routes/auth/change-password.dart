@@ -27,7 +27,7 @@ Future<Response> onRequest(RequestContext context) async {
     final token = authHeader.substring(7);
     final JWT jwt;
     try {
-      final env = DotEnv()..load();
+      final env = DotEnv(includePlatformEnvironment: true)..load();
       final jwtSecret = env['JWT_SECRET'] ?? 'my_secret_key_123';
       jwt = JWT.verify(token, SecretKey(jwtSecret));
     } catch (_) {

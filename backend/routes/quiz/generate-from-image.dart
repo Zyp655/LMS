@@ -23,7 +23,7 @@ Future<Response> onRequest(RequestContext context) async {
         body: jsonEncode({'error': 'imageBase64 or imageUrl is required'}),
       );
     }
-    final env = DotEnv()..load();
+    final env = DotEnv(includePlatformEnvironment: true)..load();
     final openaiApiKey = env['OPENAI_API_KEY'];
     if (openaiApiKey == null || openaiApiKey.isEmpty) {
       return Response(

@@ -1,4 +1,4 @@
-﻿import 'package:backend/database/database.dart';
+import 'package:backend/database/database.dart';
 import 'package:backend/repositories/student_repository.dart';
 import 'package:dart_frog/dart_frog.dart';
 import 'package:drift/drift.dart';
@@ -75,7 +75,7 @@ Future<Response> onRequest(RequestContext context) async {
               departmentId != null ? Value(departmentId) : const Value.absent(),
         ),
       );
-      return Response.json(body: {'message': 'Cập nhật hồ sơ thành công'});
+      return Response.json(body: {'message': 'C?p nh?t h? so th�nh c�ng'});
     } else {
       await repo.updateProfile(
         userId,
@@ -83,7 +83,7 @@ Future<Response> onRequest(RequestContext context) async {
         body['studentId'] as String? ?? '',
         body['major'] as String? ?? '',
       );
-      return Response.json(body: {'message': 'Cập nhật hồ sơ thành công'});
+      return Response.json(body: {'message': 'C?p nh?t h? so th�nh c�ng'});
     }
   }
 

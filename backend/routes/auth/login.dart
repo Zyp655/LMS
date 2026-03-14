@@ -31,7 +31,7 @@ Future<Response> onRequest(RequestContext context) async {
     'email': user.email,
     'role': user.role,
   });
-  final env = DotEnv()..load();
+  final env = DotEnv(includePlatformEnvironment: true)..load();
   final jwtSecret = env['JWT_SECRET'] ?? 'my_secret_key_123';
   final token = jwt.sign(SecretKey(jwtSecret));
   return Response.json(body: {

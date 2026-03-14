@@ -818,7 +818,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_createDatabase());
 
   static QueryExecutor _createDatabase() {
-    final env = DotEnv()..load();
+    final env = DotEnv(includePlatformEnvironment: true)..load();
 
     return PgDatabase(
       endpoint: Endpoint(

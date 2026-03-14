@@ -1,4 +1,4 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 import '../database/database.dart';
 import 'package:drift/drift.dart';
 class CacheService {

@@ -24,7 +24,7 @@ Future<Response> onRequest(RequestContext context) async {
 }
 
 Future<void> _sendEmail(String recipient, String otp) async {
-  final env = DotEnv()..load();
+  final env = DotEnv(includePlatformEnvironment: true)..load();
   final username = env['SMTP_EMAIL'] ?? '';
   final password = env['SMTP_PASSWORD'] ?? '';
 

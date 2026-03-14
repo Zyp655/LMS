@@ -1,4 +1,4 @@
-﻿import 'package:backend/database/database.dart';
+import 'package:backend/database/database.dart';
 import 'package:backend/middleware/auth_middleware.dart';
 import 'package:backend/middleware/cors_middleware.dart';
 import 'package:backend/middleware/error_handler_middleware.dart';
