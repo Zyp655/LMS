@@ -1,4 +1,4 @@
-﻿import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/api/api_client.dart';
 import 'ai_assistant_event.dart';
 import 'ai_assistant_state.dart';
@@ -10,6 +10,40 @@ class AiAssistantBloc extends Bloc<AiAssistantEvent, AiAssistantState> {
     on<AskAiQuestion>(_onAskQuestion);
     on<SummarizeLesson>(_onSummarize);
     on<ClearChat>(_onClearChat);
+    on<LoadChatHistory>(_onLoadHistory);
+  }
+
+  Future<void> _onLoadHistory(
+    LoadChatHistory event,
+    Emitter<AiAssistantState> emit,
+  ) async {
+    try {
+      final lessonId = event.lessonId ?? 0;
+      final response = await apiClient.get(
+        '/ai/chat-history?userId=${event.userId}&lessonId=$lessonId',
+      );
+      final data = response as Map<String, dynamic>;
+      final rawMessages = data['messages'] as List? ?? [];
+
+      if (rawMessages.isEmpty) {
+        emit(AiInitial());
+        return;
+      }
+
+      final messages = rawMessages.map((m) {
+        final msg = m as Map<String, dynamic>;
+        return AiChatMessage(
+          role: msg['role'] as String,
+          content: msg['content'] as String,
+          timestamp: DateTime.tryParse(msg['timestamp'] as String? ?? '') ??
+              DateTime.now(),
+        );
+      }).toList();
+
+      emit(AiChatLoaded(messages));
+    } catch (_) {
+      emit(AiInitial());
+    }
   }
 
   Future<void> _onAskQuestion(
@@ -36,6 +70,8 @@ class AiAssistantBloc extends Bloc<AiAssistantEvent, AiAssistantState> {
 
     emit(AiChatLoading(List.from(currentMessages)));
 
+    _persistMessage(event.userId, event.lessonId, 'user', event.question);
+
     try {
       final history = currentMessages
           .where((m) => m != currentMessages.last)
@@ -60,6 +96,8 @@ class AiAssistantBloc extends Bloc<AiAssistantEvent, AiAssistantState> {
         ),
       );
 
+      _persistMessage(event.userId, event.lessonId, 'assistant', answer);
+
       emit(AiChatLoaded(List.from(currentMessages)));
     } catch (e) {
       emit(
@@ -69,6 +107,16 @@ class AiAssistantBloc extends Bloc<AiAssistantEvent, AiAssistantState> {
         ),
       );
     }
+  }
+
+  void _persistMessage(int? userId, int? lessonId, String role, String content) {
+    if (userId == null) return;
+    apiClient.post('/ai/chat-history', {
+      'userId': userId,
+      'lessonId': lessonId ?? 0,
+      'role': role,
+      'content': content,
+    }).catchError((_) => null);
   }
 
   Future<void> _onSummarize(
@@ -108,7 +156,12 @@ class AiAssistantBloc extends Bloc<AiAssistantEvent, AiAssistantState> {
     }
   }
 
-  void _onClearChat(ClearChat event, Emitter<AiAssistantState> emit) {
+  Future<void> _onClearChat(ClearChat event, Emitter<AiAssistantState> emit) async {
+    if (event.userId != null) {
+      apiClient.delete(
+        '/ai/chat-history?userId=${event.userId}&lessonId=${event.lessonId ?? 0}',
+      ).catchError((_) => null);
+    }
     emit(AiInitial());
   }
 }

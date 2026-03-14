@@ -13,12 +13,14 @@ class LessonOverviewTab extends StatelessWidget {
   final LessonEntity lesson;
   final VideoPlayerController? videoController;
   final bool isVideoInitialized;
+  final int? userId;
 
   const LessonOverviewTab({
     super.key,
     required this.lesson,
     this.videoController,
     this.isVideoInitialized = false,
+    this.userId,
   });
 
   @override
@@ -51,7 +53,13 @@ class LessonOverviewTab extends StatelessWidget {
           children: [
             _buildInfoChip(cs, Icons.access_time, durationText),
             const SizedBox(width: 12),
-            _buildInfoChip(cs, Icons.remove_red_eye_outlined, 'Video'),
+            _buildInfoChip(
+              cs,
+              lesson.type == LessonType.text
+                  ? Icons.description_rounded
+                  : Icons.remove_red_eye_outlined,
+              lesson.type == LessonType.text ? 'Tài liệu' : 'Video',
+            ),
           ],
         ),
         const SizedBox(height: 24),
@@ -96,6 +104,7 @@ class LessonOverviewTab extends StatelessWidget {
                         textContent: lesson.textContent ?? '',
                         contentUrl: lesson.contentUrl,
                         lessonId: lesson.id,
+                        userId: userId,
                       ),
                     ),
                   );

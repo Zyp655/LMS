@@ -43,6 +43,7 @@ class CourseDetailBloc extends Bloc<CourseDetailEvent, CourseDetailState> {
     on<CreateLessonEvent>(_onCreateLesson);
     on<UpdateLessonEvent>(_onUpdateLesson);
     on<DeleteLessonEvent>(_onDeleteLesson);
+    on<DeleteModuleEvent>(_onDeleteModule);
   }
 
   Future<void> _onLoadCourseDetail(
@@ -314,5 +315,24 @@ class CourseDetailBloc extends Bloc<CourseDetailEvent, CourseDetailState> {
         emit(currentState.copyWith(modules: updatedModules));
       }
     });
+  }
+
+  Future<void> _onDeleteModule(
+    DeleteModuleEvent event,
+    Emitter<CourseDetailState> emit,
+  ) async {
+    try {
+      final api = sl<ApiClient>();
+      await api.delete('/courses/${event.courseId}/modules/${event.moduleId}');
+      if (state is CourseDetailLoaded) {
+        final currentState = state as CourseDetailLoaded;
+        final updatedModules = currentState.modules
+            .where((m) => m.id != event.moduleId)
+            .toList();
+        emit(currentState.copyWith(modules: updatedModules));
+      }
+    } catch (e) {
+      emit(CourseDetailError(e.toString()));
+    }
   }
 }

@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/api/api_client.dart';
 import '../../../../core/route/app_route.dart';
@@ -9,7 +9,6 @@ import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
 import 'teacher_subject_list_page.dart';
 import 'teacher_students_page.dart';
-import 'teacher_course_stats_page.dart';
 import 'teacher_tasks_page.dart';
 import '../bloc/teacher_bloc.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -218,7 +217,7 @@ class _TeacherDashboardPageState extends State<TeacherDashboardPage>
         physics: const AlwaysScrollableScrollPhysics(),
         slivers: [
           _buildGradientHeader(isDark),
-          SliverToBoxAdapter(child: _buildStatsSection(isDark)),
+          const SliverToBoxAdapter(child: SizedBox(height: 8)),
           if (!_loading && _pendingSubmissions > 0)
             SliverToBoxAdapter(child: _buildPendingAlert(isDark)),
           SliverToBoxAdapter(child: _buildQuickActions(isDark)),
@@ -573,20 +572,6 @@ class _TeacherDashboardPageState extends State<TeacherDashboardPage>
                       ),
                     );
                   },
-                ),
-                const SizedBox(width: 12),
-                _buildStitchActionItem(
-                  icon: Icons.bar_chart_rounded,
-                  label: 'Thống kê',
-                  isDark: isDark,
-                  cardColor: cardColor,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) =>
-                          TeacherCourseStatsPage(teacherId: widget.teacherId),
-                    ),
-                  ),
                 ),
                 const SizedBox(width: 12),
                 _buildStitchActionItem(

@@ -299,14 +299,15 @@ class TeacherRemoteDataSourceImpl implements TeacherRemoteDataSource {
   @override
   Future<List<AssignmentModel>> getAssignments(int teacherId) async {
     final url = Uri.parse(
-      '${ApiConstants.baseUrl}/teacher/assignments?userId=$teacherId',
+      '${ApiConstants.baseUrl}/teacher/assignments?teacherId=$teacherId',
     );
     final headers = await _getHeaders();
     final response = await client.get(url, headers: headers);
 
     if (response.statusCode == 200) {
-      final List decoded = jsonDecode(response.body);
-      return decoded.map((e) => AssignmentModel.fromJson(e)).toList();
+      final decoded = jsonDecode(response.body);
+      final List assignments = decoded['assignments'] ?? [];
+      return assignments.map((e) => AssignmentModel.fromJson(e)).toList();
     } else {
       throw ServerException(
         "Lỗi tải danh sách bài tập: ${response.statusCode}",

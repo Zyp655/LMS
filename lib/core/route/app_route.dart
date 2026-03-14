@@ -27,7 +27,7 @@ class AppRoutes {
   static const String discussions = '/discussions';
   static const String discussionThread = '/discussions/thread';
   static const String achievements = '/achievements';
-  static const String offlineManagement = '/offline';
+
   static const String teacherApplications = '/admin/teacher-applications';
   static const String academicStructure = '/admin/academic-structure';
   static const String enrollmentImport = '/admin/enrollment-import';

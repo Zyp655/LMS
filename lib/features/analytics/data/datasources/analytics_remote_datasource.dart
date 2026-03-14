@@ -105,6 +105,8 @@ class AnalyticsRemoteDataSource {
       currentStreak: json['currentStreak'] as int? ?? 0,
       longestStreak: json['longestStreak'] as int? ?? 0,
       weekStudyMinutes: json['weekStudyMinutes'] as int? ?? 0,
+      todayStudyMinutes: json['todayStudyMinutes'] as int? ?? 0,
+      weekCompletedLessons: json['weekCompletedLessons'] as int? ?? 0,
       activeCourses: json['activeCourses'] as int? ?? 0,
       overallProgress: (json['overallProgress'] as num?)?.toDouble() ?? 0.0,
       completedLessons: json['completedLessons'] as int? ?? 0,

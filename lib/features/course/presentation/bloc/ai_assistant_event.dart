@@ -11,15 +11,19 @@ class AskAiQuestion extends AiAssistantEvent {
   final String lessonTitle;
   final String textContent;
   final String question;
+  final int? userId;
+  final int? lessonId;
 
   const AskAiQuestion({
     required this.lessonTitle,
     required this.textContent,
     required this.question,
+    this.userId,
+    this.lessonId,
   });
 
   @override
-  List<Object?> get props => [lessonTitle, textContent, question];
+  List<Object?> get props => [lessonTitle, textContent, question, userId, lessonId];
 }
 
 class SummarizeLesson extends AiAssistantEvent {
@@ -32,4 +36,22 @@ class SummarizeLesson extends AiAssistantEvent {
   List<Object?> get props => [lessonTitle, textContent];
 }
 
-class ClearChat extends AiAssistantEvent {}
+class ClearChat extends AiAssistantEvent {
+  final int? userId;
+  final int? lessonId;
+
+  const ClearChat({this.userId, this.lessonId});
+
+  @override
+  List<Object?> get props => [userId, lessonId];
+}
+
+class LoadChatHistory extends AiAssistantEvent {
+  final int userId;
+  final int? lessonId;
+
+  const LoadChatHistory({required this.userId, this.lessonId});
+
+  @override
+  List<Object?> get props => [userId, lessonId];
+}

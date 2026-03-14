@@ -14,16 +14,22 @@ class AssignmentModel extends AssignmentEntity {
   });
 
   factory AssignmentModel.fromJson(Map<String, dynamic> json) {
+    DateTime parseDate(dynamic val) {
+      if (val is DateTime) return val;
+      if (val is String) return DateTime.parse(val);
+      return DateTime.now();
+    }
+
     return AssignmentModel(
       id: json['id'] as int,
-      classId: json['classId'] as int,
+      classId: json['classId'] as int? ?? 0,
       title: json['title'] as String,
       description: json['description'] as String?,
-      dueDate: DateTime.parse(json['dueDate'] as String),
+      dueDate: parseDate(json['dueDate']),
       rewardPoints: json['rewardPoints'] as int? ?? 0,
-      createdAt: DateTime.parse(json['createdAt'] as String),
+      createdAt: parseDate(json['createdAt']),
       totalStudents: json['totalStudents'] as int? ?? 0,
-      completedStudents: json['completedStudents'] as int? ?? 0,
+      completedStudents: json['completedStudents'] as int? ?? json['submittedCount'] as int? ?? 0,
     );
   }
 

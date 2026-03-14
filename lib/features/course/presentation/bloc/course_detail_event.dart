@@ -121,3 +121,16 @@ class DeleteLessonEvent extends CourseDetailEvent {
   @override
   List<Object?> get props => [courseId, moduleId, lessonId];
 }
+
+class DeleteModuleEvent extends CourseDetailEvent {
+  final int courseId;
+  final int moduleId;
+
+  const DeleteModuleEvent({
+    required this.courseId,
+    required this.moduleId,
+  });
+
+  @override
+  List<Object?> get props => [courseId, moduleId];
+}

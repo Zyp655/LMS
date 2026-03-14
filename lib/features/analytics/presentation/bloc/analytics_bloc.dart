@@ -34,7 +34,10 @@ class AnalyticsBloc extends Bloc<AnalyticsEvent, AnalyticsState> {
     emit(AnalyticsLoading());
 
     final summaryResult = await getSummary(userId: event.userId);
-    final heatmapResult = await getHeatmap(userId: event.userId);
+    final heatmapResult = await getHeatmap(
+      userId: event.userId,
+      months: event.heatmapMonths,
+    );
 
     final summary = summaryResult.fold((failure) => null, (data) => data);
     final heatmap = heatmapResult.fold((failure) => null, (data) => data);

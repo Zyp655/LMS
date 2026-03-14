@@ -156,9 +156,6 @@ class _TeacherTasksPageState extends State<TeacherTasksPage> {
                                     Text(
                                       "Hạn nộp: ${DateFormat('dd/MM/yyyy HH:mm').format(assignment.dueDate)}",
                                     ),
-                                    Text(
-                                      "Điểm thưởng: ${assignment.rewardPoints}",
-                                    ),
                                   ],
                                 ),
                                 trailing: Row(

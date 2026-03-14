@@ -1,5 +1,6 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/route/app_route.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:percent_indicator/linear_percent_indicator.dart';
@@ -268,7 +269,7 @@ class _MyCoursesViewState extends State<MyCoursesView> {
                 Icons.notifications_outlined,
                 color: AppColors.primary,
               ),
-              onPressed: () {},
+              onPressed: () => context.push(AppRoutes.notifications),
             ),
           ),
         ],

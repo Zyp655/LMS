@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:share_plus/share_plus.dart';
 import '../bloc/analytics_bloc.dart';
 import '../bloc/analytics_event.dart';
 import '../bloc/analytics_state.dart';
@@ -10,6 +11,8 @@ import '../widgets/benchmark_bar_widget.dart';
 import '../widgets/time_period_selector.dart';
 import '../widgets/learning_goals_widget.dart';
 import '../../../../core/theme/app_colors.dart';
+import 'recommendation_page.dart';
+import 'engagement_report_page.dart';
 
 class AnalyticsDashboardPage extends StatefulWidget {
   final int userId;
@@ -53,15 +56,44 @@ class _AnalyticsDashboardPageState extends State<AnalyticsDashboardPage> {
         elevation: 0,
         actions: [
           IconButton(
+            icon: const Icon(Icons.lightbulb_outline),
+            tooltip: 'Gợi ý học tập',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => RecommendationPage(userId: widget.userId),
+                ),
+              );
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.assessment_outlined),
+            tooltip: 'Learning Profile',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => EngagementReportPage(userId: widget.userId),
+                ),
+              );
+            },
+          ),
+          IconButton(
             icon: Icon(Icons.share_rounded),
             tooltip: 'Chia sẻ kết quả',
             onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Đang chuẩn bị báo cáo...'),
-                  duration: Duration(seconds: 2),
-                ),
-              );
+              final state = context.read<AnalyticsBloc>().state;
+              if (state is AnalyticsDashboardLoaded) {
+                final s = state.summary;
+                final report = '📊 Báo cáo học tập\n'
+                    '🔥 Streak: ${s.currentStreak} ngày\n'
+                    '⏱ Tuần này: ${s.weekStudyTimeFormatted}\n'
+                    '✅ Bài hoàn thành: ${s.completedLessons}\n'
+                    '📈 Tiến độ: ${s.overallProgress.toStringAsFixed(1)}%\n'
+                    '📚 Khóa học đang học: ${s.activeCourses}';
+                Share.share(report);
+              }
             },
           ),
         ],
@@ -114,20 +146,29 @@ class _AnalyticsDashboardPageState extends State<AnalyticsDashboardPage> {
                     selected: _selectedPeriod,
                     onChanged: (period) {
                       setState(() => _selectedPeriod = period);
+                      final months = switch (period) {
+                        TimePeriod.week => 1,
+                        TimePeriod.month => 1,
+                        TimePeriod.quarter => 3,
+                        TimePeriod.all => 12,
+                      };
                       context.read<AnalyticsBloc>().add(
-                        LoadAnalyticsDashboard(userId: widget.userId),
+                        LoadAnalyticsDashboard(
+                          userId: widget.userId,
+                          heatmapMonths: months,
+                        ),
                       );
                     },
                   ),
                   const SizedBox(height: 16),
                   QuickStatsCard(summary: state.summary),
                   const SizedBox(height: 16),
-                  const LearningGoalsWidget(
+                  LearningGoalsWidget(
                     dailyMinutesTarget: 30,
-                    dailyMinutesActual: 22,
+                    dailyMinutesActual: state.summary.todayStudyMinutes.toDouble(),
                     weeklyLessonsTarget: 5,
-                    weeklyLessonsActual: 3,
-                    currentStreak: 7,
+                    weeklyLessonsActual: state.summary.weekCompletedLessons,
+                    currentStreak: state.summary.currentStreak,
                   ),
                   const SizedBox(height: 16),
                   ActivityHeatmapWidget(entries: state.heatmap),

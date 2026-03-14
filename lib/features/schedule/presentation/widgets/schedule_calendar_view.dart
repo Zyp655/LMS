@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
 import '../../domain/enitities/schedule_entity.dart';
@@ -32,6 +32,17 @@ class _ScheduleCalendarViewState extends State<ScheduleCalendarView> {
           a.start.month == _selectedDate.month &&
           a.start.day == _selectedDate.day;
     }).toList()..sort((a, b) => a.start.compareTo(b.start));
+  }
+
+  String _getDateLabel() {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final selected = DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day);
+    final diff = selected.difference(today).inDays;
+    if (diff == 0) return 'Hôm nay';
+    if (diff == 1) return 'Ngày mai';
+    if (diff == -1) return 'Hôm qua';
+    return DateFormat('dd/MM').format(_selectedDate);
   }
 
   @override
@@ -150,7 +161,7 @@ class _ScheduleCalendarViewState extends State<ScheduleCalendarView> {
           child: Row(
             children: [
               Text(
-                'Hôm nay',
+                _getDateLabel(),
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,

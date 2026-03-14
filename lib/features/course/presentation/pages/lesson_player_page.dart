@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -18,6 +18,7 @@ import '../../../../core/api/api_constants.dart';
 import '../../../../core/route/app_route.dart';
 
 import '../widgets/assignment_submission_widget.dart';
+import '../widgets/document_viewer_widget.dart';
 import '../widgets/lesson_overview_tab.dart';
 
 import '../widgets/lesson_notes_tab.dart';
@@ -26,8 +27,7 @@ import '../bloc/ai_assistant_bloc.dart';
 import '../../../../core/api/api_client.dart';
 import '../../../analytics/presentation/bloc/analytics_bloc.dart';
 import '../../../analytics/presentation/bloc/analytics_event.dart';
-import '../../../offline/presentation/bloc/offline_bloc.dart';
-import '../../../offline/presentation/widgets/download_lesson_button.dart';
+
 import '../../../../core/theme/app_colors.dart';
 import '../widgets/segment_quiz_overlay.dart';
 import '../widgets/verify_quiz_overlay.dart';
@@ -59,7 +59,7 @@ class LessonPlayerPage extends StatelessWidget {
           create: (_) => AiAssistantBloc(apiClient: sl<ApiClient>()),
         ),
         BlocProvider(create: (_) => sl<AnalyticsBloc>()),
-        BlocProvider(create: (_) => sl<OfflineBloc>()),
+
       ],
       child: LessonPlayerView(
         lesson: lesson,
@@ -201,8 +201,18 @@ class _LessonPlayerViewState extends State<LessonPlayerView>
   }
 
   Future<void> _initializePlayer() async {
-    if (widget.lesson.type == LessonType.assignment) {
+    if (widget.lesson.type == LessonType.assignment ||
+        widget.lesson.type == LessonType.text) {
       setState(() => _isInitialized = true);
+      if (widget.lesson.type == LessonType.text) {
+        context.read<AnalyticsBloc>().add(
+          TrackActivity(
+            userId: widget.userId,
+            activityType: 'document_access',
+            lessonId: widget.lesson.id,
+          ),
+        );
+      }
       return;
     }
 
@@ -673,6 +683,7 @@ class _LessonPlayerViewState extends State<LessonPlayerView>
                             lesson: widget.lesson,
                             videoController: _videoController,
                             isVideoInitialized: _isInitialized,
+                            userId: widget.userId,
                           ),
                           const LessonNotesTab(),
                         ],
@@ -700,6 +711,49 @@ class _LessonPlayerViewState extends State<LessonPlayerView>
         child: AssignmentSubmissionWidget(
           assignmentId: widget.lesson.id,
           studentId: widget.userId,
+        ),
+      );
+    }
+
+    if (widget.lesson.type == LessonType.text) {
+      return Container(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.55,
+        ),
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: DocumentViewerWidget(
+                contentUrl: widget.lesson.contentUrl,
+                title: widget.lesson.title,
+              ),
+            ),
+            Positioned(
+              top: MediaQuery.of(context).padding.top + 8,
+              left: 12,
+              right: 12,
+              child: Row(
+                children: [
+                  GestureDetector(
+                    onTap: () => context.pop(),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.5),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.arrow_back,
+                        color: Colors.white,
+                        size: 22,
+                      ),
+                    ),
+                  ),
+
+                ],
+              ),
+            ),
+          ],
         ),
       );
     }
@@ -853,7 +907,8 @@ class _LessonPlayerViewState extends State<LessonPlayerView>
     if (!_isInitialized ||
         _videoController == null ||
         !_videoController!.value.isInitialized ||
-        widget.lesson.type == LessonType.assignment) {
+        widget.lesson.type == LessonType.assignment ||
+        widget.lesson.type == LessonType.text) {
       return const SizedBox.shrink();
     }
 
@@ -986,13 +1041,7 @@ class _LessonPlayerViewState extends State<LessonPlayerView>
                 ),
               ),
             ),
-            const SizedBox(width: 8),
-            DownloadLessonButton(
-              lessonId: widget.lesson.id,
-              courseId: widget.lesson.moduleId,
-              title: widget.lesson.title,
-              contentUrl: widget.lesson.contentUrl ?? '',
-            ),
+
             const SizedBox(width: 8),
             OutlinedButton(
               onPressed: () {

@@ -1,19 +1,19 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 import '../../../../features/course/domain/entities/module_entity.dart';
 import '../../../../features/course/domain/entities/lesson_entity.dart';
 import '../../../../features/course/presentation/bloc/course_detail_bloc.dart';
 import '../../../../features/course/presentation/bloc/course_detail_event.dart';
 import '../../../../features/course/presentation/bloc/course_detail_state.dart';
 import '../../../../injection_container.dart';
+import '../../../../core/api/api_client.dart';
 import '../widgets/dialogs/module_dialogs.dart';
 import '../widgets/dialogs/add_lesson_dialog.dart';
 import '../widgets/dialogs/edit_lesson_dialog.dart';
 import '../widgets/dialogs/video_preview_dialog.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/api/api_constants.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
+import '../../../auth/presentation/bloc/auth_state.dart';
 
 class TeacherCourseEditorPage extends StatelessWidget {
   final int courseId;
@@ -85,7 +85,7 @@ class _TeacherCourseEditorViewState extends State<TeacherCourseEditorView> {
   }
 
   Widget _buildAppBar(bool isDark, CourseDetailState state) {
-    String title = 'Ch?nh s?a n?i dung';
+    String title = 'Chỉnh sửa nội dung';
     int moduleCount = 0;
     if (state is CourseDetailLoaded) {
       title = state.course.name;
@@ -154,7 +154,7 @@ class _TeacherCourseEditorViewState extends State<TeacherCourseEditorView> {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        '$moduleCount chuong',
+                        '$moduleCount chương',
                         style: TextStyle(
                           color: AppColors.textSecondary(context),
                           fontSize: 13,
@@ -177,7 +177,7 @@ class _TeacherCourseEditorViewState extends State<TeacherCourseEditorView> {
       heroTag: 'add_module',
       onPressed: () => ModuleDialogs.showAddModule(context),
       label: const Text(
-        'Th�m chuong',
+        'Thêm chương',
         style: TextStyle(fontWeight: FontWeight.w600),
       ),
       icon: const Icon(Icons.add_rounded),
@@ -209,7 +209,7 @@ class _TeacherCourseEditorViewState extends State<TeacherCourseEditorView> {
             ),
             const SizedBox(height: 16),
             Text(
-              'L?i: $message',
+              'Lỗi: $message',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: isDark ? Colors.white : Colors.black87,
@@ -251,7 +251,7 @@ class _TeacherCourseEditorViewState extends State<TeacherCourseEditorView> {
                   ),
                   const SizedBox(height: 20),
                   Text(
-                    'Chua c� n?i dung',
+                    'Chưa có nội dung',
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
@@ -260,7 +260,7 @@ class _TeacherCourseEditorViewState extends State<TeacherCourseEditorView> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'B?m n�t "Th�m chuong" d? b?t d?u',
+                    'Bấm nút "Thêm chương" để bắt đầu',
                     style: TextStyle(
                       color: AppColors.textSecondary(context),
                       fontSize: 14,
@@ -284,6 +284,7 @@ class _TeacherCourseEditorViewState extends State<TeacherCourseEditorView> {
               module: module,
               index: index,
               totalCount: state.modules.length,
+              courseId: state.course.id,
             );
           }, childCount: state.modules.length),
         ),
@@ -296,11 +297,13 @@ class _ModuleTimelineItem extends StatelessWidget {
   final ModuleEntity module;
   final int index;
   final int totalCount;
+  final int courseId;
 
   const _ModuleTimelineItem({
     required this.module,
     required this.index,
     required this.totalCount,
+    required this.courseId,
   });
 
   static const _timelineColors = [
@@ -382,7 +385,11 @@ class _ModuleTimelineItem extends StatelessWidget {
                 ),
               Padding(
                 padding: const EdgeInsets.only(bottom: 20),
-                child: _ModuleCard(module: module, accentColor: gradient[0]),
+                child: _ModuleCard(
+                  module: module,
+                  accentColor: gradient[0],
+                  courseId: courseId,
+                ),
               ),
             ],
           ),
@@ -395,8 +402,13 @@ class _ModuleTimelineItem extends StatelessWidget {
 class _ModuleCard extends StatelessWidget {
   final ModuleEntity module;
   final Color accentColor;
+  final int courseId;
 
-  const _ModuleCard({required this.module, required this.accentColor});
+  const _ModuleCard({
+    required this.module,
+    required this.accentColor,
+    required this.courseId,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -469,6 +481,25 @@ class _ModuleCard extends StatelessWidget {
                         ),
                       ),
                     ),
+                    const SizedBox(width: 4),
+                    Material(
+                      color: isDark
+                          ? Colors.white.withAlpha(10)
+                          : Colors.grey.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      child: InkWell(
+                        onTap: () => _showDeleteModuleConfirmation(context),
+                        borderRadius: BorderRadius.circular(8),
+                        child: Padding(
+                          padding: const EdgeInsets.all(6),
+                          child: Icon(
+                            Icons.delete_outline,
+                            size: 18,
+                            color: AppColors.error,
+                          ),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
                 subtitle: Padding(
@@ -485,7 +516,7 @@ class _ModuleCard extends StatelessWidget {
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
-                          '${module.lessons?.length ?? 0} b�i h?c',
+                          '${module.lessons?.length ?? 0} bài học',
                           style: TextStyle(
                             color: accentColor,
                             fontSize: 11,
@@ -522,6 +553,93 @@ class _ModuleCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showDeleteModuleConfirmation(BuildContext mainContext) {
+    final isDark = Theme.of(mainContext).brightness == Brightness.dark;
+    showDialog(
+      context: mainContext,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.error.withAlpha(20),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(
+                Icons.delete_outline,
+                color: AppColors.error,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Text('Xóa chương'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Bạn có chắc chắn muốn xóa chương "${module.title}"?',
+              style: TextStyle(
+                color: isDark ? Colors.grey[400] : Colors.grey[600],
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Tất cả bài học và quiz trong chương sẽ bị xóa vĩnh viễn.',
+              style: TextStyle(
+                color: AppColors.error,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Hủy',
+              style: TextStyle(color: AppColors.textSecondary(mainContext)),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              BlocProvider.of<CourseDetailBloc>(mainContext).add(
+                DeleteModuleEvent(
+                  courseId: courseId,
+                  moduleId: module.id,
+                ),
+              );
+              Navigator.pop(context);
+              ScaffoldMessenger.of(mainContext).showSnackBar(
+                SnackBar(
+                  content: const Text('Đã xóa chương thành công!'),
+                  backgroundColor: AppColors.success,
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            child: const Text('Xóa', style: TextStyle(color: Colors.white)),
+          ),
+        ],
       ),
     );
   }
@@ -570,7 +688,7 @@ class _LessonItem extends StatelessWidget {
           ),
         ),
         subtitle: Text(
-          isVideo ? 'Video' : 'T�i li?u',
+          isVideo ? 'Video' : 'Tài liệu',
           style: TextStyle(
             fontSize: 11,
             color: AppColors.textSecondary(context),
@@ -599,7 +717,7 @@ class _LessonItem extends StatelessWidget {
                 children: [
                   Icon(Icons.edit_outlined, size: 18),
                   SizedBox(width: 8),
-                  Text('Ch?nh s?a'),
+                  Text('Chỉnh sửa'),
                 ],
               ),
             ),
@@ -609,7 +727,7 @@ class _LessonItem extends StatelessWidget {
                 children: [
                   Icon(Icons.delete_outline, size: 18, color: AppColors.error),
                   SizedBox(width: 8),
-                  Text('X�a', style: TextStyle(color: AppColors.error)),
+                  Text('Xóa', style: TextStyle(color: AppColors.error)),
                 ],
               ),
             ),
@@ -649,18 +767,18 @@ class _LessonItem extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 12),
-            const Text('X�c nh?n x�a'),
+            const Text('Xác nhận xóa'),
           ],
         ),
         content: Text(
-          'B?n c� ch?c ch?n mu?n x�a b�i h?c "${lesson.title}"?',
+          'Bạn có chắc chắn muốn xóa bài học "${lesson.title}"?',
           style: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[600]),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
-              'H?y',
+              'Hủy',
               style: TextStyle(color: AppColors.textSecondary(mainContext)),
             ),
           ),
@@ -685,7 +803,7 @@ class _LessonItem extends StatelessWidget {
                 borderRadius: BorderRadius.circular(10),
               ),
             ),
-            child: const Text('X�a', style: TextStyle(color: Colors.white)),
+            child: const Text('Xóa', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -754,24 +872,66 @@ class _AssignmentSectionState extends State<_AssignmentSection> {
 
   Future<void> _loadAssignments() async {
     try {
-      final response = await http.get(
-        Uri.parse(
-          '${ApiConstants.baseUrl}/teacher/assignments?moduleId=${widget.module.id}',
-        ),
+      final api = sl<ApiClient>();
+      final data = await api.get(
+        '/teacher/assignments?moduleId=${widget.module.id}',
       );
-      if (response.statusCode == 200 && mounted) {
-        final data = jsonDecode(response.body);
+      debugPrint('[_loadAssignments] moduleId=${widget.module.id} response=$data');
+      if (mounted) {
         setState(() {
           _assignments = List<Map<String, dynamic>>.from(
             data['assignments'] ?? [],
           );
           _isLoading = false;
         });
-      } else if (mounted) {
-        setState(() => _isLoading = false);
       }
     } catch (e) {
+      debugPrint('[_loadAssignments] error: $e');
       if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _deleteAssignment(dynamic id) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Xóa bài tập'),
+        content: const Text('Bạn có chắc chắn muốn xóa bài tập này?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Hủy'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Xóa'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    try {
+      final api = sl<ApiClient>();
+      await api.delete('/teacher/assignments/$id');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Đã xóa bài tập!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+      _loadAssignments();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi xóa bài tập: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -779,109 +939,176 @@ class _AssignmentSectionState extends State<_AssignmentSection> {
     final titleController = TextEditingController();
     final descController = TextEditingController();
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    DateTime selectedDueDate = DateTime.now().add(const Duration(days: 7));
 
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withAlpha(20),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(
-                Icons.assignment_add,
-                color: AppColors.primary,
-                size: 20,
-              ),
-            ),
-            const SizedBox(width: 12),
-            const Text('T?o b�i t?p m?i'),
-          ],
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          title: Row(
             children: [
-              TextField(
-                controller: titleController,
-                decoration: InputDecoration(
-                  labelText: 'Ti�u d? b�i t?p *',
-                  hintText: 'VD: B�i t?p th?c h�nh Chuong 1',
-                  filled: true,
-                  fillColor: isDark
-                      ? AppColors.darkSurfaceVariant
-                      : Colors.grey.shade50,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withAlpha(20),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  Icons.assignment_add,
+                  color: AppColors.primary,
+                  size: 20,
                 ),
               ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: descController,
-                maxLines: 5,
-                decoration: InputDecoration(
-                  labelText: 'N?i dung y�u c?u',
-                  hintText:
-                      'Nh?p y�u c?u b�i t?p ho?c m� t? chi ti?t...\n\nVD: Vi?t chuong tr�nh Java t�nh t?ng c�c s? nguy�n t? trong kho?ng [1, N].',
-                  filled: true,
-                  fillColor: isDark
-                      ? AppColors.darkSurfaceVariant
-                      : Colors.grey.shade50,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                  alignLabelWithHint: true,
-                ),
-              ),
+              const SizedBox(width: 12),
+              const Text('Tạo bài tập mới'),
             ],
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(
-              'H?y',
-              style: TextStyle(color: AppColors.textSecondary(context)),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: titleController,
+                  decoration: InputDecoration(
+                    labelText: 'Tiêu đề bài tập *',
+                    hintText: 'VD: Bài tập thực hành Chương 1',
+                    filled: true,
+                    fillColor: isDark
+                        ? AppColors.darkSurfaceVariant
+                        : Colors.grey.shade50,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: descController,
+                  maxLines: 4,
+                  decoration: InputDecoration(
+                    labelText: 'Nội dung yêu cầu',
+                    hintText: 'Nhập yêu cầu bài tập...',
+                    filled: true,
+                    fillColor: isDark
+                        ? AppColors.darkSurfaceVariant
+                        : Colors.grey.shade50,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    alignLabelWithHint: true,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                InkWell(
+                  onTap: () async {
+                    final picked = await showDatePicker(
+                      context: ctx,
+                      initialDate: selectedDueDate,
+                      firstDate: DateTime.now(),
+                      lastDate: DateTime.now().add(const Duration(days: 365)),
+                    );
+                    if (picked != null) {
+                      final time = await showTimePicker(
+                        context: ctx,
+                        initialTime: const TimeOfDay(hour: 23, minute: 59),
+                      );
+                      setDialogState(() {
+                        selectedDueDate = DateTime(
+                          picked.year, picked.month, picked.day,
+                          time?.hour ?? 23, time?.minute ?? 59,
+                        );
+                      });
+                    }
+                  },
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? AppColors.darkSurfaceVariant
+                          : Colors.grey.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.calendar_today_rounded, size: 18, color: AppColors.primary),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Hạn nộp',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: AppColors.textSecondary(context),
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                '${selectedDueDate.day}/${selectedDueDate.month}/${selectedDueDate.year} – ${selectedDueDate.hour.toString().padLeft(2, '0')}:${selectedDueDate.minute.toString().padLeft(2, '0')}',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.textPrimary(context),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Icon(Icons.edit_rounded, size: 16, color: AppColors.textSecondary(context)),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-          ElevatedButton.icon(
-            onPressed: () async {
-              if (titleController.text.trim().isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Vui l�ng nh?p ti�u d?')),
-                );
-                return;
-              }
-              Navigator.pop(ctx);
-              await _createAssignment(
-                titleController.text.trim(),
-                descController.text.trim(),
-              );
-            },
-            icon: const Icon(Icons.add_rounded, size: 18),
-            label: const Text('T?o'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(
+                'Hủy',
+                style: TextStyle(color: AppColors.textSecondary(context)),
               ),
             ),
-          ),
-        ],
+            ElevatedButton.icon(
+              onPressed: () async {
+                if (titleController.text.trim().isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Vui lòng nhập tiêu đề')),
+                  );
+                  return;
+                }
+                Navigator.pop(ctx);
+                await _createAssignment(
+                  titleController.text.trim(),
+                  descController.text.trim(),
+                  selectedDueDate,
+                );
+              },
+              icon: const Icon(Icons.add_rounded, size: 18),
+              label: const Text('Tạo'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Future<void> _createAssignment(String title, String description) async {
+  Future<void> _createAssignment(String title, String description, DateTime dueDate) async {
     try {
       final courseId =
           (BlocProvider.of<CourseDetailBloc>(context).state
@@ -889,25 +1116,25 @@ class _AssignmentSectionState extends State<_AssignmentSection> {
               .course
               .id;
 
-      final response = await http.post(
-        Uri.parse('${ApiConstants.baseUrl}/teacher/create_assignment'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'classId': courseId,
-          'teacherId': 1,
-          'title': title,
-          'description': description,
-          'dueDate': DateTime.now()
-              .add(const Duration(days: 7))
-              .toIso8601String(),
-          'moduleId': widget.module.id,
-        }),
-      );
+      final api = sl<ApiClient>();
+      final authState = context.read<AuthBloc>().state;
+      final teacherId = (authState is AuthSuccess && authState.user != null)
+          ? authState.user!.id
+          : 1;
+      final response = await api.post('/teacher/create_assignment', {
+        'classId': courseId,
+        'teacherId': teacherId,
+        'title': title,
+        'description': description,
+        'dueDate': dueDate.toIso8601String(),
+        'moduleId': widget.module.id,
+      });
+      debugPrint('[_createAssignment] response=$response');
 
-      if (response.statusCode == 200 && mounted) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('�� t?o b�i t?p th�nh c�ng!'),
+            content: Text('Đã tạo bài tập thành công!'),
             backgroundColor: AppColors.success,
           ),
         );
@@ -917,7 +1144,7 @@ class _AssignmentSectionState extends State<_AssignmentSection> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('L?i t?o b�i t?p: $e'),
+            content: Text('Lỗi tạo bài tập: $e'),
             backgroundColor: AppColors.error,
           ),
         );
@@ -965,7 +1192,7 @@ class _AssignmentSectionState extends State<_AssignmentSection> {
               ),
               const SizedBox(width: 10),
               Text(
-                'B�i t?p',
+                'Bài tập',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 14,
@@ -1008,7 +1235,7 @@ class _AssignmentSectionState extends State<_AssignmentSection> {
             )
           else if (_assignments.isEmpty)
             Text(
-              'Chua c� b�i t?p n�o cho chuong n�y',
+              'Chưa có bài tập nào cho chương này',
               style: TextStyle(
                 fontSize: 12,
                 color: AppColors.textSecondary(context),
@@ -1038,10 +1265,22 @@ class _AssignmentSectionState extends State<_AssignmentSection> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        a['title'] ?? 'B�i t?p',
+                        a['title'] ?? 'Bài tập',
                         style: TextStyle(
                           fontSize: 13,
                           color: isDark ? Colors.white : Colors.black87,
+                        ),
+                      ),
+                    ),
+                    InkWell(
+                      onTap: () => _deleteAssignment(a['id']),
+                      borderRadius: BorderRadius.circular(20),
+                      child: Padding(
+                        padding: const EdgeInsets.all(4),
+                        child: Icon(
+                          Icons.delete_outline_rounded,
+                          size: 18,
+                          color: Colors.red.shade400,
                         ),
                       ),
                     ),
@@ -1055,7 +1294,7 @@ class _AssignmentSectionState extends State<_AssignmentSection> {
             child: ElevatedButton.icon(
               onPressed: _showCreateAssignmentDialog,
               icon: const Icon(Icons.add_rounded, size: 16),
-              label: const Text('T?o b�i t?p', style: TextStyle(fontSize: 13)),
+              label: const Text('Tạo bài tập', style: TextStyle(fontSize: 13)),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF00B894),
                 foregroundColor: Colors.white,

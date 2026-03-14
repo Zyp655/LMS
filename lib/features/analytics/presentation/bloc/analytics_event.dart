@@ -9,11 +9,15 @@ abstract class AnalyticsEvent extends Equatable {
 
 class LoadAnalyticsDashboard extends AnalyticsEvent {
   final int userId;
+  final int heatmapMonths;
 
-  const LoadAnalyticsDashboard({required this.userId});
+  const LoadAnalyticsDashboard({
+    required this.userId,
+    this.heatmapMonths = 6,
+  });
 
   @override
-  List<Object?> get props => [userId];
+  List<Object?> get props => [userId, heatmapMonths];
 }
 
 class LoadVelocity extends AnalyticsEvent {

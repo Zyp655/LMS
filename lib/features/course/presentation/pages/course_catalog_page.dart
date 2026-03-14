@@ -101,71 +101,61 @@ class _CourseCatalogPageState extends State<CourseCatalogPage> {
 
   Widget _buildSliverAppBar(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bgColor = isDark ? AppColors.darkSurface : Colors.white;
     final textColor = isDark
         ? AppColors.textPrimaryDark
         : AppColors.textPrimaryLight;
     final subColor = isDark ? Colors.grey[400]! : Colors.grey[500]!;
+    final topPadding = MediaQuery.of(context).padding.top;
 
-    return SliverAppBar(
-      expandedHeight: 90,
-      floating: false,
-      pinned: true,
-      elevation: 0,
-      backgroundColor: bgColor,
-      surfaceTintColor: Colors.transparent,
-      title: Text(
-        'Khám phá môn học',
-        style: TextStyle(
-          color: textColor,
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-      actions: [
-        IconButton(
-          icon: Icon(Icons.notifications_outlined, color: AppColors.primary),
-          onPressed: () => context.push(AppRoutes.notifications),
-        ),
-      ],
-      flexibleSpace: FlexibleSpaceBar(
-        background: Container(
-          color: bgColor,
-          child: SafeArea(
-            top: false,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 56, 16, 12),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.end,
+    return SliverToBoxAdapter(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: EdgeInsets.fromLTRB(20, topPadding + 8, 20, 0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Khám phá môn học',
+                    style: TextStyle(
+                      color: textColor,
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(Icons.notifications_outlined, color: AppColors.primary),
+                  onPressed: () => context.push(AppRoutes.notifications),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: isDark ? Colors.grey[800] : Colors.grey[100],
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: isDark ? Colors.grey[700]! : Colors.grey[300]!,
+                ),
+              ),
+              child: Row(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isDark ? Colors.grey[800] : Colors.grey[100],
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(
-                        color: isDark ? Colors.grey[700]! : Colors.grey[300]!,
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.search, size: 20, color: subColor),
-                        const SizedBox(width: 10),
-                        Text(
-                          'Tìm kiếm môn học...',
-                          style: TextStyle(color: subColor, fontSize: 14),
-                        ),
-                      ],
-                    ),
+                  Icon(Icons.search, size: 20, color: subColor),
+                  const SizedBox(width: 10),
+                  Text(
+                    'Tìm kiếm môn học...',
+                    style: TextStyle(color: subColor, fontSize: 14),
                   ),
                 ],
               ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }

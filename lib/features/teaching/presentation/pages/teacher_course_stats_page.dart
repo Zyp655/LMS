@@ -7,6 +7,9 @@ import '../widgets/stat_card_widget.dart';
 import '../widgets/student_status_chart.dart';
 import '../widgets/review_card_widget.dart';
 import '../widgets/rating_section_widget.dart';
+import 'course_insights_page.dart';
+import 'at_risk_students_page.dart';
+import 'teacher_ai_quiz_page.dart';
 
 class TeacherCourseStatsPage extends StatefulWidget {
   final int teacherId;
@@ -98,7 +101,67 @@ class _TeacherCourseStatsPageState extends State<TeacherCourseStatsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background(context),
-      appBar: AppBar(title: const Text('Thống kê Khóa học'), elevation: 0),
+      appBar: AppBar(
+        title: const Text('Thống kê Môn học'),
+        elevation: 0,
+        actions: [
+          if (_selectedCourseId != null)
+            IconButton(
+              icon: const Icon(Icons.auto_awesome),
+              tooltip: 'AI Insights',
+              onPressed: () {
+                final course = _courses.firstWhere(
+                  (c) => c['id'] == _selectedCourseId,
+                  orElse: () => {'title': ''},
+                );
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => CourseInsightsPage(
+                      courseId: _selectedCourseId!,
+                      courseTitle: course['title'] as String? ?? '',
+                    ),
+                  ),
+                );
+              },
+            ),
+          if (_selectedCourseId != null)
+            IconButton(
+              icon: const Icon(Icons.warning_amber_rounded),
+              tooltip: 'SV Nguy cơ',
+              onPressed: () {
+                final course = _courses.firstWhere(
+                  (c) => c['id'] == _selectedCourseId,
+                  orElse: () => {'title': ''},
+                );
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => AtRiskStudentsPage(
+                      courseId: _selectedCourseId!,
+                      courseTitle: course['title'] as String? ?? '',
+                    ),
+                  ),
+                );
+              },
+            ),
+          if (_selectedCourseId != null)
+            IconButton(
+              icon: const Icon(Icons.quiz_outlined),
+              tooltip: 'Tạo Quiz AI',
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => TeacherAiQuizPage(
+                      courseId: _selectedCourseId!,
+                    ),
+                  ),
+                );
+              },
+            ),
+        ],
+      ),
       body: Column(
         children: [
           _buildCourseSelector(),
@@ -117,7 +180,7 @@ class _TeacherCourseStatsPageState extends State<TeacherCourseStatsPage> {
         dropdownColor: AppColors.surface(context),
         style: TextStyle(color: AppColors.textPrimary(context)),
         decoration: InputDecoration(
-          labelText: 'Chọn khóa học',
+          labelText: 'Chọn môn học',
           labelStyle: TextStyle(color: AppColors.textSecondary(context)),
         ),
         items: _courses.map<DropdownMenuItem<int>>((course) {
@@ -155,7 +218,7 @@ class _TeacherCourseStatsPageState extends State<TeacherCourseStatsPage> {
             ),
             AppSpacing.gapV16,
             Text(
-              'Bạn chưa có khóa học nào',
+              'Bạn chưa có môn học nào',
               style: TextStyle(
                 color: AppColors.textSecondary(context),
                 fontSize: 16,

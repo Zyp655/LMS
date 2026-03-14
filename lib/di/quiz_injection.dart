@@ -1,15 +1,12 @@
 import 'package:get_it/get_it.dart';
 import '../features/quiz/data/datasources/quiz_remote_data_source.dart';
 import '../features/quiz/data/repositories/quiz_repository_impl.dart';
-import '../features/quiz/data/repositories/multiplayer_repository_impl.dart';
 import '../features/quiz/domain/repositories/quiz_repository.dart';
-import '../features/quiz/domain/repositories/multiplayer_repository.dart';
 import '../features/quiz/domain/usecases/quiz_usecases.dart'
     hide GetLeaderboardUseCase;
 import '../features/quiz/domain/usecases/get_leaderboard_usecase.dart';
 import '../features/quiz/presentation/bloc/quiz_bloc.dart';
 import '../features/quiz/presentation/bloc/leaderboard/leaderboard_bloc.dart';
-import '../features/quiz/presentation/bloc/multiplayer/multiplayer_bloc.dart';
 
 void initQuizModule(GetIt sl) {
   sl.registerLazySingleton<QuizRemoteDataSource>(
@@ -17,9 +14,6 @@ void initQuizModule(GetIt sl) {
   );
   sl.registerLazySingleton<QuizRepository>(
     () => QuizRepositoryImpl(remoteDataSource: sl()),
-  );
-  sl.registerLazySingleton<MultiplayerRepository>(
-    () => MultiplayerRepositoryImpl(client: sl()),
   );
 
   sl.registerLazySingleton(() => GenerateQuizUseCase(sl()));
@@ -45,5 +39,4 @@ void initQuizModule(GetIt sl) {
     ),
   );
   sl.registerFactory(() => LeaderboardBloc(getLeaderboard: sl()));
-  sl.registerFactory(() => MultiplayerBloc(repository: sl()));
 }

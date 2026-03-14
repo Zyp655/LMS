@@ -1,8 +1,7 @@
-﻿import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../../../core/api/api_constants.dart';
+import '../../../../core/api/api_client.dart';
+import '../../../../injection_container.dart';
 
 import '../widgets/custom_search_bar.dart';
 import '../widgets/filter_chip_group.dart';
@@ -66,29 +65,25 @@ class _TeacherStudentsPageState extends State<TeacherStudentsPage>
 
   Future<void> _loadCourses() async {
     try {
-      final response = await http.get(
-        Uri.parse('${ApiConstants.baseUrl}/courses'),
+      final api = sl<ApiClient>();
+      final data = await api.get(
+        '/teacher/my-classes?teacherId=${widget.teacherId}',
       );
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final courses = (data['courses'] as List).cast<Map<String, dynamic>>();
-        if (mounted) {
-          setState(() {
-            _courses = courses
-                .where((c) => c['instructorId'] == widget.teacherId)
-                .toList();
-            if (_selectedCourseId != null) {
-              _loadStudents();
-              _loadInsights();
-            } else if (_courses.isNotEmpty) {
-              _selectedCourseId = _courses.first['id'];
-              _loadStudents();
-              _loadInsights();
-            } else {
-              _isLoading = false;
-            }
-          });
-        }
+      final courses = List<Map<String, dynamic>>.from(data is List ? data : []);
+      if (mounted) {
+        setState(() {
+          _courses = courses;
+          if (_selectedCourseId != null) {
+            _loadStudents();
+            _loadInsights();
+          } else if (_courses.isNotEmpty) {
+            _selectedCourseId = _courses.first['academicCourseId'] as int?;
+            _loadStudents();
+            _loadInsights();
+          } else {
+            _isLoading = false;
+          }
+        });
       }
     } catch (e) {
       if (mounted) setState(() => _isLoading = false);
@@ -109,20 +104,20 @@ class _TeacherStudentsPageState extends State<TeacherStudentsPage>
       queryParams['sortOrder'] = _sortOrder;
       queryParams['threshold'] = _riskThreshold.toString();
 
-      final uri = Uri.parse(
-        '${ApiConstants.baseUrl}/courses/$_selectedCourseId/students',
-      ).replace(queryParameters: queryParams.isNotEmpty ? queryParams : null);
+      final queryString = queryParams.entries
+          .map((e) => '${e.key}=${Uri.encodeComponent(e.value)}')
+          .join('&');
+      final path = '/courses/$_selectedCourseId/students'
+          '${queryString.isNotEmpty ? '?$queryString' : ''}';
 
-      final response = await http.get(uri);
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (mounted) {
-          setState(() {
-            _students = data['students'] ?? [];
-            _stats = data['stats'];
-            _isLoading = false;
-          });
-        }
+      final api = sl<ApiClient>();
+      final data = await api.get(path);
+      if (mounted) {
+        setState(() {
+          _students = data['students'] ?? [];
+          _stats = data['stats'];
+          _isLoading = false;
+        });
       }
     } catch (e) {
       if (mounted) setState(() => _isLoading = false);
@@ -134,21 +129,15 @@ class _TeacherStudentsPageState extends State<TeacherStudentsPage>
     setState(() => _isLoadingInsights = true);
 
     try {
-      final response = await http.get(
-        Uri.parse(
-          '${ApiConstants.baseUrl}/courses/$_selectedCourseId/analytics/insights',
-        ),
+      final api = sl<ApiClient>();
+      final data = await api.get(
+        '/courses/$_selectedCourseId/analytics/insights',
       );
-
-      if (response.statusCode == 200) {
-        if (mounted) {
-          setState(() {
-            _insightsData = jsonDecode(response.body);
-            _isLoadingInsights = false;
-          });
-        }
-      } else {
-        if (mounted) setState(() => _isLoadingInsights = false);
+      if (mounted) {
+        setState(() {
+          _insightsData = data is Map<String, dynamic> ? data : null;
+          _isLoadingInsights = false;
+        });
       }
     } catch (e) {
       if (mounted) setState(() => _isLoadingInsights = false);
@@ -473,7 +462,7 @@ class _TeacherStudentsPageState extends State<TeacherStudentsPage>
                       size: 20,
                     ),
                     decoration: InputDecoration(
-                      labelText: 'Khóa học',
+                      labelText: 'Môn học',
                       labelStyle: TextStyle(
                         color: AppColors.textSecondary(context),
                         fontSize: 12,
@@ -488,9 +477,9 @@ class _TeacherStudentsPageState extends State<TeacherStudentsPage>
                     ),
                     items: _courses.map<DropdownMenuItem<int>>((course) {
                       return DropdownMenuItem(
-                        value: course['id'] as int,
+                        value: course['academicCourseId'] as int,
                         child: Text(
-                          course['title'] as String,
+                          course['courseName'] as String,
                           overflow: TextOverflow.ellipsis,
                         ),
                       );
@@ -663,8 +652,8 @@ class _TeacherStudentsPageState extends State<TeacherStudentsPage>
     if (_courses.isEmpty) {
       return _buildEmptyState(
         Icons.school_outlined,
-        'Bạn chưa có khóa học nào',
-        'Liên hệ quản trị viên để được gán khóa học',
+        'Bạn chưa có môn học nào',
+        'Liên hệ quản trị viên để được gán môn học',
         isDark,
       );
     }
@@ -954,18 +943,15 @@ class _TeacherStudentsPageState extends State<TeacherStudentsPage>
     );
 
     try {
-      final response = await http.post(
-        Uri.parse(
-          '${ApiConstants.baseUrl}/courses/$_selectedCourseId/students/nudge',
-        ),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'userId': userId}),
+      final api = sl<ApiClient>();
+      final data = await api.post(
+        '/courses/$_selectedCourseId/students/nudge',
+        {'userId': userId},
       );
 
       if (mounted) Navigator.pop(context);
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+      if (data != null) {
         final aiMessage = data['message'] as String;
 
         if (mounted) {
@@ -976,12 +962,9 @@ class _TeacherStudentsPageState extends State<TeacherStudentsPage>
               initialMessage: aiMessage,
               isAiGenerated: true,
               onSend: (title, message) async {
-                await http.put(
-                  Uri.parse(
-                    '${ApiConstants.baseUrl}/courses/$_selectedCourseId/students/nudge',
-                  ),
-                  headers: {'Content-Type': 'application/json'},
-                  body: jsonEncode({'userId': userId}),
+                await sl<ApiClient>().put(
+                  '/courses/$_selectedCourseId/students/nudge',
+                  {'userId': userId},
                 );
 
                 if (mounted) {

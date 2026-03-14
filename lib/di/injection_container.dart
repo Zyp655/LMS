@@ -1,4 +1,4 @@
-﻿import 'package:get_it/get_it.dart';
+import 'package:get_it/get_it.dart';
 
 import 'core_injection.dart';
 import 'auth_injection.dart';
@@ -16,7 +16,7 @@ import 'discussion_injection.dart';
 import 'chat_injection.dart';
 import 'search_injection.dart';
 import 'profile_injection.dart';
-import 'offline_injection.dart';
+
 import 'admin_injection.dart';
 
 final sl = GetIt.instance;
@@ -39,6 +39,6 @@ Future<void> init() async {
   initChatModule(sl);
   initSearchModule(sl);
   initProfileModule(sl);
-  initOfflineModule(sl);
+
   initAdminModule(sl);
 }

@@ -58,27 +58,33 @@ class _AttendanceDashboardPageState extends State<AttendanceDashboardPage> {
         top: false,
         child: CustomScrollView(
           slivers: [
-            SliverAppBar(
-              expandedHeight: 100,
-              pinned: true,
-              automaticallyImplyLeading: false,
-              flexibleSpace: FlexibleSpaceBar(
-                title: Text(
-                  'Chuyên cần hôm nay',
-                  style: TextStyle(
-                    color: cs.onSurface,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                  ),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  20,
+                  MediaQuery.of(context).padding.top + 8,
+                  20,
+                  0,
                 ),
-                centerTitle: true,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Chuyên cần',
+                        style: TextStyle(
+                          color: cs.onSurface,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 22,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.calendar_today, color: AppColors.accent),
+                      onPressed: _pickDate,
+                    ),
+                  ],
+                ),
               ),
-              actions: [
-                IconButton(
-                  icon: Icon(Icons.calendar_today, color: AppColors.accent),
-                  onPressed: _pickDate,
-                ),
-              ],
             ),
             if (_loading)
               const SliverFillRemaining(

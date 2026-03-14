@@ -16,6 +16,7 @@ class AiChatSheet extends StatefulWidget {
   final String textContent;
   final String? contentUrl;
   final int? lessonId;
+  final int? userId;
 
   const AiChatSheet({
     super.key,
@@ -23,6 +24,7 @@ class AiChatSheet extends StatefulWidget {
     required this.textContent,
     this.contentUrl,
     this.lessonId,
+    this.userId,
   });
 
   @override
@@ -54,6 +56,11 @@ class _AiChatSheetState extends State<AiChatSheet> {
   @override
   void initState() {
     super.initState();
+    if (widget.userId != null) {
+      context.read<AiAssistantBloc>().add(
+        LoadChatHistory(userId: widget.userId!, lessonId: widget.lessonId),
+      );
+    }
     if (widget.textContent.isEmpty && widget.contentUrl != null) {
       _extractContent();
     }
@@ -136,6 +143,8 @@ class _AiChatSheetState extends State<AiChatSheet> {
         lessonTitle: widget.lessonTitle,
         textContent: _effectiveTextContent,
         question: text.trim(),
+        userId: widget.userId,
+        lessonId: widget.lessonId,
       ),
     );
     _controller.clear();
@@ -422,7 +431,9 @@ class _AiChatSheetState extends State<AiChatSheet> {
               IconButton(
                 icon: Icon(Icons.delete_outline, color: cs.onSurfaceVariant),
                 onPressed: () {
-                  context.read<AiAssistantBloc>().add(ClearChat());
+                  context.read<AiAssistantBloc>().add(
+                    ClearChat(userId: widget.userId, lessonId: widget.lessonId),
+                  );
                 },
                 tooltip: 'Xóa hội thoại',
               ),

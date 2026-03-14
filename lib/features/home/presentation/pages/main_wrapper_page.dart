@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../schedule/presentation/pages/schedule_page.dart';
 import '../../../user/presentation/pages/profile_page.dart';
@@ -7,8 +7,7 @@ import '../../../course/presentation/pages/my_courses_page.dart';
 import '../../../course/presentation/bloc/my_courses_bloc.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
-import '../../../offline/presentation/bloc/offline_bloc.dart';
-import '../../../offline/presentation/widgets/connectivity_banner_widget.dart';
+
 import '../../../../injection_container.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../teaching/presentation/pages/attendance_dashboard_page.dart';
@@ -43,13 +42,7 @@ class _MainWrapperPageState extends State<MainWrapperPage> {
     const ProfilePage(),
   ];
 
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<OfflineBloc>().add(CheckConnectivity());
-    });
-  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -58,25 +51,7 @@ class _MainWrapperPageState extends State<MainWrapperPage> {
 
     return Scaffold(
       backgroundColor: bgColor,
-      body: Column(
-        children: [
-          BlocBuilder<OfflineBloc, OfflineState>(
-            builder: (context, state) {
-              final isOnline = state is OfflineStatusLoaded
-                  ? state.isOnline
-                  : true;
-              return ConnectivityBannerWidget(
-                isOnline: isOnline,
-                onRetry: () =>
-                    context.read<OfflineBloc>().add(CheckConnectivity()),
-              );
-            },
-          ),
-          Expanded(
-            child: IndexedStack(index: _currentIndex, children: _pages),
-          ),
-        ],
-      ),
+      body: IndexedStack(index: _currentIndex, children: _pages),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: isDark ? AppColors.darkSurface : Colors.white,

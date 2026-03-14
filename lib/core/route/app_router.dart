@@ -41,8 +41,7 @@ import '../../features/discussion/presentation/pages/discussion_thread_page.dart
 import '../../features/discussion/presentation/bloc/discussion_bloc.dart';
 import '../../features/profile/presentation/pages/achievements_page.dart';
 import '../../features/profile/presentation/bloc/achievement_bloc.dart';
-import '../../features/offline/presentation/pages/offline_management_page.dart';
-import '../../features/offline/presentation/bloc/offline_bloc.dart';
+
 import '../../features/user/presentation/pages/teacher_applications_admin_page.dart';
 import '../../features/admin/presentation/pages/academic_structure_page.dart';
 import '../../features/admin/presentation/bloc/admin_bloc.dart';
@@ -113,17 +112,11 @@ final GoRouter appRouter = GoRouter(
 
     GoRoute(
       path: AppRoutes.studentHome,
-      builder: (context, state) => BlocProvider(
-        create: (_) => sl<OfflineBloc>(),
-        child: const MainWrapperPage(),
-      ),
+      builder: (context, state) => const MainWrapperPage(),
     ),
     GoRoute(
       path: AppRoutes.schedule,
-      builder: (context, state) => BlocProvider(
-        create: (_) => sl<OfflineBloc>(),
-        child: const MainWrapperPage(),
-      ),
+      builder: (context, state) => const MainWrapperPage(),
     ),
 
     GoRoute(
@@ -337,13 +330,7 @@ final GoRouter appRouter = GoRouter(
       ),
     ),
 
-    GoRoute(
-      path: AppRoutes.offlineManagement,
-      builder: (context, state) => BlocProvider(
-        create: (_) => sl<OfflineBloc>(),
-        child: const OfflineManagementPage(),
-      ),
-    ),
+
 
     GoRoute(
       path: AppRoutes.attendanceDashboard,
