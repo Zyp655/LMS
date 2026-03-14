@@ -39,10 +39,31 @@ Future<Response> onRequest(RequestContext context) async {
     final weekMinutes =
         weekTimeResult.read(db.learningActivities.durationMinutes.sum()) ?? 0;
 
-    final enrollments = await (db.select(db.enrollments)
-          ..where((t) => t.userId.equals(userId))
-          ..where((t) => t.completedAt.isNull()))
-        .get();
+    final todayStart =
+        DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
+    final todayTimeQuery = db.selectOnly(db.learningActivities)
+      ..addColumns([db.learningActivities.durationMinutes.sum()])
+      ..where(db.learningActivities.userId.equals(userId))
+      ..where(
+          db.learningActivities.createdAt.isBiggerOrEqualValue(todayStart));
+    final todayTimeResult = await todayTimeQuery.getSingle();
+    final todayMinutes =
+        todayTimeResult.read(db.learningActivities.durationMinutes.sum()) ?? 0;
+
+    final weekLessonsQuery = db.selectOnly(db.lessonProgress)
+      ..addColumns([db.lessonProgress.id.count()])
+      ..where(db.lessonProgress.userId.equals(userId))
+      ..where(db.lessonProgress.isCompleted.equals(true))
+      ..where(
+          db.lessonProgress.completedAt.isBiggerOrEqualValue(weekStartDate));
+    final weekLessonsResult = await weekLessonsQuery.getSingle();
+    final weekCompletedLessons =
+        weekLessonsResult.read(db.lessonProgress.id.count()) ?? 0;
+
+    var enrollmentsQuery = db.select(db.enrollments)
+      ..where((t) => t.userId.equals(userId))
+      ..where((t) => t.completedAt.isNull());
+    final enrollments = await enrollmentsQuery.get();
 
     final overallProgress = enrollments.isNotEmpty
         ? enrollments.fold<double>(0, (s, e) => s + e.progressPercent) /
@@ -57,13 +78,11 @@ Future<Response> onRequest(RequestContext context) async {
     final completedLessons =
         completedResult.read(db.lessonProgress.id.count()) ?? 0;
 
-    final todayStart =
-        DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
-    final todayQuery = db.selectOnly(db.learningActivities)
+    final todayActivityQuery = db.selectOnly(db.learningActivities)
       ..addColumns([db.learningActivities.id.count()])
       ..where(db.learningActivities.userId.equals(userId))
       ..where(db.learningActivities.createdAt.isBiggerOrEqualValue(todayStart));
-    final todayResult = await todayQuery.getSingle();
+    final todayResult = await todayActivityQuery.getSingle();
     final todayActivities =
         todayResult.read(db.learningActivities.id.count()) ?? 0;
 
@@ -71,6 +90,8 @@ Future<Response> onRequest(RequestContext context) async {
       'currentStreak': streak?.currentStreak ?? 0,
       'longestStreak': streak?.longestStreak ?? 0,
       'weekStudyMinutes': weekMinutes,
+      'todayStudyMinutes': todayMinutes,
+      'weekCompletedLessons': weekCompletedLessons,
       'activeCourses': enrollments.length,
       'overallProgress': overallProgress,
       'completedLessons': completedLessons,
