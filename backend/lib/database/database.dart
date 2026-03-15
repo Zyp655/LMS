@@ -833,7 +833,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 31;
+  int get schemaVersion => 32;
 
   @override
   MigrationStrategy get migration {
@@ -1116,6 +1116,33 @@ class AppDatabase extends _$AppDatabase {
         if (from < 31) {
           await m.issueCustomQuery(
             'ALTER TABLE assignments ADD COLUMN IF NOT EXISTS module_id INTEGER REFERENCES modules(id)',
+          );
+        }
+
+        if (from < 32) {
+          await m.issueCustomQuery(
+            'CREATE INDEX IF NOT EXISTS idx_schedules_user ON schedules(user_id)',
+          );
+          await m.issueCustomQuery(
+            'CREATE INDEX IF NOT EXISTS idx_schedules_class ON schedules(class_id)',
+          );
+          await m.issueCustomQuery(
+            'CREATE INDEX IF NOT EXISTS idx_enrollments_user ON enrollments(user_id)',
+          );
+          await m.issueCustomQuery(
+            'CREATE INDEX IF NOT EXISTS idx_enrollments_course ON enrollments(course_id)',
+          );
+          await m.issueCustomQuery(
+            'CREATE INDEX IF NOT EXISTS idx_notifications_user_read ON notifications(user_id, is_read)',
+          );
+          await m.issueCustomQuery(
+            'CREATE INDEX IF NOT EXISTS idx_chat_messages_conv ON chat_messages(conversation_id)',
+          );
+          await m.issueCustomQuery(
+            'CREATE INDEX IF NOT EXISTS idx_attendances_class_date ON attendances(class_id, date)',
+          );
+          await m.issueCustomQuery(
+            'CREATE INDEX IF NOT EXISTS idx_lesson_progress_user_lesson ON lesson_progress(user_id, lesson_id)',
           );
         }
       },

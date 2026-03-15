@@ -4,6 +4,11 @@ import 'package:dotenv/dotenv.dart';
 
 import 'rbac_middleware.dart';
 
+final _jwtSecret = () {
+  final env = DotEnv(includePlatformEnvironment: true)..load();
+  return env['JWT_SECRET'] ?? 'my_secret_key_123';
+}();
+
 const _publicPrefixes = [
   '/auth/',
   '/files/',
@@ -35,9 +40,7 @@ Handler authMiddleware(Handler handler) {
     final token = authHeader.substring(7);
 
     try {
-      final env = DotEnv(includePlatformEnvironment: true)..load();
-      final jwtSecret = env['JWT_SECRET'] ?? 'my_secret_key_123';
-      final jwt = JWT.verify(token, SecretKey(jwtSecret));
+      final jwt = JWT.verify(token, SecretKey(_jwtSecret));
       final payload = jwt.payload as Map<String, dynamic>;
       final userId = payload['id'] as int;
       final role = (payload['role'] as int?) ?? 0;

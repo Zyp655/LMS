@@ -36,11 +36,7 @@ dart_frog dev
 
 The application will automatically load the environment variables from `.env` on startup.
 
-### Important Notes
 
-- **Never commit `.env`** to version control
-- Always keep `.env.example` updated with the structure (but not the actual values)
-- Each developer needs to create their own `.env` file with their local credentials
 
 [dart_frog_lint_badge]: https://img.shields.io/badge/style-dart_frog_lint-1DF9D2.svg
 [dart_frog_lint_link]: https://pub.dev/packages/dart_frog_lint

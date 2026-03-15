@@ -75,7 +75,7 @@ Future<Response> onRequest(RequestContext context) async {
               departmentId != null ? Value(departmentId) : const Value.absent(),
         ),
       );
-      return Response.json(body: {'message': 'C?p nh?t h? so th�nh c�ng'});
+      return Response.json(body: {'message': 'Cập nhật hồ sơ thành công'});
     } else {
       await repo.updateProfile(
         userId,
@@ -83,7 +83,7 @@ Future<Response> onRequest(RequestContext context) async {
         body['studentId'] as String? ?? '',
         body['major'] as String? ?? '',
       );
-      return Response.json(body: {'message': 'C?p nh?t h? so th�nh c�ng'});
+      return Response.json(body: {'message': 'Cập nhật hồ sơ thành công'});
     }
   }
 

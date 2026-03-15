@@ -19,6 +19,7 @@ dependencies:
   dart_frog_web_socket: ^1.0.3
   web_socket_channel: ^3.0.3
   excel: ^4.0.6
+  redis: ^3.1.0
 
 dev_dependencies:
   dart_frog_lint: ^0.1.0

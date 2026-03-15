@@ -1,5 +1,6 @@
 import 'package:backend/database/database.dart';
 import 'package:backend/helpers/pagination.dart';
+import 'package:backend/services/redis_service.dart';
 import 'package:dart_frog/dart_frog.dart';
 import 'package:drift/drift.dart';
 
@@ -8,6 +9,7 @@ Future<Response> onRequest(RequestContext context) async {
     return Response(statusCode: 405);
   }
   final db = context.read<AppDatabase>();
+  final redis = context.read<RedisService>();
   final params = context.request.uri.queryParameters;
   if (!params.containsKey('userId')) {
     return Response.json(
@@ -19,6 +21,19 @@ Future<Response> onRequest(RequestContext context) async {
   final pg = Pagination.fromQuery(params);
   final unreadOnly = params['unreadOnly'] == 'true';
   try {
+    final unreadKey = 'notif:unread:$userId';
+    int unreadCount;
+    final cachedUnread = await redis.get(unreadKey);
+    if (cachedUnread != null) {
+      unreadCount = int.tryParse(cachedUnread) ?? 0;
+    } else {
+      unreadCount = await (db.select(db.notifications)
+            ..where((n) => n.userId.equals(userId))
+            ..where((n) => n.isRead.equals(false)))
+          .get()
+          .then((rows) => rows.length);
+      await redis.set(unreadKey, '$unreadCount', ttlSeconds: 30);
+    }
 
     var countQ = db.select(db.notifications)
       ..where((n) => n.userId.equals(userId));
@@ -36,12 +51,6 @@ Future<Response> onRequest(RequestContext context) async {
       ..orderBy([(n) => OrderingTerm.desc(n.createdAt)])
       ..limit(pg.limit, offset: pg.offset);
     final notifications = await query.get();
-
-    final unreadCount = await (db.select(db.notifications)
-          ..where((n) => n.userId.equals(userId))
-          ..where((n) => n.isRead.equals(false)))
-        .get()
-        .then((rows) => rows.length);
 
     final result = notifications.map((n) {
       return {
@@ -64,7 +73,7 @@ Future<Response> onRequest(RequestContext context) async {
   } catch (e) {
     return Response.json(
       statusCode: 500,
-      body: {'error': 'Đã xảy ra lỗi hệ thống. Vui lòng thử lại sau.'},
+      body: {'error': '\u0110\u00e3 x\u1ea3y ra l\u1ed7i h\u1ec7 th\u1ed1ng. Vui l\u00f2ng th\u1eed l\u1ea1i sau.'},
     );
   }
 }

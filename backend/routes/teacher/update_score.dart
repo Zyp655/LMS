@@ -1,6 +1,7 @@
 import 'package:backend/database/database.dart';
 import 'package:dart_frog/dart_frog.dart';
 import 'package:drift/drift.dart';
+
 Future<Response> onRequest(RequestContext context) async {
   if (context.request.method != HttpMethod.post) {
     return Response(statusCode: 405);
@@ -16,7 +17,7 @@ Future<Response> onRequest(RequestContext context) async {
         ..where((t) => t.id.equals(scheduleId)))
       .getSingleOrNull();
   if (targetSchedule == null) {
-    return Response(statusCode: 404, body: 'Kh�ng t�m th?y l?ch h?c');
+    return Response(statusCode: 404, body: 'Không tìm thấy lịch học');
   }
   if (targetSchedule.classId != null) {
     await (db.update(db.schedules)
@@ -46,5 +47,5 @@ Future<Response> onRequest(RequestContext context) async {
       ),
     );
   }
-  return Response.json(body: {'message': 'C?p nh?t th�nh c�ng'});
+  return Response.json(body: {'message': 'Cập nhật thành công'});
 }

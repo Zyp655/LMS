@@ -6,12 +6,13 @@ import 'api_constants.dart';
 
 class ApiClient {
   final http.Client client;
+  SharedPreferences? _prefs;
 
   ApiClient({required this.client});
 
   Future<Map<String, String>> _getHeaders() async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('token');
+    _prefs ??= await SharedPreferences.getInstance();
+    final token = _prefs!.getString('token');
 
     return {
       'Content-Type': 'application/json',

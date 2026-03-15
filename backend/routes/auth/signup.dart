@@ -16,11 +16,11 @@ Future<Response> onRequest(RequestContext context) async {
         password == null ||
         password.isEmpty) {
       return Response.json(
-          statusCode: 400, body: {'error': 'Vui l�ng nh?p email v� m?t kh?u'});
+          statusCode: 400, body: {'error': 'Vui lòng nhập email và mật khẩu'});
     }
     final user = await repo.createUser(email: email, password: password);
     return Response.json(
-        body: {'message': '�ang k� th�nh c�ng', 'id': user.id});
+        body: {'message': 'Đăng ký thành công', 'id': user.id});
   } catch (e, stackTrace) {
     logger.error('Signup failed',
         error: e, stackTrace: stackTrace, context: 'signup');
@@ -28,11 +28,11 @@ Future<Response> onRequest(RequestContext context) async {
     if (errorString.contains('23505') ||
         errorString.contains('already exists')) {
       return Response.json(statusCode: 409, body: {
-        'error': 'Email n�y d� du?c s? d?ng. Vui l�ng ch?n email kh�c.'
+        'error': 'Email này đã được sử dụng. Vui lòng chọn email khác.'
       });
     }
     return Response.json(
         statusCode: 500,
-        body: {'error': '�� x?y ra l?i h? th?ng. Vui l�ng th? l?i sau.'});
+        body: {'error': 'Đã xảy ra lỗi hệ thống. Vui lòng thử lại sau.'});
   }
 }

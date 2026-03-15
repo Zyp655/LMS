@@ -1,21 +1,32 @@
 import 'dart:convert';
+import 'package:backend/services/redis_service.dart';
 import '../database/database.dart';
 import 'package:drift/drift.dart';
+
 class CacheService {
   final AppDatabase db;
+  final RedisService _redis = RedisService();
   static const maxCacheSize = 100;
   CacheService(this.db);
+
   String _generateCacheKey(String topic, String difficulty, int numQuestions) {
     final normalized =
         '${topic.toLowerCase().trim()}_${difficulty}_$numQuestions';
-    return normalized.replaceAll(RegExp(r'[^a-z0-9_]'), '');
+    return 'quiz:${normalized.replaceAll(RegExp(r'[^a-z0-9_]'), '')}';
   }
+
   Future<Map<String, dynamic>?> getCachedQuiz(
     String topic,
     String difficulty,
     int numQuestions,
   ) async {
     final key = _generateCacheKey(topic, difficulty, numQuestions);
+
+    if (_redis.isConnected) {
+      final cached = await _redis.getJson(key);
+      if (cached != null) return cached;
+    }
+
     final cached = await (db.select(db.quizCache)
           ..where((t) => t.cacheKey.equals(key)))
         .getSingleOrNull();
@@ -25,8 +36,12 @@ class CacheService {
       hitCount: Value(cached.hitCount + 1),
       lastAccessedAt: Value(DateTime.now()),
     ));
-    return jsonDecode(cached.quizData) as Map<String, dynamic>;
+
+    final data = jsonDecode(cached.quizData) as Map<String, dynamic>;
+    await _redis.setJson(key, data, ttlSeconds: 600);
+    return data;
   }
+
   Future<void> cacheQuiz(
     String topic,
     String difficulty,
@@ -34,6 +49,9 @@ class CacheService {
     Map<String, dynamic> quizData,
   ) async {
     final key = _generateCacheKey(topic, difficulty, numQuestions);
+
+    await _redis.setJson(key, quizData, ttlSeconds: 600);
+
     final existing = await (db.select(db.quizCache)
           ..where((t) => t.cacheKey.equals(key)))
         .getSingleOrNull();
@@ -58,6 +76,7 @@ class CacheService {
           ),
         );
   }
+
   Future<void> _evictLRU() async {
     final oldest = await (db.select(db.quizCache)
           ..orderBy([(t) => OrderingTerm.asc(t.lastAccessedAt)])
@@ -65,8 +84,10 @@ class CacheService {
         .get();
     for (final item in oldest) {
       await (db.delete(db.quizCache)..where((t) => t.id.equals(item.id))).go();
+      await _redis.delete(item.cacheKey);
     }
   }
+
   Future<Map<String, dynamic>> getCacheStats() async {
     final total = await db.quizCache.count().getSingle();
     final allItems = await db.select(db.quizCache).get();
@@ -78,6 +99,7 @@ class CacheService {
       'totalCached': total,
       'totalHits': totalHits,
       'maxSize': maxCacheSize,
+      'redisConnected': _redis.isConnected,
     };
   }
 }

@@ -4,6 +4,11 @@ import 'package:drift/drift.dart';
 import 'package:dotenv/dotenv.dart';
 import 'ai_service.dart';
 
+final _openaiKey = () {
+  final env = DotEnv(includePlatformEnvironment: true)..load();
+  return env['OPENAI_API_KEY'] ?? '';
+}();
+
 class VideoSegmentService {
   final AppDatabase db;
 
@@ -23,10 +28,8 @@ class VideoSegmentService {
         .get();
     if (existing.isNotEmpty) return;
 
-    final env = DotEnv(includePlatformEnvironment: true)..load();
-    final apiKey = env['OPENAI_API_KEY'] ?? '';
-    if (apiKey.isEmpty) throw Exception('OPENAI_API_KEY not configured');
-    final aiService = AIService(openaiApiKey: apiKey);
+    if (_openaiKey.isEmpty) throw Exception('OPENAI_API_KEY not configured');
+    final aiService = AIService(openaiApiKey: _openaiKey);
 
     final transcript = await _extractTranscript(aiService, lesson.contentUrl!);
     if (transcript.isEmpty) throw Exception('Could not extract transcript');

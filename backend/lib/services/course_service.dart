@@ -1,11 +1,33 @@
 import 'package:backend/database/database.dart';
+import 'package:backend/services/redis_service.dart';
 import 'package:drift/drift.dart';
 
 class CourseService {
   final AppDatabase db;
+  final RedisService _redis = RedisService();
   CourseService(this.db);
 
+  String _cacheKey(int courseId, {int? userId}) =>
+      'course:$courseId${userId != null ? ':u$userId' : ''}';
+
   Future<Map<String, dynamic>> getCourseDetails(
+    int courseId, {
+    int? userId,
+  }) async {
+    final key = _cacheKey(courseId, userId: userId);
+    final cached = await _redis.getJson(key);
+    if (cached != null) return cached;
+
+    final result = await _fetchCourseDetails(courseId, userId: userId);
+
+    if (!result.containsKey('error')) {
+      await _redis.setJson(key, result, ttlSeconds: 120);
+    }
+
+    return result;
+  }
+
+  Future<Map<String, dynamic>> _fetchCourseDetails(
     int courseId, {
     int? userId,
   }) async {
@@ -138,7 +160,7 @@ class CourseService {
   ) async {
     final updated = db.update(db.courses)
       ..where((tbl) => tbl.id.equals(courseId));
-    return updated.write(
+    final result = await updated.write(
       CoursesCompanion(
         title: body.containsKey('title')
             ? Value(body['title'] as String)
@@ -167,6 +189,8 @@ class CourseService {
         updatedAt: Value(DateTime.now()),
       ),
     );
+    await _redis.deletePattern('course:$courseId*');
+    return result;
   }
 
   Future<void> deleteCourse(int courseId) async {
@@ -252,6 +276,7 @@ class CourseService {
           ..where((tbl) => tbl.courseId.equals(courseId)))
         .go();
     await (db.delete(db.courses)..where((tbl) => tbl.id.equals(courseId))).go();
+    await _redis.deletePattern('course:$courseId*');
   }
 }
 
