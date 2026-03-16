@@ -207,6 +207,13 @@ class _AcademicStructurePageState extends State<AcademicStructurePage>
     }
   }
 
+  String _fmtDate(dynamic isoStr) {
+    if (isoStr == null) return '—';
+    final dt = DateTime.tryParse(isoStr.toString());
+    if (dt == null) return '—';
+    return '${dt.day}/${dt.month}/${dt.year}';
+  }
+
   ({IconData icon, Color color}) _getDepartmentIcon(String code, String name) {
     final c = code.toLowerCase();
     final n = name.toLowerCase();
@@ -382,7 +389,9 @@ class _AcademicStructurePageState extends State<AcademicStructurePage>
         subtitle: '${item['courseName']} · GV: ${item['teacherName']}',
         description: [
           if (item['semesterName'] != null) 'HK: ${item['semesterName']}',
-          if (item['schedule'] != null) 'TKB: ${item['schedule']}',
+          if (item['dayOfWeek'] != null) 'Thứ ${item['dayOfWeek']}',
+          if (item['startDate'] != null || item['endDate'] != null)
+            '${_fmtDate(item['startDate'])} → ${_fmtDate(item['endDate'])}',
           'SV tối đa: ${item['maxStudents'] ?? 50}',
         ].join(' · '),
         icon: Icons.meeting_room_rounded,
@@ -809,7 +818,7 @@ class _AcademicStructurePageState extends State<AcademicStructurePage>
       extra: _departments.isNotEmpty
           ? StatefulBuilder(
               builder: (ctx, setSt) => DropdownButtonFormField<int>(
-                initialValue: selectedDeptId,
+                value: selectedDeptId,
                 decoration: InputDecoration(
                   labelText: 'Khoa',
                   prefixIcon: Icon(Icons.business),
@@ -851,7 +860,6 @@ class _AcademicStructurePageState extends State<AcademicStructurePage>
 
   void _showClassSheet(ColorScheme cs, {Map<String, dynamic>? existing}) {
     final codeCtrl = TextEditingController(text: existing?['classCode'] ?? '');
-    final schedCtrl = TextEditingController(text: existing?['schedule'] ?? '');
     final maxCtrl = TextEditingController(
       text: (existing?['maxStudents'] ?? 50).toString(),
     );
@@ -870,6 +878,26 @@ class _AcademicStructurePageState extends State<AcademicStructurePage>
         existing?['teacherId'] ??
         (teachers.isNotEmpty ? teachers.first['id'] : null);
 
+    int? selectedDayOfWeek = existing?['dayOfWeek'] as int?;
+    DateTime? startDate;
+    DateTime? endDate;
+    if (existing?['startDate'] != null) {
+      startDate = DateTime.tryParse(existing!['startDate'].toString());
+    }
+    if (existing?['endDate'] != null) {
+      endDate = DateTime.tryParse(existing!['endDate'].toString());
+    }
+
+    final dayLabels = {
+      2: 'Thứ 2',
+      3: 'Thứ 3',
+      4: 'Thứ 4',
+      5: 'Thứ 5',
+      6: 'Thứ 6',
+      7: 'Thứ 7',
+      8: 'Chủ nhật',
+    };
+
     final isEdit = existing != null;
 
     _showSheet(
@@ -877,20 +905,95 @@ class _AcademicStructurePageState extends State<AcademicStructurePage>
       title: isEdit ? 'Sửa Lớp HP' : 'Thêm Lớp học phần',
       fields: [
         _sheetField(codeCtrl, 'Tên lớp (VD: CNTT-01)', Icons.tag),
-        _sheetField(schedCtrl, 'TKB (VD: T2(1-3), T5(4-6))', Icons.schedule),
         _sheetField(maxCtrl, 'SV tối đa', Icons.people),
       ],
-      extra: Column(
-        children: [
-          if (_courses.isNotEmpty)
-            StatefulBuilder(
-              builder: (ctx, setSt) => Padding(
+      extra: StatefulBuilder(
+        builder: (ctx, setSt) => Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: DropdownButtonFormField<int>(
+                value: selectedDayOfWeek,
+                decoration: InputDecoration(
+                  labelText: 'Học vào thứ',
+                  prefixIcon: const Icon(Icons.calendar_view_day),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                items: dayLabels.entries
+                    .map(
+                      (e) =>
+                          DropdownMenuItem(value: e.key, child: Text(e.value)),
+                    )
+                    .toList(),
+                onChanged: (v) => setSt(() => selectedDayOfWeek = v),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: ListTile(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: BorderSide(color: cs.outline.withValues(alpha: 0.5)),
+                ),
+                leading: const Icon(Icons.date_range),
+                title: Text(
+                  startDate != null
+                      ? '${startDate!.day}/${startDate!.month}/${startDate!.year}'
+                      : 'Chọn ngày bắt đầu',
+                  style: TextStyle(
+                    color: startDate != null
+                        ? cs.onSurface
+                        : cs.onSurfaceVariant,
+                  ),
+                ),
+                onTap: () async {
+                  final picked = await showDatePicker(
+                    context: ctx,
+                    initialDate: startDate ?? DateTime.now(),
+                    firstDate: DateTime(2020),
+                    lastDate: DateTime(2030),
+                  );
+                  if (picked != null) setSt(() => startDate = picked);
+                },
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: ListTile(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: BorderSide(color: cs.outline.withValues(alpha: 0.5)),
+                ),
+                leading: const Icon(Icons.event),
+                title: Text(
+                  endDate != null
+                      ? '${endDate!.day}/${endDate!.month}/${endDate!.year}'
+                      : 'Chọn ngày kết thúc',
+                  style: TextStyle(
+                    color: endDate != null ? cs.onSurface : cs.onSurfaceVariant,
+                  ),
+                ),
+                onTap: () async {
+                  final picked = await showDatePicker(
+                    context: ctx,
+                    initialDate: endDate ?? (startDate ?? DateTime.now()),
+                    firstDate: DateTime(2020),
+                    lastDate: DateTime(2030),
+                  );
+                  if (picked != null) setSt(() => endDate = picked);
+                },
+              ),
+            ),
+            if (_courses.isNotEmpty)
+              Padding(
                 padding: const EdgeInsets.only(bottom: 12),
                 child: DropdownButtonFormField<int>(
-                  initialValue: selectedCourseId,
+                  value: selectedCourseId,
                   decoration: InputDecoration(
                     labelText: 'Học phần',
-                    prefixIcon: Icon(Icons.menu_book),
+                    prefixIcon: const Icon(Icons.menu_book),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -906,16 +1009,14 @@ class _AcademicStructurePageState extends State<AcademicStructurePage>
                   onChanged: (v) => setSt(() => selectedCourseId = v),
                 ),
               ),
-            ),
-          if (_semesters.isNotEmpty)
-            StatefulBuilder(
-              builder: (ctx, setSt) => Padding(
+            if (_semesters.isNotEmpty)
+              Padding(
                 padding: const EdgeInsets.only(bottom: 12),
                 child: DropdownButtonFormField<int>(
-                  initialValue: selectedSemId,
+                  value: selectedSemId,
                   decoration: InputDecoration(
                     labelText: 'Học kỳ',
-                    prefixIcon: Icon(Icons.calendar_month),
+                    prefixIcon: const Icon(Icons.calendar_month),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -931,14 +1032,12 @@ class _AcademicStructurePageState extends State<AcademicStructurePage>
                   onChanged: (v) => setSt(() => selectedSemId = v),
                 ),
               ),
-            ),
-          if (teachers.isNotEmpty)
-            StatefulBuilder(
-              builder: (ctx, setSt) => DropdownButtonFormField<int>(
-                initialValue: selectedTeacherId,
+            if (teachers.isNotEmpty)
+              DropdownButtonFormField<int>(
+                value: selectedTeacherId,
                 decoration: InputDecoration(
                   labelText: 'Giảng viên',
-                  prefixIcon: Icon(Icons.person),
+                  prefixIcon: const Icon(Icons.person),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -953,8 +1052,8 @@ class _AcademicStructurePageState extends State<AcademicStructurePage>
                     .toList(),
                 onChanged: (v) => setSt(() => selectedTeacherId = v),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
       onSave: () async {
         final data = <String, dynamic>{
@@ -962,7 +1061,9 @@ class _AcademicStructurePageState extends State<AcademicStructurePage>
           'academicCourseId': selectedCourseId,
           'semesterId': selectedSemId,
           'teacherId': selectedTeacherId,
-          'schedule': schedCtrl.text.isEmpty ? null : schedCtrl.text,
+          'dayOfWeek': selectedDayOfWeek,
+          'startDate': startDate?.toIso8601String(),
+          'endDate': endDate?.toIso8601String(),
           'maxStudents': int.tryParse(maxCtrl.text) ?? 50,
         };
         if (isEdit) {

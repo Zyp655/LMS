@@ -1,4 +1,4 @@
-﻿import 'package:equatable/equatable.dart';
+import 'package:equatable/equatable.dart';
 
 class CourseClassEntity extends Equatable {
   final int id;
@@ -11,6 +11,9 @@ class CourseClassEntity extends Equatable {
   final String teacherName;
   final String? room;
   final String? schedule;
+  final int? dayOfWeek;
+  final DateTime? startDate;
+  final DateTime? endDate;
   final int maxStudents;
   final int enrolledCount;
   final String? semesterName;
@@ -36,6 +39,9 @@ class CourseClassEntity extends Equatable {
     required this.teacherName,
     this.room,
     this.schedule,
+    this.dayOfWeek,
+    this.startDate,
+    this.endDate,
     required this.maxStudents,
     required this.enrolledCount,
     this.semesterName,
@@ -55,6 +61,17 @@ class CourseClassEntity extends Equatable {
   bool get isCompleted =>
       enrollmentStatus == 'completed' || progressPercent >= 100;
   bool get isFull => enrolledCount >= maxStudents;
+
+  String? get scheduleLabel {
+    if (dayOfWeek != null) {
+      final dayNames = {2: 'Thứ 2', 3: 'Thứ 3', 4: 'Thứ 4', 5: 'Thứ 5', 6: 'Thứ 6', 7: 'Thứ 7', 8: 'CN'};
+      final parts = <String>[dayNames[dayOfWeek] ?? 'T$dayOfWeek'];
+      if (startDate != null) parts.add('${startDate!.day}/${startDate!.month}/${startDate!.year}');
+      if (endDate != null) parts.add('→ ${endDate!.day}/${endDate!.month}/${endDate!.year}');
+      return parts.join(' ');
+    }
+    return schedule;
+  }
 
   factory CourseClassEntity.fromCourseEntity(dynamic course) {
     return CourseClassEntity(
@@ -87,6 +104,9 @@ class CourseClassEntity extends Equatable {
     teacherName,
     room,
     schedule,
+    dayOfWeek,
+    startDate,
+    endDate,
     maxStudents,
     enrolledCount,
     semesterName,

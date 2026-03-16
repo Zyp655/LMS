@@ -51,6 +51,9 @@ Future<Response> onRequest(RequestContext context) async {
 
     final schedule = body['schedule'] as String?;
     final maxStudents = body['maxStudents'] as int? ?? 50;
+    final dayOfWeek = body['dayOfWeek'] as int?;
+    final startDateStr = body['startDate'] as String?;
+    final endDateStr = body['endDate'] as String?;
 
     final row = await db.into(db.courseClasses).insertReturning(
           CourseClassesCompanion.insert(
@@ -61,6 +64,9 @@ Future<Response> onRequest(RequestContext context) async {
             maxStudents: Value(maxStudents),
             room: const Value(null),
             schedule: Value(schedule),
+            dayOfWeek: Value(dayOfWeek),
+            startDate: Value(startDateStr != null ? DateTime.parse(startDateStr) : null),
+            endDate: Value(endDateStr != null ? DateTime.parse(endDateStr) : null),
             createdAt: DateTime.now(),
           ),
         );
@@ -110,6 +116,9 @@ Future<Response> onRequest(RequestContext context) async {
           'classCode': row.classCode,
           'academicCourseId': row.academicCourseId,
           'schedule': row.schedule,
+          'dayOfWeek': row.dayOfWeek,
+          'startDate': row.startDate?.toIso8601String(),
+          'endDate': row.endDate?.toIso8601String(),
           'maxStudents': row.maxStudents,
           'teacherId': row.teacherId,
           'enrolledCount': enrolledCount,

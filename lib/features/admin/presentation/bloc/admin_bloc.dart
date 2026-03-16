@@ -288,6 +288,9 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
       room: event.room,
       schedule: event.schedule,
       maxStudents: event.maxStudents,
+      dayOfWeek: event.dayOfWeek,
+      startDate: event.startDate,
+      endDate: event.endDate,
     );
     result.fold(
       (failure) => emit(AdminError(failure.message)),

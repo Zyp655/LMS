@@ -1,13 +1,19 @@
 import 'dart:convert';
+import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:syncfusion_flutter_pdf/pdf.dart';
 import '../../../../core/api/api_constants.dart';
 import '../../../../core/theme/app_colors.dart';
 
 class TeacherAiQuizPage extends StatefulWidget {
   final int courseId;
+  final String? initialContent;
 
-  const TeacherAiQuizPage({super.key, required this.courseId});
+  const TeacherAiQuizPage({super.key, required this.courseId, this.initialContent});
 
   @override
   State<TeacherAiQuizPage> createState() => _TeacherAiQuizPageState();
@@ -21,11 +27,76 @@ class _TeacherAiQuizPageState extends State<TeacherAiQuizPage> {
   String _quizTitle = '';
   bool _isGenerating = false;
   List<Map<String, dynamic>> _draftQuestions = [];
+  String? _importedFileName;
+  bool _isImporting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialContent != null && widget.initialContent!.isNotEmpty) {
+      _contentController.text = widget.initialContent!;
+    }
+  }
 
   @override
   void dispose() {
     _contentController.dispose();
     super.dispose();
+  }
+
+  Future<void> _importFile() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['txt', 'md', 'csv', 'json', 'pdf'],
+        withData: true,
+      );
+      if (result == null || result.files.isEmpty) return;
+
+      final file = result.files.first;
+      setState(() => _isImporting = true);
+
+      String text = '';
+      final ext = file.extension?.toLowerCase() ?? '';
+
+      if (ext == 'pdf') {
+        Uint8List? bytes = file.bytes;
+        bytes ??= await File(file.path!).readAsBytes();
+        final pdfDoc = PdfDocument(inputBytes: bytes);
+        final extractor = PdfTextExtractor(pdfDoc);
+        text = extractor.extractText();
+        pdfDoc.dispose();
+      } else {
+        if (file.bytes != null) {
+          text = utf8.decode(file.bytes!, allowMalformed: true);
+        } else if (file.path != null) {
+          text = await File(file.path!).readAsString();
+        }
+      }
+
+      if (text.trim().isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('File rỗng hoặc không trích xuất được nội dung')),
+          );
+        }
+        setState(() => _isImporting = false);
+        return;
+      }
+
+      setState(() {
+        _contentController.text = text;
+        _importedFileName = file.name;
+        _isImporting = false;
+      });
+    } catch (e) {
+      setState(() => _isImporting = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi import: $e')),
+        );
+      }
+    }
   }
 
   Future<void> _generateQuiz() async {
@@ -97,6 +168,9 @@ class _TeacherAiQuizPageState extends State<TeacherAiQuizPage> {
     }
 
     try {
+      final prefs = await SharedPreferences.getInstance();
+      final userId = prefs.getInt('userId') ?? 0;
+
       final quizQuestions = _draftQuestions.map((q) {
         final options = (q['options'] as List).cast<String>();
         final correctIdx = q['correctIndex'] as int? ?? 0;
@@ -104,6 +178,7 @@ class _TeacherAiQuizPageState extends State<TeacherAiQuizPage> {
           'question': q['question'],
           'options': options,
           'correctAnswer': options[correctIdx],
+          'correctIndex': correctIdx,
           'explanation': q['explanation'] ?? '',
         };
       }).toList();
@@ -112,13 +187,14 @@ class _TeacherAiQuizPageState extends State<TeacherAiQuizPage> {
         Uri.parse('${ApiConstants.baseUrl}/quiz/save'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'userId': 0,
-          'courseId': widget.courseId,
-          'title': _quizTitle,
-          'topic': _quizTitle,
-          'difficulty': _difficulty,
+          'userId': userId,
           'isPublic': true,
-          'questions': quizQuestions,
+          'quiz': {
+            'topic': _quizTitle,
+            'difficulty': _difficulty,
+            'subjectContext': 'courseId:${widget.courseId}',
+            'questions': quizQuestions,
+          },
         }),
       );
 
@@ -177,6 +253,7 @@ class _TeacherAiQuizPageState extends State<TeacherAiQuizPage> {
   }
 
   Widget _buildImportStep(ColorScheme cs, bool isDark) {
+    final hasContent = _contentController.text.trim().isNotEmpty;
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -207,7 +284,7 @@ class _TeacherAiQuizPageState extends State<TeacherAiQuizPage> {
                         ),
                       ),
                       Text(
-                        'Paste nội dung tài liệu → AI tạo quiz → Bạn duyệt & chỉnh sửa',
+                        'Import tài liệu (PDF, TXT) \u2192 AI scan nội dung \u2192 Tạo quiz tự \u0111ộng',
                         style: TextStyle(
                           color: Colors.white.withValues(alpha: 0.9),
                           fontSize: 12,
@@ -219,35 +296,154 @@ class _TeacherAiQuizPageState extends State<TeacherAiQuizPage> {
               ],
             ),
           ),
-          const SizedBox(height: 20),
-          Text(
-            'Nội dung tài liệu',
-            style: TextStyle(
-              color: cs.onSurface,
-              fontWeight: FontWeight.w600,
-              fontSize: 15,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Container(
-            decoration: BoxDecoration(
-              color: isDark ? AppColors.darkSurface : Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3)),
-            ),
-            child: TextField(
-              controller: _contentController,
-              maxLines: 10,
-              style: TextStyle(color: cs.onSurface, fontSize: 14),
-              decoration: InputDecoration(
-                hintText: 'Paste nội dung bài giảng, sách, tài liệu tại đây...',
-                hintStyle: TextStyle(color: cs.onSurfaceVariant.withValues(alpha: 0.5)),
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.all(16),
+          const SizedBox(height: 24),
+          if (!hasContent)
+            GestureDetector(
+              onTap: _isImporting ? null : _importFile,
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 48),
+                decoration: BoxDecoration(
+                  color: isDark ? AppColors.darkSurface : Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: AppColors.primary.withValues(alpha: 0.3),
+                    width: 2,
+                    strokeAlign: BorderSide.strokeAlignInside,
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: _isImporting
+                          ? const SizedBox(
+                              width: 32,
+                              height: 32,
+                              child: CircularProgressIndicator(strokeWidth: 3),
+                            )
+                          : const Icon(Icons.upload_file_rounded, size: 32, color: AppColors.primary),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      _isImporting ? '\u0110ang \u0111\u1ecdc t\u00e0i li\u1ec7u...' : 'Ch\u1ecdn t\u00e0i li\u1ec7u',
+                      style: TextStyle(
+                        color: cs.onSurface,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'H\u1ed7 tr\u1ee3: PDF, TXT, MD, CSV, JSON',
+                      style: TextStyle(
+                        color: cs.onSurfaceVariant,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else ...[
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: AppColors.success.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AppColors.success.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.success.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      _importedFileName?.endsWith('.pdf') == true
+                          ? Icons.picture_as_pdf_rounded
+                          : Icons.description_rounded,
+                      color: AppColors.success,
+                      size: 22,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _importedFileName ?? 'T\u00e0i li\u1ec7u',
+                          style: TextStyle(
+                            color: cs.onSurface,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '${_contentController.text.split(' ').length} t\u1eeb \u2022 S\u1eb5n s\u00e0ng t\u1ea1o quiz',
+                          style: TextStyle(
+                            color: AppColors.success,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        onPressed: _importFile,
+                        icon: const Icon(Icons.swap_horiz_rounded, size: 20),
+                        tooltip: '\u0110\u1ed5i file',
+                        color: cs.onSurfaceVariant,
+                      ),
+                      IconButton(
+                        onPressed: () {
+                          setState(() {
+                            _contentController.clear();
+                            _importedFileName = null;
+                          });
+                        },
+                        icon: const Icon(Icons.close_rounded, size: 20),
+                        tooltip: 'X\u00f3a',
+                        color: AppColors.error,
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
-          ),
-          const SizedBox(height: 20),
+            const SizedBox(height: 12),
+            Container(
+              height: 120,
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.darkSurface : Colors.grey.shade50,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.2)),
+              ),
+              child: SingleChildScrollView(
+                child: Text(
+                  _contentController.text,
+                  style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12, height: 1.5),
+                  maxLines: 8,
+                  overflow: TextOverflow.fade,
+                ),
+              ),
+            ),
+          ],
+          const SizedBox(height: 24),
           Row(
             children: [
               Expanded(
@@ -255,7 +451,7 @@ class _TeacherAiQuizPageState extends State<TeacherAiQuizPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Số câu: $_numQuestions',
+                      'S\u1ed1 c\u00e2u: $_numQuestions',
                       style: TextStyle(color: cs.onSurface, fontWeight: FontWeight.w600),
                     ),
                     Slider(
@@ -274,17 +470,17 @@ class _TeacherAiQuizPageState extends State<TeacherAiQuizPage> {
           ),
           const SizedBox(height: 12),
           Text(
-            'Độ khó',
+            '\u0110\u1ed9 kh\u00f3',
             style: TextStyle(color: cs.onSurface, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 8),
           Row(
             children: [
-              _buildDiffChip('easy', 'Dễ', AppColors.success, isDark),
+              _buildDiffChip('easy', 'D\u1ec5', AppColors.success, isDark),
               const SizedBox(width: 8),
               _buildDiffChip('medium', 'TB', AppColors.warning, isDark),
               const SizedBox(width: 8),
-              _buildDiffChip('hard', 'Khó', AppColors.error, isDark),
+              _buildDiffChip('hard', 'Kh\u00f3', AppColors.error, isDark),
             ],
           ),
           const SizedBox(height: 24),
@@ -292,7 +488,7 @@ class _TeacherAiQuizPageState extends State<TeacherAiQuizPage> {
             width: double.infinity,
             height: 52,
             child: FilledButton.icon(
-              onPressed: _isGenerating ? null : _generateQuiz,
+              onPressed: (!hasContent || _isGenerating) ? null : _generateQuiz,
               icon: _isGenerating
                   ? const SizedBox(
                       width: 20,
@@ -304,7 +500,7 @@ class _TeacherAiQuizPageState extends State<TeacherAiQuizPage> {
                     )
                   : const Icon(Icons.auto_awesome),
               label: Text(
-                _isGenerating ? 'Đang tạo quiz...' : 'Tạo Quiz AI',
+                _isGenerating ? '\u0110ang t\u1ea1o quiz...' : 'T\u1ea1o Quiz AI',
                 style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
               style: FilledButton.styleFrom(

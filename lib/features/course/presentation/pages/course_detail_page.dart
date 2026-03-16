@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -15,7 +15,6 @@ import '../widgets/study_plan_setup_dialog.dart';
 import '../widgets/course_hero_header.dart';
 import '../widgets/course_curriculum_tab.dart';
 import '../widgets/course_assignments_tab.dart';
-import '../widgets/course_about_tab.dart';
 import '../widgets/course_reviews_tab.dart';
 import '../widgets/course_students_tab.dart';
 import '../../../schedule/presentation/bloc/schedule_bloc.dart';
@@ -69,7 +68,7 @@ class _CourseDetailViewState extends State<CourseDetailView>
     _tabController = null;
     old?.dispose();
     _isEnrolled = enrolled;
-    _tabController = TabController(length: enrolled ? 3 : 5, vsync: this);
+    _tabController = TabController(length: enrolled ? 2 : 4, vsync: this);
   }
 
   Future<void> _fetchInstructorFromClass(int courseId) async {
@@ -377,7 +376,6 @@ class _CourseDetailViewState extends State<CourseDetailView>
                             userId: widget.userId,
                           ),
                           CourseAssignmentsTab(courseId: state.course.id),
-                          CourseAboutTab(course: state.course),
                         ]
                       : [
                           CourseCurriculumTab(
@@ -387,7 +385,6 @@ class _CourseDetailViewState extends State<CourseDetailView>
                           ),
                           CourseStudentsTab(courseId: state.course.id),
                           CourseAssignmentsTab(courseId: state.course.id),
-                          CourseAboutTab(course: state.course),
                           CourseReviewsTab(state: state),
                         ],
                 ),
@@ -431,13 +428,11 @@ class _CourseDetailViewState extends State<CourseDetailView>
             ? const [
                 Tab(text: 'Nội dung'),
                 Tab(text: 'Bài tập'),
-                Tab(text: 'Giới thiệu'),
               ]
             : const [
                 Tab(text: 'Nội dung'),
                 Tab(text: 'Sinh viên'),
                 Tab(text: 'Bài tập'),
-                Tab(text: 'Giới thiệu'),
                 Tab(text: 'Đánh giá'),
               ],
       ),

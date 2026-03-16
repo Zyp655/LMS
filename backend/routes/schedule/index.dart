@@ -110,8 +110,44 @@ Future<Response> onRequest(RequestContext context) async {
     for (final row in academicResults) {
       final cc = row.readTable(db.courseClasses);
       final ac = row.readTable(db.academicCourses);
-      final scheduleText = cc.schedule ?? '';
 
+      if (cc.dayOfWeek != null && cc.startDate != null && cc.endDate != null) {
+        final dow = cc.dayOfWeek!;
+        final rangeStart = cc.startDate!;
+        final rangeEnd = cc.endDate!;
+        final monday = today.subtract(Duration(days: today.weekday - 1));
+
+        for (var weekOffset = 0; weekOffset <= 1; weekOffset++) {
+          final targetDate =
+              monday.add(Duration(days: (dow - 1) + (weekOffset * 7)));
+          if (targetDate.isBefore(rangeStart) || targetDate.isAfter(rangeEnd)) {
+            continue;
+          }
+          final startDt = DateTime(
+              targetDate.year, targetDate.month, targetDate.day, 7, 0);
+          final endDt = DateTime(
+              targetDate.year, targetDate.month, targetDate.day, 9, 30);
+
+          academicJson.add({
+            'id': -(20000 + cc.id * 100 + weekOffset),
+            'userId': userId,
+            'subject': ac.name,
+            'room': cc.room ?? '',
+            'start': startDt.toIso8601String(),
+            'end': endDt.toIso8601String(),
+            'note': 'Lớp ${cc.classCode}',
+            'classCode': cc.classCode,
+            'credits': ac.credits,
+            'currentAbsences': 0,
+            'maxAbsences': ac.credits * 3,
+            'type': 'classSession',
+            'format': 'offline',
+          });
+        }
+        continue;
+      }
+
+      final scheduleText = cc.schedule ?? '';
       if (scheduleText.isEmpty) continue;
 
       final dayTimeMatch =
@@ -153,12 +189,8 @@ Future<Response> onRequest(RequestContext context) async {
             'credits': ac.credits,
             'currentAbsences': 0,
             'maxAbsences': ac.credits * 3,
-            'midtermScore': 0.0,
-            'finalScore': 0.0,
-            'targetScore': 4.0,
             'type': 'classSession',
             'format': 'offline',
-            'overallScore': 0.0,
           });
         }
       } else if (dayDateMatch != null) {
@@ -180,12 +212,8 @@ Future<Response> onRequest(RequestContext context) async {
           'credits': ac.credits,
           'currentAbsences': 0,
           'maxAbsences': ac.credits * 3,
-          'midtermScore': 0.0,
-          'finalScore': 0.0,
-          'targetScore': 4.0,
           'type': 'classSession',
           'format': 'offline',
-          'overallScore': 0.0,
         });
       }
     }

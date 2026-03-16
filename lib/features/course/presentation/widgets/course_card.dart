@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../domain/entities/course_class_entity.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -180,7 +180,7 @@ class _CourseCardState extends State<CourseCard> {
               ),
             ],
           ),
-          if (cc.schedule != null || cc.room != null) ...[
+          if (cc.scheduleLabel != null || cc.room != null) ...[
             const SizedBox(height: 6),
             Row(
               children: [
@@ -193,7 +193,7 @@ class _CourseCardState extends State<CourseCard> {
                 Expanded(
                   child: Text(
                     [
-                      if (cc.schedule != null) cc.schedule,
+                      if (cc.scheduleLabel != null) cc.scheduleLabel,
                       if (cc.room != null) cc.room,
                     ].join(' • '),
                     style: TextStyle(

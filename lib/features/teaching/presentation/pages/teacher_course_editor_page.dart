@@ -14,6 +14,7 @@ import '../widgets/dialogs/video_preview_dialog.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
+import 'teacher_ai_quiz_page.dart';
 
 class TeacherCourseEditorPage extends StatelessWidget {
   final int courseId;
@@ -537,15 +538,18 @@ class _ModuleCard extends StatelessWidget {
 
                   if (module.lessons != null)
                     ...module.lessons!.map(
-                      (lesson) =>
-                          _LessonItem(lesson: lesson, accentColor: accentColor),
+                      (lesson) => _LessonItem(
+                        lesson: lesson,
+                        accentColor: accentColor,
+                        courseId: courseId,
+                      ),
                     ),
 
                   _AddLessonButton(moduleId: module.id),
 
                   const SizedBox(height: 12),
 
-                  _AssignmentSection(module: module),
+                  _AssignmentSection(module: module, courseId: courseId),
 
                   const SizedBox(height: 14),
                 ],
@@ -648,7 +652,12 @@ class _ModuleCard extends StatelessWidget {
 class _LessonItem extends StatelessWidget {
   final LessonEntity lesson;
   final Color accentColor;
-  const _LessonItem({required this.lesson, required this.accentColor});
+  final int courseId;
+  const _LessonItem({
+    required this.lesson,
+    required this.accentColor,
+    required this.courseId,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -700,6 +709,8 @@ class _LessonItem extends StatelessWidget {
               EditLessonDialog.show(context, lesson);
             } else if (value == 'delete') {
               _showDeleteConfirmation(context, lesson);
+            } else if (value == 'quiz_ai') {
+              _openAiQuiz(context, lesson);
             }
           },
           icon: Icon(
@@ -721,6 +732,17 @@ class _LessonItem extends StatelessWidget {
                 ],
               ),
             ),
+            if (lesson.type == LessonType.text)
+              const PopupMenuItem(
+                value: 'quiz_ai',
+                child: Row(
+                  children: [
+                    Icon(Icons.auto_awesome, size: 18, color: AppColors.primary),
+                    SizedBox(width: 8),
+                    Text('Tạo Quiz AI', style: TextStyle(color: AppColors.primary)),
+                  ],
+                ),
+              ),
             const PopupMenuItem(
               value: 'delete',
               child: Row(
@@ -809,6 +831,18 @@ class _LessonItem extends StatelessWidget {
       ),
     );
   }
+
+  void _openAiQuiz(BuildContext context, LessonEntity lesson) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => TeacherAiQuizPage(
+          courseId: courseId,
+          initialContent: lesson.textContent,
+        ),
+      ),
+    );
+  }
 }
 
 class _AddLessonButton extends StatelessWidget {
@@ -853,8 +887,9 @@ class _AddLessonButton extends StatelessWidget {
 
 class _AssignmentSection extends StatefulWidget {
   final ModuleEntity module;
+  final int courseId;
 
-  const _AssignmentSection({required this.module});
+  const _AssignmentSection({required this.module, required this.courseId});
 
   @override
   State<_AssignmentSection> createState() => _AssignmentSectionState();
@@ -1289,22 +1324,51 @@ class _AssignmentSectionState extends State<_AssignmentSection> {
               ),
             ),
           const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: _showCreateAssignmentDialog,
-              icon: const Icon(Icons.add_rounded, size: 16),
-              label: const Text('Tạo bài tập', style: TextStyle(fontSize: 13)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF00B894),
-                foregroundColor: Colors.white,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: _showCreateAssignmentDialog,
+                  icon: const Icon(Icons.add_rounded, size: 16),
+                  label: const Text('Tạo bài tập', style: TextStyle(fontSize: 13)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF00B894),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                  ),
                 ),
-                padding: const EdgeInsets.symmetric(vertical: 10),
               ),
-            ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => TeacherAiQuizPage(
+                          courseId: widget.courseId,
+                        ),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.auto_awesome, size: 16),
+                  label: const Text('Tạo Quiz AI', style: TextStyle(fontSize: 13)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),

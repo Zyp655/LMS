@@ -32,6 +32,9 @@ Future<Response> onRequest(RequestContext context, String id) async {
                       userMap[c.teacherId]?.email ??
                       '',
                   'schedule': c.schedule,
+                  'dayOfWeek': c.dayOfWeek,
+                  'startDate': c.startDate?.toIso8601String(),
+                  'endDate': c.endDate?.toIso8601String(),
                   'room': c.room,
                   'maxStudents': c.maxStudents,
                 })

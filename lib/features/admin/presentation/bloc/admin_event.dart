@@ -114,12 +114,18 @@ class CreateCourseClassEvent extends AdminEvent {
   final String? room;
   final String? schedule;
   final int? maxStudents;
+  final int? dayOfWeek;
+  final String? startDate;
+  final String? endDate;
   const CreateCourseClassEvent({
     required this.academicCourseId,
     required this.classCode,
     this.room,
     this.schedule,
     this.maxStudents,
+    this.dayOfWeek,
+    this.startDate,
+    this.endDate,
   });
   @override
   List<Object?> get props => [
@@ -128,6 +134,9 @@ class CreateCourseClassEvent extends AdminEvent {
     room,
     schedule,
     maxStudents,
+    dayOfWeek,
+    startDate,
+    endDate,
   ];
 }
 

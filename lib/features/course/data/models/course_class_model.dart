@@ -1,4 +1,4 @@
-﻿import '../../domain/entities/course_class_entity.dart';
+import '../../domain/entities/course_class_entity.dart';
 
 class CourseClassModel extends CourseClassEntity {
   const CourseClassModel({
@@ -12,6 +12,9 @@ class CourseClassModel extends CourseClassEntity {
     required super.teacherName,
     super.room,
     super.schedule,
+    super.dayOfWeek,
+    super.startDate,
+    super.endDate,
     required super.maxStudents,
     required super.enrolledCount,
     super.semesterName,
@@ -41,6 +44,13 @@ class CourseClassModel extends CourseClassEntity {
       teacherName: (json['teacherName'] as String?) ?? 'N/A',
       room: cls['room'] as String?,
       schedule: cls['schedule'] as String?,
+      dayOfWeek: cls['dayOfWeek'] as int?,
+      startDate: cls['startDate'] != null
+          ? DateTime.tryParse(cls['startDate'] as String)
+          : null,
+      endDate: cls['endDate'] != null
+          ? DateTime.tryParse(cls['endDate'] as String)
+          : null,
       maxStudents: (cls['maxStudents'] as int?) ?? 50,
       enrolledCount: (cls['enrolledCount'] as int?) ?? 0,
       semesterName: json['semesterName'] as String?,

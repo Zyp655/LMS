@@ -39,6 +39,9 @@ Future<Response> onRequest(RequestContext context) async {
           'classCode': cc.classCode,
           'room': cc.room,
           'schedule': cc.schedule,
+          'dayOfWeek': cc.dayOfWeek,
+          'startDate': cc.startDate?.toIso8601String(),
+          'endDate': cc.endDate?.toIso8601String(),
         };
       }).toList();
 

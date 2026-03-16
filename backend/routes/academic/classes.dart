@@ -49,6 +49,9 @@ Future<Response> _getAll(AppDatabase db) async {
                 'maxStudents': c.maxStudents,
                 'room': c.room,
                 'schedule': c.schedule,
+                'dayOfWeek': c.dayOfWeek,
+                'startDate': c.startDate?.toIso8601String(),
+                'endDate': c.endDate?.toIso8601String(),
                 'createdAt': c.createdAt.toIso8601String(),
               })
           .toList(),
@@ -86,6 +89,9 @@ Future<Response> _create(RequestContext context, AppDatabase db) async {
             maxStudents: Value(body['maxStudents'] as int? ?? 50),
             room: Value(body['room'] as String?),
             schedule: Value(body['schedule'] as String?),
+            dayOfWeek: Value(body['dayOfWeek'] as int?),
+            startDate: Value(body['startDate'] != null ? DateTime.parse(body['startDate'] as String) : null),
+            endDate: Value(body['endDate'] != null ? DateTime.parse(body['endDate'] as String) : null),
             createdAt: DateTime.now(),
           ),
         );
@@ -169,6 +175,15 @@ Future<Response> _update(RequestContext context, AppDatabase db) async {
           : const Value.absent(),
       semesterId: body['semesterId'] != null
           ? Value(body['semesterId'] as int)
+          : const Value.absent(),
+      dayOfWeek: body.containsKey('dayOfWeek')
+          ? Value(body['dayOfWeek'] as int?)
+          : const Value.absent(),
+      startDate: body.containsKey('startDate')
+          ? Value(body['startDate'] != null ? DateTime.parse(body['startDate'] as String) : null)
+          : const Value.absent(),
+      endDate: body.containsKey('endDate')
+          ? Value(body['endDate'] != null ? DateTime.parse(body['endDate'] as String) : null)
           : const Value.absent(),
     ));
     return Response.json(body: {'message': 'Cập nhật lớp học phần thành công'});

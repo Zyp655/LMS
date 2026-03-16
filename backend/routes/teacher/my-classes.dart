@@ -73,6 +73,9 @@ Future<Response> onRequest(RequestContext context) async {
       'department': dept?.name ?? '',
       'room': cc.room,
       'schedule': cc.schedule,
+      'dayOfWeek': cc.dayOfWeek,
+      'startDate': cc.startDate?.toIso8601String(),
+      'endDate': cc.endDate?.toIso8601String(),
       'maxStudents': cc.maxStudents,
       'studentCount': enrollCountMap[cc.id] ?? 0,
     };

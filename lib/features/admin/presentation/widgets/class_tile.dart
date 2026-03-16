@@ -25,7 +25,7 @@ class ClassTile extends StatelessWidget {
     final classCode = classData['classCode'] as String? ?? '';
     final teacherName = classData['teacherName'] as String?;
     final teacherId = classData['teacherId'] as int?;
-    final schedule = classData['schedule'] as String?;
+    final dayOfWeek = classData['dayOfWeek'] as int?;
     final hasTeacher =
         teacherId != null && teacherName != null && teacherName != 'Unknown';
 
@@ -71,9 +71,9 @@ class ClassTile extends StatelessWidget {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  if (schedule != null)
+                  if (dayOfWeek != null)
                     Text(
-                      schedule,
+                      'Thứ $dayOfWeek',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: AppColors.textSecondary(context),
                       ),
@@ -120,7 +120,7 @@ class ClassTile extends StatelessWidget {
             const SizedBox(width: 4),
             IconButton(
               onPressed: () =>
-                  _showEditDialog(context, ccId, classCode, schedule),
+                  _showEditDialog(context, ccId, classCode),
               icon: Icon(Icons.edit_outlined, color: AppColors.info),
               tooltip: 'Sửa lớp',
               visualDensity: VisualDensity.compact,
@@ -150,7 +150,6 @@ class ClassTile extends StatelessWidget {
     BuildContext context,
     int ccId,
     String currentCode,
-    String? currentSchedule,
   ) {
     final codeCtrl = TextEditingController(text: currentCode);
     final bloc = context.read<AdminBloc>();
@@ -163,7 +162,6 @@ class ClassTile extends StatelessWidget {
           courseClassId: ccId,
           courseId: courseId,
           codeCtrl: codeCtrl,
-          currentSchedule: currentSchedule,
         ),
       ),
     );
@@ -247,13 +245,11 @@ class _EditClassDialog extends StatefulWidget {
   final int courseClassId;
   final int courseId;
   final TextEditingController codeCtrl;
-  final String? currentSchedule;
 
   const _EditClassDialog({
     required this.courseClassId,
     required this.courseId,
     required this.codeCtrl,
-    this.currentSchedule,
   });
 
   @override

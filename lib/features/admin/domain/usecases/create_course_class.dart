@@ -12,6 +12,9 @@ class CreateCourseClassUseCase {
     String? room,
     String? schedule,
     int? maxStudents,
+    int? dayOfWeek,
+    String? startDate,
+    String? endDate,
   }) {
     return repository.createCourseClass(
       academicCourseId,
@@ -19,6 +22,9 @@ class CreateCourseClassUseCase {
       room: room,
       schedule: schedule,
       maxStudents: maxStudents,
+      dayOfWeek: dayOfWeek,
+      startDate: startDate,
+      endDate: endDate,
     );
   }
 }

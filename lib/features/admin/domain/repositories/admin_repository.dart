@@ -53,6 +53,9 @@ abstract class AdminRepository {
     String? room,
     String? schedule,
     int? maxStudents,
+    int? dayOfWeek,
+    String? startDate,
+    String? endDate,
   });
 
   Future<Either<Failure, Map<String, dynamic>>> assignCourseTeacher(

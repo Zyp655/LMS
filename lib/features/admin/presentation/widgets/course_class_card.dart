@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/api/api_client.dart';
@@ -360,19 +360,20 @@ class _CreateClassDialogContentState extends State<_CreateClassDialogContent> {
 
   void _createClass() {
     if (widget.codeCtrl.text.trim().isEmpty) return;
-    String? schedule;
+    int? dayOfWeek;
+    String? startDate;
     if (_selectedDate != null) {
       final d = _selectedDate!;
-      final weekday = ['', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'][d.weekday];
-      schedule =
-          '$weekday (${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year})';
+      dayOfWeek = d.weekday == 7 ? 8 : d.weekday + 1;
+      startDate = d.toIso8601String();
     }
     setState(() => _isCreating = true);
     context.read<AdminBloc>().add(
       CreateCourseClassEvent(
         academicCourseId: widget.courseId,
         classCode: widget.codeCtrl.text.trim(),
-        schedule: schedule,
+        dayOfWeek: dayOfWeek,
+        startDate: startDate,
       ),
     );
   }

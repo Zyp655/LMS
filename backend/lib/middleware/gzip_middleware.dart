@@ -16,10 +16,16 @@ Middleware gzipMiddleware() {
           contentType.contains('text') ||
           contentType.contains('javascript') ||
           contentType.contains('xml');
-      if (!isCompressible && !contentType.isEmpty) return response;
+      if (!isCompressible && contentType.isNotEmpty) return response;
 
       final body = await response.body();
-      if (body.isEmpty || body.length < 256) return response;
+      if (body.isEmpty || body.length < 256) {
+        return Response(
+          statusCode: response.statusCode,
+          body: body,
+          headers: response.headers,
+        );
+      }
 
       final compressed = gzip.encode(utf8.encode(body));
 

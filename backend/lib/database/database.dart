@@ -590,6 +590,9 @@ class CourseClasses extends Table {
   IntColumn get maxStudents => integer().withDefault(const Constant(50))();
   TextColumn get room => text().nullable()();
   TextColumn get schedule => text().nullable()();
+  IntColumn get dayOfWeek => integer().nullable()();
+  DateTimeColumn get startDate => dateTime().nullable()();
+  DateTimeColumn get endDate => dateTime().nullable()();
   DateTimeColumn get createdAt => dateTime()();
 
   @override
@@ -833,7 +836,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 32;
+  int get schemaVersion => 34;
 
   @override
   MigrationStrategy get migration {
@@ -1143,6 +1146,47 @@ class AppDatabase extends _$AppDatabase {
           );
           await m.issueCustomQuery(
             'CREATE INDEX IF NOT EXISTS idx_lesson_progress_user_lesson ON lesson_progress(user_id, lesson_id)',
+          );
+        }
+
+        if (from < 33) {
+          await m.issueCustomQuery('''
+            CREATE TABLE IF NOT EXISTS video_segments (
+              id SERIAL PRIMARY KEY,
+              lesson_id INTEGER NOT NULL REFERENCES lessons(id),
+              segment_index INTEGER NOT NULL,
+              start_timestamp DOUBLE PRECISION NOT NULL,
+              end_timestamp DOUBLE PRECISION NOT NULL,
+              transcript TEXT NOT NULL,
+              summary TEXT,
+              quiz_question TEXT NOT NULL,
+              created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )
+          ''');
+          await m.issueCustomQuery('''
+            CREATE TABLE IF NOT EXISTS segment_quiz_attempts (
+              id SERIAL PRIMARY KEY,
+              student_id INTEGER NOT NULL REFERENCES users(id),
+              segment_id INTEGER NOT NULL REFERENCES video_segments(id),
+              attempt_count INTEGER NOT NULL DEFAULT 0,
+              passed BOOLEAN NOT NULL DEFAULT FALSE,
+              last_attempt_at TIMESTAMPTZ
+            )
+          ''');
+          await m.issueCustomQuery(
+            'CREATE INDEX IF NOT EXISTS idx_video_segments_lesson ON video_segments(lesson_id, segment_index)',
+          );
+        }
+
+        if (from < 34) {
+          await m.issueCustomQuery(
+            'ALTER TABLE course_classes ADD COLUMN IF NOT EXISTS day_of_week INTEGER',
+          );
+          await m.issueCustomQuery(
+            'ALTER TABLE course_classes ADD COLUMN IF NOT EXISTS start_date TIMESTAMPTZ',
+          );
+          await m.issueCustomQuery(
+            'ALTER TABLE course_classes ADD COLUMN IF NOT EXISTS end_date TIMESTAMPTZ',
           );
         }
       },

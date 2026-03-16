@@ -286,6 +286,9 @@ class AdminRepositoryImpl implements AdminRepository {
     String? room,
     String? schedule,
     int? maxStudents,
+    int? dayOfWeek,
+    String? startDate,
+    String? endDate,
   }) async {
     try {
       final body = <String, dynamic>{
@@ -295,6 +298,9 @@ class AdminRepositoryImpl implements AdminRepository {
       if (room != null) body['room'] = room;
       if (schedule != null) body['schedule'] = schedule;
       if (maxStudents != null) body['maxStudents'] = maxStudents;
+      if (dayOfWeek != null) body['dayOfWeek'] = dayOfWeek;
+      if (startDate != null) body['startDate'] = startDate;
+      if (endDate != null) body['endDate'] = endDate;
       final response = await apiClient.post('/admin/create-course-class', body);
       return Right(response['message'] as String? ?? 'Tạo lớp thành công');
     } catch (e) {

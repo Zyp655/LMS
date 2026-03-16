@@ -62,7 +62,7 @@ class _MyCoursesViewState extends State<MyCoursesView> {
   Future<void> _loadTodaySchedule() async {
     try {
       final api = sl<ApiClient>();
-      final res = await api.get('/student/schedule?userId=${widget.userId}');
+      final res = await api.get('/schedule');
       final list = List<Map<String, dynamic>>.from(res is List ? res : []);
       final now = DateTime.now();
       final today = list.where((s) {
