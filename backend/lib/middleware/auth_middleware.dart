@@ -12,6 +12,7 @@ final _jwtSecret = () {
 const _publicPrefixes = [
   '/auth/',
   '/files/',
+  '/cron/',
 ];
 const _publicExact = [
   '/',

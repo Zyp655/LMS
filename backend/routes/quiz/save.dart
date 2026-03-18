@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:dart_frog/dart_frog.dart';
 import 'package:drift/drift.dart';
 import 'package:backend/database/database.dart';
+import 'package:backend/helpers/notification_helper.dart';
 
 Future<Response> onRequest(RequestContext context) async {
   if (context.request.method != HttpMethod.post) {
@@ -18,6 +19,7 @@ Future<Response> onRequest(RequestContext context) async {
     final userId = data['userId'] as int?;
     final quiz = data['quiz'] as Map<String, dynamic>?;
     final isPublic = data['isPublic'] as bool? ?? false;
+    final moduleId = data['moduleId'] as int? ?? quiz?['moduleId'] as int?;
     if (userId == null || quiz == null) {
       return Response(
         statusCode: HttpStatus.badRequest,
@@ -31,6 +33,7 @@ Future<Response> onRequest(RequestContext context) async {
     final quizId = await db.into(db.quizzes).insert(
           QuizzesCompanion.insert(
             createdBy: userId,
+            moduleId: Value(moduleId),
             topic: topic,
             difficulty: difficulty,
             subjectContext: Value(subjectContext),
@@ -55,11 +58,51 @@ Future<Response> onRequest(RequestContext context) async {
             ),
           );
     }
+
+    int notifiedCount = 0;
+    if (moduleId != null) {
+      try {
+        final module = await (db.select(db.modules)
+              ..where((m) => m.id.equals(moduleId)))
+            .getSingleOrNull();
+
+        if (module?.academicCourseId != null) {
+          final classes = await (db.select(db.courseClasses)
+                ..where((c) => c.academicCourseId.equals(module!.academicCourseId!)))
+              .get();
+
+          final studentIds = <int>{};
+          for (final cc in classes) {
+            final enrollments = await (db.select(db.courseClassEnrollments)
+                  ..where((e) => e.courseClassId.equals(cc.id)))
+                .get();
+            studentIds.addAll(
+              enrollments.map((e) => e.studentId).where((id) => id != userId),
+            );
+          }
+
+          if (studentIds.isNotEmpty) {
+            await NotificationHelper.createBatchNotifications(
+              db: db,
+              userIds: studentIds.toList(),
+              type: 'quiz_new',
+              title: '📝 Quiz mới',
+              message: 'Giáo viên đã tạo quiz: $topic',
+              relatedId: quizId,
+              relatedType: 'quiz',
+            );
+            notifiedCount = studentIds.length;
+          }
+        }
+      } catch (_) {}
+    }
+
     return Response.json(
       body: {
         'success': true,
         'quizId': quizId,
         'message': 'Quiz saved successfully',
+        'notifiedStudents': notifiedCount,
       },
     );
   } catch (e) {

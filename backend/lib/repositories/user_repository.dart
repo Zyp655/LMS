@@ -28,7 +28,10 @@ class UserRepository {
     String? email,
   }) async {
     var hash = hashedPassword;
-    if (hash.startsWith(r'$10$')) {
+    hash = hash.replaceAll(r'\$', r'$');
+    if (hash.startsWith(r'$2a$')) {
+      hash = hash.replaceFirst(r'$2a$', r'$2b$');
+    } else if (hash.startsWith(r'$10$')) {
       hash = '\$2b\$10\$${hash.substring(4)}';
     }
     final ok = await IsolateUtils.checkPassword(rawPassword, hash);

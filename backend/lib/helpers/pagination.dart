@@ -8,7 +8,7 @@ class Pagination {
 
   factory Pagination.fromQuery(Map<String, String> params) {
     final page = (int.tryParse(params['page'] ?? '1') ?? 1).clamp(1, 99999);
-    final limit = (int.tryParse(params['limit'] ?? '20') ?? 20).clamp(1, 100);
+    final limit = (int.tryParse(params['limit'] ?? '20') ?? 20).clamp(1, 10000);
     return Pagination(page: page, limit: limit);
   }
 
