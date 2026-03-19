@@ -18,7 +18,8 @@ Future<Response> onRequest(RequestContext context) async {
       return _handleMultipart(context, service);
     }
     return _handleJson(context, service);
-  } catch (e) {
+  } catch (e, st) {
+    print('[Upload] Error: $e\n$st');
     if (e is FileTooLargeException) {
       return Response.json(
         statusCode: HttpStatus.badRequest,
@@ -27,7 +28,7 @@ Future<Response> onRequest(RequestContext context) async {
     }
     return Response.json(
       statusCode: HttpStatus.internalServerError,
-      body: {'error': 'Đã xảy ra lỗi hệ thống. Vui lòng thử lại sau.'},
+      body: {'error': 'Upload failed: $e'},
     );
   }
 }

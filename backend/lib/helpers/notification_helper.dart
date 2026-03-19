@@ -14,7 +14,7 @@ class NotificationHelper {
     int? relatedId,
     String? relatedType,
   }) async {
-    await db.into(db.notifications).insert(
+    final notifId = await db.into(db.notifications).insert(
           NotificationsCompanion.insert(
             userId: userId,
             type: type,
@@ -27,7 +27,15 @@ class NotificationHelper {
           ),
         );
 
-    await _sendFcmPush(db: db, userId: userId, title: title, message: message, type: type, relatedId: relatedId);
+    await _sendFcmPush(
+      db: db,
+      notificationId: notifId,
+      userId: userId,
+      title: title,
+      message: message,
+      type: type,
+      relatedId: relatedId,
+    );
   }
 
   static Future<void> createBatchNotifications({
@@ -41,27 +49,34 @@ class NotificationHelper {
     String? relatedType,
   }) async {
     final now = DateTime.now();
-
-    await db.batch((batch) {
-      for (final userId in userIds) {
-        batch.insert(
-          db.notifications,
-          NotificationsCompanion.insert(
-            userId: userId,
-            type: type,
-            title: title,
-            message: message,
-            actionUrl: Value(actionUrl),
-            relatedId: Value(relatedId),
-            relatedType: Value(relatedType),
-            createdAt: now,
-          ),
-        );
-      }
-    });
+    final notifIds = <int, int>{};
 
     for (final userId in userIds) {
-      await _sendFcmPush(db: db, userId: userId, title: title, message: message, type: type, relatedId: relatedId);
+      final id = await db.into(db.notifications).insert(
+            NotificationsCompanion.insert(
+              userId: userId,
+              type: type,
+              title: title,
+              message: message,
+              actionUrl: Value(actionUrl),
+              relatedId: Value(relatedId),
+              relatedType: Value(relatedType),
+              createdAt: now,
+            ),
+          );
+      notifIds[userId] = id;
+    }
+
+    for (final userId in userIds) {
+      await _sendFcmPush(
+        db: db,
+        notificationId: notifIds[userId]!,
+        userId: userId,
+        title: title,
+        message: message,
+        type: type,
+        relatedId: relatedId,
+      );
     }
   }
 
@@ -97,6 +112,7 @@ class NotificationHelper {
 
   static Future<void> _sendFcmPush({
     required AppDatabase db,
+    required int notificationId,
     required int userId,
     required String title,
     required String message,
@@ -127,8 +143,13 @@ class NotificationHelper {
           if (relatedId != null) 'relatedId': relatedId.toString(),
         },
       );
+
+      await (db.update(db.notifications)
+            ..where((n) => n.id.equals(notificationId)))
+          .write(const NotificationsCompanion(fcmPushed: Value(true)));
     } catch (e) {
       Log.error('FCM', 'Push to userId=$userId failed', e);
     }
   }
 }
+

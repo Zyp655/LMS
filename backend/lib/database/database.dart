@@ -104,6 +104,7 @@ class Notifications extends Table {
   TextColumn get title => text()();
   TextColumn get message => text()();
   BoolColumn get isRead => boolean().withDefault(const Constant(false))();
+  BoolColumn get fcmPushed => boolean().withDefault(const Constant(false))();
   TextColumn get actionUrl => text().nullable()();
   IntColumn get relatedId => integer().nullable()();
   TextColumn get relatedType => text().nullable()();
@@ -508,6 +509,7 @@ class ChatMessages extends Table {
   IntColumn get senderId => integer().references(Users, #id)();
   TextColumn get content => text()();
   TextColumn get messageType => text().withDefault(const Constant('text'))();
+  TextColumn get mediaUrl => text().nullable()();
   BoolColumn get isRead => boolean().withDefault(const Constant(false))();
   DateTimeColumn get createdAt => dateTime()();
 }
@@ -849,7 +851,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 36;
+  int get schemaVersion => 38;
 
   @override
   MigrationStrategy get migration {
@@ -1222,6 +1224,18 @@ class AppDatabase extends _$AppDatabase {
         if (from < 36) {
           await m.issueCustomQuery(
             'ALTER TABLE users ADD COLUMN IF NOT EXISTS active_session_token TEXT',
+          );
+        }
+
+        if (from < 37) {
+          await m.issueCustomQuery(
+            'ALTER TABLE notifications ADD COLUMN IF NOT EXISTS fcm_pushed BOOLEAN NOT NULL DEFAULT FALSE',
+          );
+        }
+
+        if (from < 38) {
+          await m.issueCustomQuery(
+            'ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS media_url TEXT',
           );
         }
       },

@@ -40,6 +40,7 @@ Future<Response> onRequest(RequestContext context) async {
             final conversationId = data['conversationId'] as int;
             final content = data['content'] as String;
             final messageType = data['messageType'] as String? ?? 'text';
+            final mediaUrl = data['mediaUrl'] as String?;
             final now = DateTime.now();
 
             final id = await db.into(db.chatMessages).insert(
@@ -48,6 +49,7 @@ Future<Response> onRequest(RequestContext context) async {
                     senderId: userId,
                     content: content,
                     messageType: Value(messageType),
+                    mediaUrl: Value(mediaUrl),
                     createdAt: now,
                   ),
                 );
@@ -75,6 +77,7 @@ Future<Response> onRequest(RequestContext context) async {
                 'senderName': sender?.fullName ?? sender?.email ?? '',
                 'content': content,
                 'messageType': messageType,
+                'mediaUrl': mediaUrl,
                 'isRead': false,
                 'createdAt': now.toIso8601String(),
               };

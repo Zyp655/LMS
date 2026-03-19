@@ -2,13 +2,29 @@ import 'package:backend/database/database.dart';
 import 'package:backend/helpers/notification_helper.dart';
 import 'package:dart_frog/dart_frog.dart';
 import 'package:drift/drift.dart';
+
 Future<Response> onRequest(RequestContext context, String id) async {
   if (context.request.method != HttpMethod.post) {
     return Response(statusCode: 405);
   }
   final db = context.read<AppDatabase>();
   final assignmentId = int.parse(id);
-  final body = await context.request.json() as Map<String, dynamic>;
+
+  Map<String, dynamic> body;
+  final contentType = context.request.headers['content-type'] ?? '';
+  if (contentType.contains('multipart/form-data')) {
+    final formData = await context.request.formData();
+    body = formData.fields.map((k, v) => MapEntry(k, v));
+    if (body.containsKey('userId')) {
+      body['userId'] = int.tryParse(body['userId'].toString()) ?? 0;
+    }
+    if (body.containsKey('fileSize')) {
+      body['fileSize'] = int.tryParse(body['fileSize'].toString());
+    }
+  } else {
+    body = await context.request.json() as Map<String, dynamic>;
+  }
+
   if (!body.containsKey('userId')) {
     return Response.json(
       statusCode: 400,
@@ -79,9 +95,11 @@ Future<Response> onRequest(RequestContext context, String id) async {
       },
     );
   } catch (e) {
+    print('[Submit] Error: $e');
     return Response.json(
       statusCode: 500,
-      body: {'error': 'Đã xảy ra lỗi hệ thống. Vui lòng thử lại sau.'},
+      body: {'error': 'Submit failed: $e'},
     );
   }
 }
+

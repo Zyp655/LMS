@@ -113,23 +113,25 @@ Future<Response> onRequest(RequestContext context) async {
 
       if (cc.dayOfWeek != null && cc.startDate != null && cc.endDate != null) {
         final dow = cc.dayOfWeek!;
-        final rangeStart = cc.startDate!;
-        final rangeEnd = cc.endDate!;
-        final monday = today.subtract(Duration(days: today.weekday - 1));
+        final rangeStart = DateTime(cc.startDate!.year, cc.startDate!.month, cc.startDate!.day);
+        final rangeEnd = DateTime(cc.endDate!.year, cc.endDate!.month, cc.endDate!.day);
+        final monday = rangeStart.subtract(Duration(days: rangeStart.weekday - 1));
+        final firstTarget = monday.add(Duration(days: dow - 1));
+        final start = firstTarget.isBefore(rangeStart)
+            ? firstTarget.add(const Duration(days: 7))
+            : firstTarget;
+        final totalWeeks = ((rangeEnd.difference(start).inDays) / 7).floor() + 1;
 
-        for (var weekOffset = 0; weekOffset <= 1; weekOffset++) {
-          final targetDate =
-              monday.add(Duration(days: (dow - 1) + (weekOffset * 7)));
-          if (targetDate.isBefore(rangeStart) || targetDate.isAfter(rangeEnd)) {
-            continue;
-          }
+        for (var w = 0; w < totalWeeks; w++) {
+          final targetDate = start.add(Duration(days: w * 7));
+          if (targetDate.isAfter(rangeEnd)) break;
           final startDt = DateTime(
               targetDate.year, targetDate.month, targetDate.day, 7, 0);
           final endDt = DateTime(
               targetDate.year, targetDate.month, targetDate.day, 9, 30);
 
           academicJson.add({
-            'id': -(20000 + cc.id * 100 + weekOffset),
+            'id': -(20000 + cc.id * 100 + w),
             'userId': userId,
             'subject': ac.name,
             'room': cc.room ?? '',
@@ -167,7 +169,7 @@ Future<Response> onRequest(RequestContext context) async {
         final endMin = int.parse(endParts[1]);
 
         final monday = today.subtract(Duration(days: today.weekday - 1));
-        for (var weekOffset = 0; weekOffset <= 1; weekOffset++) {
+        for (var weekOffset = 0; weekOffset <= 28; weekOffset++) {
           final targetDate = monday
               .add(Duration(days: (dayOfWeek - 1) + (weekOffset * 7)));
           final startDt = DateTime(

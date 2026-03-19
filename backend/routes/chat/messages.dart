@@ -53,6 +53,7 @@ Future<Response> _getMessages(RequestContext context, AppDatabase db) async {
         'senderName': sender.fullName ?? sender.email,
         'content': msg.content,
         'messageType': msg.messageType,
+        'mediaUrl': msg.mediaUrl,
         'isRead': msg.isRead,
         'createdAt': msg.createdAt.toIso8601String(),
       };

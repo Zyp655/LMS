@@ -5781,6 +5781,14 @@ class $NotificationsTable extends Notifications
       type: DriftSqlType.bool,
       requiredDuringInsert: false,
       defaultValue: const Constant(false));
+  static const VerificationMeta _fcmPushedMeta =
+      const VerificationMeta('fcmPushed');
+  @override
+  late final GeneratedColumn<bool> fcmPushed = GeneratedColumn<bool>(
+      'fcm_pushed', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(false));
   static const VerificationMeta _actionUrlMeta =
       const VerificationMeta('actionUrl');
   @override
@@ -5813,6 +5821,7 @@ class $NotificationsTable extends Notifications
         title,
         message,
         isRead,
+        fcmPushed,
         actionUrl,
         relatedId,
         relatedType,
@@ -5859,6 +5868,10 @@ class $NotificationsTable extends Notifications
       context.handle(_isReadMeta,
           isRead.isAcceptableOrUnknown(data['is_read']!, _isReadMeta));
     }
+    if (data.containsKey('fcm_pushed')) {
+      context.handle(_fcmPushedMeta,
+          fcmPushed.isAcceptableOrUnknown(data['fcm_pushed']!, _fcmPushedMeta));
+    }
     if (data.containsKey('action_url')) {
       context.handle(_actionUrlMeta,
           actionUrl.isAcceptableOrUnknown(data['action_url']!, _actionUrlMeta));
@@ -5900,6 +5913,8 @@ class $NotificationsTable extends Notifications
           .read(DriftSqlType.string, data['${effectivePrefix}message'])!,
       isRead: attachedDatabase.typeMapping
           .read(DriftSqlType.bool, data['${effectivePrefix}is_read'])!,
+      fcmPushed: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}fcm_pushed'])!,
       actionUrl: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}action_url']),
       relatedId: attachedDatabase.typeMapping
@@ -5924,6 +5939,7 @@ class Notification extends DataClass implements Insertable<Notification> {
   final String title;
   final String message;
   final bool isRead;
+  final bool fcmPushed;
   final String? actionUrl;
   final int? relatedId;
   final String? relatedType;
@@ -5935,6 +5951,7 @@ class Notification extends DataClass implements Insertable<Notification> {
       required this.title,
       required this.message,
       required this.isRead,
+      required this.fcmPushed,
       this.actionUrl,
       this.relatedId,
       this.relatedType,
@@ -5948,6 +5965,7 @@ class Notification extends DataClass implements Insertable<Notification> {
     map['title'] = Variable<String>(title);
     map['message'] = Variable<String>(message);
     map['is_read'] = Variable<bool>(isRead);
+    map['fcm_pushed'] = Variable<bool>(fcmPushed);
     if (!nullToAbsent || actionUrl != null) {
       map['action_url'] = Variable<String>(actionUrl);
     }
@@ -5969,6 +5987,7 @@ class Notification extends DataClass implements Insertable<Notification> {
       title: Value(title),
       message: Value(message),
       isRead: Value(isRead),
+      fcmPushed: Value(fcmPushed),
       actionUrl: actionUrl == null && nullToAbsent
           ? const Value.absent()
           : Value(actionUrl),
@@ -5992,6 +6011,7 @@ class Notification extends DataClass implements Insertable<Notification> {
       title: serializer.fromJson<String>(json['title']),
       message: serializer.fromJson<String>(json['message']),
       isRead: serializer.fromJson<bool>(json['isRead']),
+      fcmPushed: serializer.fromJson<bool>(json['fcmPushed']),
       actionUrl: serializer.fromJson<String?>(json['actionUrl']),
       relatedId: serializer.fromJson<int?>(json['relatedId']),
       relatedType: serializer.fromJson<String?>(json['relatedType']),
@@ -6008,6 +6028,7 @@ class Notification extends DataClass implements Insertable<Notification> {
       'title': serializer.toJson<String>(title),
       'message': serializer.toJson<String>(message),
       'isRead': serializer.toJson<bool>(isRead),
+      'fcmPushed': serializer.toJson<bool>(fcmPushed),
       'actionUrl': serializer.toJson<String?>(actionUrl),
       'relatedId': serializer.toJson<int?>(relatedId),
       'relatedType': serializer.toJson<String?>(relatedType),
@@ -6022,6 +6043,7 @@ class Notification extends DataClass implements Insertable<Notification> {
           String? title,
           String? message,
           bool? isRead,
+          bool? fcmPushed,
           Value<String?> actionUrl = const Value.absent(),
           Value<int?> relatedId = const Value.absent(),
           Value<String?> relatedType = const Value.absent(),
@@ -6033,6 +6055,7 @@ class Notification extends DataClass implements Insertable<Notification> {
         title: title ?? this.title,
         message: message ?? this.message,
         isRead: isRead ?? this.isRead,
+        fcmPushed: fcmPushed ?? this.fcmPushed,
         actionUrl: actionUrl.present ? actionUrl.value : this.actionUrl,
         relatedId: relatedId.present ? relatedId.value : this.relatedId,
         relatedType: relatedType.present ? relatedType.value : this.relatedType,
@@ -6046,6 +6069,7 @@ class Notification extends DataClass implements Insertable<Notification> {
       title: data.title.present ? data.title.value : this.title,
       message: data.message.present ? data.message.value : this.message,
       isRead: data.isRead.present ? data.isRead.value : this.isRead,
+      fcmPushed: data.fcmPushed.present ? data.fcmPushed.value : this.fcmPushed,
       actionUrl: data.actionUrl.present ? data.actionUrl.value : this.actionUrl,
       relatedId: data.relatedId.present ? data.relatedId.value : this.relatedId,
       relatedType:
@@ -6063,6 +6087,7 @@ class Notification extends DataClass implements Insertable<Notification> {
           ..write('title: $title, ')
           ..write('message: $message, ')
           ..write('isRead: $isRead, ')
+          ..write('fcmPushed: $fcmPushed, ')
           ..write('actionUrl: $actionUrl, ')
           ..write('relatedId: $relatedId, ')
           ..write('relatedType: $relatedType, ')
@@ -6073,7 +6098,7 @@ class Notification extends DataClass implements Insertable<Notification> {
 
   @override
   int get hashCode => Object.hash(id, userId, type, title, message, isRead,
-      actionUrl, relatedId, relatedType, createdAt);
+      fcmPushed, actionUrl, relatedId, relatedType, createdAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -6084,6 +6109,7 @@ class Notification extends DataClass implements Insertable<Notification> {
           other.title == this.title &&
           other.message == this.message &&
           other.isRead == this.isRead &&
+          other.fcmPushed == this.fcmPushed &&
           other.actionUrl == this.actionUrl &&
           other.relatedId == this.relatedId &&
           other.relatedType == this.relatedType &&
@@ -6097,6 +6123,7 @@ class NotificationsCompanion extends UpdateCompanion<Notification> {
   final Value<String> title;
   final Value<String> message;
   final Value<bool> isRead;
+  final Value<bool> fcmPushed;
   final Value<String?> actionUrl;
   final Value<int?> relatedId;
   final Value<String?> relatedType;
@@ -6108,6 +6135,7 @@ class NotificationsCompanion extends UpdateCompanion<Notification> {
     this.title = const Value.absent(),
     this.message = const Value.absent(),
     this.isRead = const Value.absent(),
+    this.fcmPushed = const Value.absent(),
     this.actionUrl = const Value.absent(),
     this.relatedId = const Value.absent(),
     this.relatedType = const Value.absent(),
@@ -6120,6 +6148,7 @@ class NotificationsCompanion extends UpdateCompanion<Notification> {
     required String title,
     required String message,
     this.isRead = const Value.absent(),
+    this.fcmPushed = const Value.absent(),
     this.actionUrl = const Value.absent(),
     this.relatedId = const Value.absent(),
     this.relatedType = const Value.absent(),
@@ -6136,6 +6165,7 @@ class NotificationsCompanion extends UpdateCompanion<Notification> {
     Expression<String>? title,
     Expression<String>? message,
     Expression<bool>? isRead,
+    Expression<bool>? fcmPushed,
     Expression<String>? actionUrl,
     Expression<int>? relatedId,
     Expression<String>? relatedType,
@@ -6148,6 +6178,7 @@ class NotificationsCompanion extends UpdateCompanion<Notification> {
       if (title != null) 'title': title,
       if (message != null) 'message': message,
       if (isRead != null) 'is_read': isRead,
+      if (fcmPushed != null) 'fcm_pushed': fcmPushed,
       if (actionUrl != null) 'action_url': actionUrl,
       if (relatedId != null) 'related_id': relatedId,
       if (relatedType != null) 'related_type': relatedType,
@@ -6162,6 +6193,7 @@ class NotificationsCompanion extends UpdateCompanion<Notification> {
       Value<String>? title,
       Value<String>? message,
       Value<bool>? isRead,
+      Value<bool>? fcmPushed,
       Value<String?>? actionUrl,
       Value<int?>? relatedId,
       Value<String?>? relatedType,
@@ -6173,6 +6205,7 @@ class NotificationsCompanion extends UpdateCompanion<Notification> {
       title: title ?? this.title,
       message: message ?? this.message,
       isRead: isRead ?? this.isRead,
+      fcmPushed: fcmPushed ?? this.fcmPushed,
       actionUrl: actionUrl ?? this.actionUrl,
       relatedId: relatedId ?? this.relatedId,
       relatedType: relatedType ?? this.relatedType,
@@ -6201,6 +6234,9 @@ class NotificationsCompanion extends UpdateCompanion<Notification> {
     if (isRead.present) {
       map['is_read'] = Variable<bool>(isRead.value);
     }
+    if (fcmPushed.present) {
+      map['fcm_pushed'] = Variable<bool>(fcmPushed.value);
+    }
     if (actionUrl.present) {
       map['action_url'] = Variable<String>(actionUrl.value);
     }
@@ -6225,6 +6261,7 @@ class NotificationsCompanion extends UpdateCompanion<Notification> {
           ..write('title: $title, ')
           ..write('message: $message, ')
           ..write('isRead: $isRead, ')
+          ..write('fcmPushed: $fcmPushed, ')
           ..write('actionUrl: $actionUrl, ')
           ..write('relatedId: $relatedId, ')
           ..write('relatedType: $relatedType, ')
@@ -19622,6 +19659,12 @@ class $ChatMessagesTable extends ChatMessages
       type: DriftSqlType.string,
       requiredDuringInsert: false,
       defaultValue: const Constant('text'));
+  static const VerificationMeta _mediaUrlMeta =
+      const VerificationMeta('mediaUrl');
+  @override
+  late final GeneratedColumn<String> mediaUrl = GeneratedColumn<String>(
+      'media_url', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
   static const VerificationMeta _isReadMeta = const VerificationMeta('isRead');
   @override
   late final GeneratedColumn<bool> isRead = GeneratedColumn<bool>(
@@ -19636,8 +19679,16 @@ class $ChatMessagesTable extends ChatMessages
       'created_at', aliasedName, false,
       type: DriftSqlType.dateTime, requiredDuringInsert: true);
   @override
-  List<GeneratedColumn> get $columns =>
-      [id, conversationId, senderId, content, messageType, isRead, createdAt];
+  List<GeneratedColumn> get $columns => [
+        id,
+        conversationId,
+        senderId,
+        content,
+        messageType,
+        mediaUrl,
+        isRead,
+        createdAt
+      ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -19677,6 +19728,10 @@ class $ChatMessagesTable extends ChatMessages
           messageType.isAcceptableOrUnknown(
               data['message_type']!, _messageTypeMeta));
     }
+    if (data.containsKey('media_url')) {
+      context.handle(_mediaUrlMeta,
+          mediaUrl.isAcceptableOrUnknown(data['media_url']!, _mediaUrlMeta));
+    }
     if (data.containsKey('is_read')) {
       context.handle(_isReadMeta,
           isRead.isAcceptableOrUnknown(data['is_read']!, _isReadMeta));
@@ -19706,6 +19761,8 @@ class $ChatMessagesTable extends ChatMessages
           .read(DriftSqlType.string, data['${effectivePrefix}content'])!,
       messageType: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}message_type'])!,
+      mediaUrl: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}media_url']),
       isRead: attachedDatabase.typeMapping
           .read(DriftSqlType.bool, data['${effectivePrefix}is_read'])!,
       createdAt: attachedDatabase.typeMapping
@@ -19725,6 +19782,7 @@ class ChatMessage extends DataClass implements Insertable<ChatMessage> {
   final int senderId;
   final String content;
   final String messageType;
+  final String? mediaUrl;
   final bool isRead;
   final DateTime createdAt;
   const ChatMessage(
@@ -19733,6 +19791,7 @@ class ChatMessage extends DataClass implements Insertable<ChatMessage> {
       required this.senderId,
       required this.content,
       required this.messageType,
+      this.mediaUrl,
       required this.isRead,
       required this.createdAt});
   @override
@@ -19743,6 +19802,9 @@ class ChatMessage extends DataClass implements Insertable<ChatMessage> {
     map['sender_id'] = Variable<int>(senderId);
     map['content'] = Variable<String>(content);
     map['message_type'] = Variable<String>(messageType);
+    if (!nullToAbsent || mediaUrl != null) {
+      map['media_url'] = Variable<String>(mediaUrl);
+    }
     map['is_read'] = Variable<bool>(isRead);
     map['created_at'] = Variable<DateTime>(createdAt);
     return map;
@@ -19755,6 +19817,9 @@ class ChatMessage extends DataClass implements Insertable<ChatMessage> {
       senderId: Value(senderId),
       content: Value(content),
       messageType: Value(messageType),
+      mediaUrl: mediaUrl == null && nullToAbsent
+          ? const Value.absent()
+          : Value(mediaUrl),
       isRead: Value(isRead),
       createdAt: Value(createdAt),
     );
@@ -19769,6 +19834,7 @@ class ChatMessage extends DataClass implements Insertable<ChatMessage> {
       senderId: serializer.fromJson<int>(json['senderId']),
       content: serializer.fromJson<String>(json['content']),
       messageType: serializer.fromJson<String>(json['messageType']),
+      mediaUrl: serializer.fromJson<String?>(json['mediaUrl']),
       isRead: serializer.fromJson<bool>(json['isRead']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
@@ -19782,6 +19848,7 @@ class ChatMessage extends DataClass implements Insertable<ChatMessage> {
       'senderId': serializer.toJson<int>(senderId),
       'content': serializer.toJson<String>(content),
       'messageType': serializer.toJson<String>(messageType),
+      'mediaUrl': serializer.toJson<String?>(mediaUrl),
       'isRead': serializer.toJson<bool>(isRead),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
@@ -19793,6 +19860,7 @@ class ChatMessage extends DataClass implements Insertable<ChatMessage> {
           int? senderId,
           String? content,
           String? messageType,
+          Value<String?> mediaUrl = const Value.absent(),
           bool? isRead,
           DateTime? createdAt}) =>
       ChatMessage(
@@ -19801,6 +19869,7 @@ class ChatMessage extends DataClass implements Insertable<ChatMessage> {
         senderId: senderId ?? this.senderId,
         content: content ?? this.content,
         messageType: messageType ?? this.messageType,
+        mediaUrl: mediaUrl.present ? mediaUrl.value : this.mediaUrl,
         isRead: isRead ?? this.isRead,
         createdAt: createdAt ?? this.createdAt,
       );
@@ -19814,6 +19883,7 @@ class ChatMessage extends DataClass implements Insertable<ChatMessage> {
       content: data.content.present ? data.content.value : this.content,
       messageType:
           data.messageType.present ? data.messageType.value : this.messageType,
+      mediaUrl: data.mediaUrl.present ? data.mediaUrl.value : this.mediaUrl,
       isRead: data.isRead.present ? data.isRead.value : this.isRead,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
@@ -19827,6 +19897,7 @@ class ChatMessage extends DataClass implements Insertable<ChatMessage> {
           ..write('senderId: $senderId, ')
           ..write('content: $content, ')
           ..write('messageType: $messageType, ')
+          ..write('mediaUrl: $mediaUrl, ')
           ..write('isRead: $isRead, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
@@ -19834,8 +19905,8 @@ class ChatMessage extends DataClass implements Insertable<ChatMessage> {
   }
 
   @override
-  int get hashCode => Object.hash(
-      id, conversationId, senderId, content, messageType, isRead, createdAt);
+  int get hashCode => Object.hash(id, conversationId, senderId, content,
+      messageType, mediaUrl, isRead, createdAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -19845,6 +19916,7 @@ class ChatMessage extends DataClass implements Insertable<ChatMessage> {
           other.senderId == this.senderId &&
           other.content == this.content &&
           other.messageType == this.messageType &&
+          other.mediaUrl == this.mediaUrl &&
           other.isRead == this.isRead &&
           other.createdAt == this.createdAt);
 }
@@ -19855,6 +19927,7 @@ class ChatMessagesCompanion extends UpdateCompanion<ChatMessage> {
   final Value<int> senderId;
   final Value<String> content;
   final Value<String> messageType;
+  final Value<String?> mediaUrl;
   final Value<bool> isRead;
   final Value<DateTime> createdAt;
   const ChatMessagesCompanion({
@@ -19863,6 +19936,7 @@ class ChatMessagesCompanion extends UpdateCompanion<ChatMessage> {
     this.senderId = const Value.absent(),
     this.content = const Value.absent(),
     this.messageType = const Value.absent(),
+    this.mediaUrl = const Value.absent(),
     this.isRead = const Value.absent(),
     this.createdAt = const Value.absent(),
   });
@@ -19872,6 +19946,7 @@ class ChatMessagesCompanion extends UpdateCompanion<ChatMessage> {
     required int senderId,
     required String content,
     this.messageType = const Value.absent(),
+    this.mediaUrl = const Value.absent(),
     this.isRead = const Value.absent(),
     required DateTime createdAt,
   })  : conversationId = Value(conversationId),
@@ -19884,6 +19959,7 @@ class ChatMessagesCompanion extends UpdateCompanion<ChatMessage> {
     Expression<int>? senderId,
     Expression<String>? content,
     Expression<String>? messageType,
+    Expression<String>? mediaUrl,
     Expression<bool>? isRead,
     Expression<DateTime>? createdAt,
   }) {
@@ -19893,6 +19969,7 @@ class ChatMessagesCompanion extends UpdateCompanion<ChatMessage> {
       if (senderId != null) 'sender_id': senderId,
       if (content != null) 'content': content,
       if (messageType != null) 'message_type': messageType,
+      if (mediaUrl != null) 'media_url': mediaUrl,
       if (isRead != null) 'is_read': isRead,
       if (createdAt != null) 'created_at': createdAt,
     });
@@ -19904,6 +19981,7 @@ class ChatMessagesCompanion extends UpdateCompanion<ChatMessage> {
       Value<int>? senderId,
       Value<String>? content,
       Value<String>? messageType,
+      Value<String?>? mediaUrl,
       Value<bool>? isRead,
       Value<DateTime>? createdAt}) {
     return ChatMessagesCompanion(
@@ -19912,6 +19990,7 @@ class ChatMessagesCompanion extends UpdateCompanion<ChatMessage> {
       senderId: senderId ?? this.senderId,
       content: content ?? this.content,
       messageType: messageType ?? this.messageType,
+      mediaUrl: mediaUrl ?? this.mediaUrl,
       isRead: isRead ?? this.isRead,
       createdAt: createdAt ?? this.createdAt,
     );
@@ -19935,6 +20014,9 @@ class ChatMessagesCompanion extends UpdateCompanion<ChatMessage> {
     if (messageType.present) {
       map['message_type'] = Variable<String>(messageType.value);
     }
+    if (mediaUrl.present) {
+      map['media_url'] = Variable<String>(mediaUrl.value);
+    }
     if (isRead.present) {
       map['is_read'] = Variable<bool>(isRead.value);
     }
@@ -19952,6 +20034,7 @@ class ChatMessagesCompanion extends UpdateCompanion<ChatMessage> {
           ..write('senderId: $senderId, ')
           ..write('content: $content, ')
           ..write('messageType: $messageType, ')
+          ..write('mediaUrl: $mediaUrl, ')
           ..write('isRead: $isRead, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
@@ -35492,6 +35575,7 @@ typedef $$NotificationsTableCreateCompanionBuilder = NotificationsCompanion
   required String title,
   required String message,
   Value<bool> isRead,
+  Value<bool> fcmPushed,
   Value<String?> actionUrl,
   Value<int?> relatedId,
   Value<String?> relatedType,
@@ -35505,6 +35589,7 @@ typedef $$NotificationsTableUpdateCompanionBuilder = NotificationsCompanion
   Value<String> title,
   Value<String> message,
   Value<bool> isRead,
+  Value<bool> fcmPushed,
   Value<String?> actionUrl,
   Value<int?> relatedId,
   Value<String?> relatedType,
@@ -35554,6 +35639,9 @@ class $$NotificationsTableFilterComposer
 
   ColumnFilters<bool> get isRead => $composableBuilder(
       column: $table.isRead, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get fcmPushed => $composableBuilder(
+      column: $table.fcmPushed, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get actionUrl => $composableBuilder(
       column: $table.actionUrl, builder: (column) => ColumnFilters(column));
@@ -35612,6 +35700,9 @@ class $$NotificationsTableOrderingComposer
   ColumnOrderings<bool> get isRead => $composableBuilder(
       column: $table.isRead, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<bool> get fcmPushed => $composableBuilder(
+      column: $table.fcmPushed, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<String> get actionUrl => $composableBuilder(
       column: $table.actionUrl, builder: (column) => ColumnOrderings(column));
 
@@ -35668,6 +35759,9 @@ class $$NotificationsTableAnnotationComposer
 
   GeneratedColumn<bool> get isRead =>
       $composableBuilder(column: $table.isRead, builder: (column) => column);
+
+  GeneratedColumn<bool> get fcmPushed =>
+      $composableBuilder(column: $table.fcmPushed, builder: (column) => column);
 
   GeneratedColumn<String> get actionUrl =>
       $composableBuilder(column: $table.actionUrl, builder: (column) => column);
@@ -35731,6 +35825,7 @@ class $$NotificationsTableTableManager extends RootTableManager<
             Value<String> title = const Value.absent(),
             Value<String> message = const Value.absent(),
             Value<bool> isRead = const Value.absent(),
+            Value<bool> fcmPushed = const Value.absent(),
             Value<String?> actionUrl = const Value.absent(),
             Value<int?> relatedId = const Value.absent(),
             Value<String?> relatedType = const Value.absent(),
@@ -35743,6 +35838,7 @@ class $$NotificationsTableTableManager extends RootTableManager<
             title: title,
             message: message,
             isRead: isRead,
+            fcmPushed: fcmPushed,
             actionUrl: actionUrl,
             relatedId: relatedId,
             relatedType: relatedType,
@@ -35755,6 +35851,7 @@ class $$NotificationsTableTableManager extends RootTableManager<
             required String title,
             required String message,
             Value<bool> isRead = const Value.absent(),
+            Value<bool> fcmPushed = const Value.absent(),
             Value<String?> actionUrl = const Value.absent(),
             Value<int?> relatedId = const Value.absent(),
             Value<String?> relatedType = const Value.absent(),
@@ -35767,6 +35864,7 @@ class $$NotificationsTableTableManager extends RootTableManager<
             title: title,
             message: message,
             isRead: isRead,
+            fcmPushed: fcmPushed,
             actionUrl: actionUrl,
             relatedId: relatedId,
             relatedType: relatedType,
@@ -49285,6 +49383,7 @@ typedef $$ChatMessagesTableCreateCompanionBuilder = ChatMessagesCompanion
   required int senderId,
   required String content,
   Value<String> messageType,
+  Value<String?> mediaUrl,
   Value<bool> isRead,
   required DateTime createdAt,
 });
@@ -49295,6 +49394,7 @@ typedef $$ChatMessagesTableUpdateCompanionBuilder = ChatMessagesCompanion
   Value<int> senderId,
   Value<String> content,
   Value<String> messageType,
+  Value<String?> mediaUrl,
   Value<bool> isRead,
   Value<DateTime> createdAt,
 });
@@ -49351,6 +49451,9 @@ class $$ChatMessagesTableFilterComposer
 
   ColumnFilters<String> get messageType => $composableBuilder(
       column: $table.messageType, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get mediaUrl => $composableBuilder(
+      column: $table.mediaUrl, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<bool> get isRead => $composableBuilder(
       column: $table.isRead, builder: (column) => ColumnFilters(column));
@@ -49417,6 +49520,9 @@ class $$ChatMessagesTableOrderingComposer
   ColumnOrderings<String> get messageType => $composableBuilder(
       column: $table.messageType, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get mediaUrl => $composableBuilder(
+      column: $table.mediaUrl, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<bool> get isRead => $composableBuilder(
       column: $table.isRead, builder: (column) => ColumnOrderings(column));
 
@@ -49481,6 +49587,9 @@ class $$ChatMessagesTableAnnotationComposer
 
   GeneratedColumn<String> get messageType => $composableBuilder(
       column: $table.messageType, builder: (column) => column);
+
+  GeneratedColumn<String> get mediaUrl =>
+      $composableBuilder(column: $table.mediaUrl, builder: (column) => column);
 
   GeneratedColumn<bool> get isRead =>
       $composableBuilder(column: $table.isRead, builder: (column) => column);
@@ -49558,6 +49667,7 @@ class $$ChatMessagesTableTableManager extends RootTableManager<
             Value<int> senderId = const Value.absent(),
             Value<String> content = const Value.absent(),
             Value<String> messageType = const Value.absent(),
+            Value<String?> mediaUrl = const Value.absent(),
             Value<bool> isRead = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
           }) =>
@@ -49567,6 +49677,7 @@ class $$ChatMessagesTableTableManager extends RootTableManager<
             senderId: senderId,
             content: content,
             messageType: messageType,
+            mediaUrl: mediaUrl,
             isRead: isRead,
             createdAt: createdAt,
           ),
@@ -49576,6 +49687,7 @@ class $$ChatMessagesTableTableManager extends RootTableManager<
             required int senderId,
             required String content,
             Value<String> messageType = const Value.absent(),
+            Value<String?> mediaUrl = const Value.absent(),
             Value<bool> isRead = const Value.absent(),
             required DateTime createdAt,
           }) =>
@@ -49585,6 +49697,7 @@ class $$ChatMessagesTableTableManager extends RootTableManager<
             senderId: senderId,
             content: content,
             messageType: messageType,
+            mediaUrl: mediaUrl,
             isRead: isRead,
             createdAt: createdAt,
           ),

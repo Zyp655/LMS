@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:dart_frog/dart_frog.dart';
 import 'package:backend/database/database.dart';
@@ -26,13 +27,41 @@ Future<Response> onRequest(RequestContext context, String id) async {
 
     final result = <Map<String, dynamic>>[];
     for (final quiz in quizzes) {
+      final questions = await (db.select(db.quizQuestions)
+            ..where((q) => q.quizId.equals(quiz.id))
+            ..orderBy([(q) => OrderingTerm.asc(q.orderIndex)]))
+          .get();
+
       result.add({
         'id': quiz.id,
         'moduleId': quiz.moduleId,
+        'quiz': {
+          'id': quiz.id,
+          'topic': quiz.topic,
+          'difficulty': quiz.difficulty,
+          'questionCount': quiz.questionCount,
+        },
         'topic': quiz.topic,
         'difficulty': quiz.difficulty,
         'questionCount': quiz.questionCount,
         'createdAt': quiz.createdAt.toIso8601String(),
+        'questions': questions.map((q) {
+          List<dynamic> optionsList;
+          try {
+            optionsList = jsonDecode(q.options) as List<dynamic>;
+          } catch (_) {
+            optionsList = [q.options];
+          }
+          return {
+            'id': q.id,
+            'question': q.question,
+            'questionType': q.questionType,
+            'options': optionsList,
+            'correctIndex': q.correctIndex,
+            'correctAnswer': q.correctAnswer,
+            'explanation': q.explanation,
+          };
+        }).toList(),
       });
     }
 
