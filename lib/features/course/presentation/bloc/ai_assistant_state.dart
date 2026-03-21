@@ -1,4 +1,4 @@
-﻿import 'package:equatable/equatable.dart';
+import 'package:equatable/equatable.dart';
 
 class AiChatMessage {
   final String role;
@@ -62,4 +62,42 @@ class AiError extends AiAssistantState {
 
   @override
   List<Object?> get props => [message, previousMessages];
+}
+
+class ConceptNode {
+  final String id;
+  final String label;
+  final String description;
+  final String type;
+
+  const ConceptNode({
+    required this.id,
+    required this.label,
+    required this.description,
+    required this.type,
+  });
+}
+
+class ConceptEdge {
+  final String from;
+  final String to;
+  final String label;
+
+  const ConceptEdge({
+    required this.from,
+    required this.to,
+    required this.label,
+  });
+}
+
+class AiConceptMapLoading extends AiAssistantState {}
+
+class AiConceptMapLoaded extends AiAssistantState {
+  final List<ConceptNode> nodes;
+  final List<ConceptEdge> edges;
+
+  const AiConceptMapLoaded({required this.nodes, required this.edges});
+
+  @override
+  List<Object?> get props => [nodes, edges];
 }

@@ -32,6 +32,9 @@ import '../../../analytics/presentation/bloc/analytics_event.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../widgets/segment_quiz_overlay.dart';
 import '../widgets/verify_quiz_overlay.dart';
+import '../widgets/emotion_camera_widget.dart';
+import '../widgets/ai_chat_sheet.dart';
+import '../services/confusion_detector.dart';
 
 class LessonPlayerPage extends StatelessWidget {
   final LessonEntity lesson;
@@ -136,6 +139,9 @@ class _LessonPlayerViewState extends State<LessonPlayerView>
   int _pauseCount = 0;
   Duration _previousPosition = Duration.zero;
 
+  late final ConfusionDetector _confusionDetector;
+  bool _showConfusionPopup = false;
+
   @override
   void initState() {
     super.initState();
@@ -144,6 +150,9 @@ class _LessonPlayerViewState extends State<LessonPlayerView>
     _tabController = TabController(length: 2, vsync: this);
     _analyticsBloc = context.read<AnalyticsBloc>();
     _learningPlayerBloc = context.read<LearningPlayerBloc>();
+    _confusionDetector = ConfusionDetector(
+      onConfusionDetected: _onConfusionDetected,
+    );
 
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
@@ -565,6 +574,11 @@ class _LessonPlayerViewState extends State<LessonPlayerView>
     _seekForwardCount = 0;
     _seekBackwardCount = 0;
     _pauseCount = 0;
+    _confusionDetector.updateVideoBehavior(
+      pauseCount: pauses,
+      rewindCount: rewinds,
+      skipCount: skips,
+    );
     try {
       final api = sl<ApiClient>();
       await api.post('/student/daily-learning-log', {
@@ -575,6 +589,36 @@ class _LessonPlayerViewState extends State<LessonPlayerView>
         'pauseCount': pauses,
       });
     } catch (_) {}
+  }
+
+  void _onConfusionDetected() {
+    if (_showConfusionPopup || _showQuizOverlay || _showVerifyOverlay) return;
+    _videoController?.pause();
+    setState(() => _showConfusionPopup = true);
+  }
+
+  void _dismissConfusionPopup() {
+    setState(() => _showConfusionPopup = false);
+    _videoController?.play();
+  }
+
+  void _openAiFromConfusion() {
+    setState(() => _showConfusionPopup = false);
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => BlocProvider.value(
+        value: context.read<AiAssistantBloc>(),
+        child: AiChatSheet(
+          lessonTitle: widget.lesson.title,
+          textContent: widget.lesson.textContent ?? '',
+          contentUrl: widget.lesson.contentUrl,
+          lessonId: widget.lesson.id,
+          userId: widget.userId,
+        ),
+      ),
+    );
   }
 
   String _formatDuration(Duration duration) {
@@ -814,6 +858,7 @@ class _LessonPlayerViewState extends State<LessonPlayerView>
     }
 
     return Stack(
+      clipBehavior: Clip.none,
       children: [
         Container(
           constraints: BoxConstraints(
@@ -934,6 +979,81 @@ class _LessonPlayerViewState extends State<LessonPlayerView>
                       style: TextStyle(color: Colors.white70, fontSize: 14),
                     ),
                   ],
+                ),
+              ),
+            ),
+          ),
+        EmotionCameraWidget(
+          onEmotionDetected: (emotion, confidence) {
+            _confusionDetector.updateEmotion(emotion, confidence);
+          },
+        ),
+        if (_showConfusionPopup)
+          Positioned.fill(
+            child: Container(
+              color: Colors.black.withValues(alpha: 0.7),
+              child: Center(
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 32),
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text('💭', style: TextStyle(fontSize: 40)),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Có vẻ đoạn này hơi khó?',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'AI có thể giải thích lại cho bạn dễ hiểu hơn',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 20),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: _dismissConfusionPopup,
+                              style: OutlinedButton.styleFrom(
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              child: Text('Bỏ qua'),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: FilledButton.icon(
+                              onPressed: _openAiFromConfusion,
+                              icon: Icon(Icons.smart_toy_rounded, size: 18),
+                              label: Text('Hỏi AI'),
+                              style: FilledButton.styleFrom(
+                                backgroundColor: AppColors.primary,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),

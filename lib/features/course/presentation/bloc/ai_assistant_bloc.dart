@@ -11,6 +11,7 @@ class AiAssistantBloc extends Bloc<AiAssistantEvent, AiAssistantState> {
     on<SummarizeLesson>(_onSummarize);
     on<ClearChat>(_onClearChat);
     on<LoadChatHistory>(_onLoadHistory);
+    on<GenerateConceptMap>(_onGenerateConceptMap);
   }
 
   Future<void> _onLoadHistory(
@@ -83,6 +84,7 @@ class AiAssistantBloc extends Bloc<AiAssistantEvent, AiAssistantState> {
         'textContent': event.textContent,
         'history': history,
         'question': event.question,
+        if (event.persona != null) 'persona': event.persona,
       });
 
       final data = response as Map<String, dynamic>;
@@ -163,5 +165,46 @@ class AiAssistantBloc extends Bloc<AiAssistantEvent, AiAssistantState> {
       ).catchError((_) => null);
     }
     emit(AiInitial());
+  }
+
+  Future<void> _onGenerateConceptMap(
+    GenerateConceptMap event,
+    Emitter<AiAssistantState> emit,
+  ) async {
+    emit(AiConceptMapLoading());
+
+    try {
+      final response = await apiClient.post('/ai/concept-map', {
+        'lessonTitle': event.lessonTitle,
+        'textContent': event.textContent,
+      });
+
+      final data = response as Map<String, dynamic>;
+      final rawNodes = data['nodes'] as List? ?? [];
+      final rawEdges = data['edges'] as List? ?? [];
+
+      final nodes = rawNodes.map((n) {
+        final m = n as Map<String, dynamic>;
+        return ConceptNode(
+          id: m['id'] as String? ?? '',
+          label: m['label'] as String? ?? '',
+          description: m['description'] as String? ?? '',
+          type: m['type'] as String? ?? 'sub',
+        );
+      }).toList();
+
+      final edges = rawEdges.map((e) {
+        final m = e as Map<String, dynamic>;
+        return ConceptEdge(
+          from: m['from'] as String? ?? '',
+          to: m['to'] as String? ?? '',
+          label: m['label'] as String? ?? '',
+        );
+      }).toList();
+
+      emit(AiConceptMapLoaded(nodes: nodes, edges: edges));
+    } catch (e) {
+      emit(AiError('Không thể tạo concept map: ${e.toString()}'));
+    }
   }
 }

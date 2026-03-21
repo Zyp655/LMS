@@ -44,6 +44,7 @@ class _AiChatSheetState extends State<AiChatSheet> {
   bool _isTranscribingVideo = false;
   bool _transcribeFailed = false;
   String _videoTranscript = '';
+  String? _selectedPersona;
 
   static const _suggestedQuestions = [
     'Tóm tắt nội dung chính',
@@ -166,6 +167,7 @@ class _AiChatSheetState extends State<AiChatSheet> {
         question: text.trim(),
         userId: widget.userId,
         lessonId: widget.lessonId,
+        persona: _selectedPersona,
       ),
     );
     _controller.clear();
@@ -266,6 +268,7 @@ class _AiChatSheetState extends State<AiChatSheet> {
             children: [
               _buildHeader(cs),
               const Divider(height: 1),
+              _buildPersonaSelector(cs),
               if (_isTranscribingVideo) _buildVideoTranscribeBanner(cs),
               if (_transcribeFailed && !_isTranscribingVideo) _buildTranscribeFailedBanner(cs),
               if (_isRecording) _buildRecordingBanner(cs),
@@ -302,6 +305,83 @@ class _AiChatSheetState extends State<AiChatSheet> {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildPersonaSelector(ColorScheme cs) {
+    const personas = [
+      {'key': 'socrates', 'label': '🤔 Socrates', 'desc': 'Hỏi ngược lại'},
+      {'key': 'coach', 'label': '🎯 Coach', 'desc': 'Dẫn dắt từng bước'},
+      {'key': 'expert', 'label': '🎓 Expert', 'desc': 'Giảng chuyên sâu'},
+    ];
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Phong cách giảng dạy',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: cs.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: personas.map((p) {
+              final isActive = _selectedPersona == p['key'];
+              return Expanded(
+                child: GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _selectedPersona = isActive ? null : p['key'];
+                    });
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    margin: const EdgeInsets.symmetric(horizontal: 3),
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    decoration: BoxDecoration(
+                      color: isActive
+                          ? AppColors.primary.withValues(alpha: 0.12)
+                          : cs.surfaceContainerHighest.withValues(alpha: 0.4),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: isActive
+                            ? AppColors.primary.withValues(alpha: 0.5)
+                            : Colors.transparent,
+                        width: 1.5,
+                      ),
+                    ),
+                    child: Column(
+                      children: [
+                        Text(
+                          p['label']!,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                            color: isActive ? AppColors.primary : cs.onSurface,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          p['desc']!,
+                          style: TextStyle(
+                            fontSize: 9,
+                            color: cs.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
     );
   }
 

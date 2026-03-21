@@ -5,6 +5,7 @@ import 'package:video_player/video_player.dart';
 import '../../domain/entities/lesson_entity.dart';
 import '../bloc/ai_assistant_bloc.dart';
 import '../widgets/ai_chat_sheet.dart';
+import '../widgets/ai_concept_map_sheet.dart';
 import '../pages/module_quiz_page.dart';
 import '../../../../core/theme/app_colors.dart';
 
@@ -101,6 +102,29 @@ class LessonOverviewTab extends StatelessWidget {
                   contentUrl: lesson.contentUrl,
                   lessonId: lesson.id,
                   userId: userId,
+                ),
+              ),
+            );
+          },
+        ),
+
+        const SizedBox(height: 8),
+
+        _buildAiButton(
+          cs,
+          icon: Icons.account_tree_rounded,
+          label: 'Concept Map',
+          color: AppColors.primary,
+          onTap: () {
+            showModalBottomSheet(
+              context: context,
+              isScrollControlled: true,
+              backgroundColor: Colors.transparent,
+              builder: (_) => BlocProvider.value(
+                value: context.read<AiAssistantBloc>(),
+                child: AiConceptMapSheet(
+                  lessonTitle: lesson.title,
+                  textContent: lesson.textContent ?? '',
                 ),
               ),
             );
