@@ -7,6 +7,7 @@ import '../../../teaching/presentation/bloc/student_event.dart';
 import '../../../teaching/presentation/bloc/student_state.dart';
 import '../../../teaching/presentation/pages/submit_assignment_page.dart';
 import '../../../teaching/domain/entities/assignment_entity.dart';
+import '../../../teaching/domain/entities/student_assignment_entity.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -40,11 +41,7 @@ class CourseAssignmentsTab extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
-                      Icons.error_outline,
-                      size: 40,
-                      color: Colors.grey[400],
-                    ),
+                    Icon(Icons.error_outline, size: 40, color: Colors.grey[400]),
                     const SizedBox(height: 12),
                     Text(
                       'Không thể tải bài tập',
@@ -57,20 +54,18 @@ class CourseAssignmentsTab extends StatelessWidget {
           }
 
           if (state is StudentAssignmentsLoaded) {
-            final assignments = state.assignments;
+            final filtered = state.assignments
+                .where((a) => a.courseId == courseId)
+                .toList();
 
-            if (assignments.isEmpty) {
+            if (filtered.isEmpty) {
               return Center(
                 child: Padding(
                   padding: const EdgeInsets.all(24),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(
-                        Icons.assignment_outlined,
-                        size: 48,
-                        color: Colors.grey[300],
-                      ),
+                      Icon(Icons.assignment_outlined, size: 48, color: Colors.grey[300]),
                       const SizedBox(height: 12),
                       Text(
                         'Chưa có bài tập nào',
@@ -86,141 +81,23 @@ class CourseAssignmentsTab extends StatelessWidget {
               );
             }
 
+            final grouped = <String, List<StudentAssignmentEntity>>{};
+            for (final a in filtered) {
+              final key = a.moduleName ?? 'Chưa phân chương';
+              grouped.putIfAbsent(key, () => []).add(a);
+            }
+
+            final moduleNames = grouped.keys.toList();
+
             return ListView.builder(
               padding: const EdgeInsets.all(16),
-              itemCount: assignments.length,
-              itemBuilder: (context, index) {
-                final assignment = assignments[index];
-                final isLate =
-                    DateTime.now().isAfter(assignment.dueDate) &&
-                    !assignment.isCompleted;
-                final isGraded = assignment.submissionStatus == 'graded' &&
-                    assignment.grade != null;
-                final statusColor = isGraded
-                    ? Colors.green
-                    : assignment.isCompleted
-                    ? Colors.blue
-                    : isLate
-                    ? Colors.red
-                    : Colors.orange;
-                final statusText = isGraded
-                    ? 'Điểm: ${assignment.grade}'
-                    : assignment.isCompleted
-                    ? 'Chờ chấm điểm'
-                    : isLate
-                    ? 'Trễ hạn'
-                    : 'Chưa nộp';
-
-                final isDark = Theme.of(context).brightness == Brightness.dark;
-                final cardColor = isDark
-                    ? AppColors.darkSurface
-                    : Colors.white;
-                final textColor = isDark
-                    ? AppColors.textPrimaryDark
-                    : AppColors.textPrimaryLight;
-                final subtextColor = isDark
-                    ? Colors.grey[400]!
-                    : AppColors.textSecondaryLight;
-
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  decoration: BoxDecoration(
-                    color: cardColor,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: isDark
-                          ? AppColors.darkSurfaceVariant
-                          : AppColors.lightBorder,
-                    ),
-                  ),
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(12),
-                    onTap: () async {
-                      final result = await Navigator.push<bool>(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => SubmitAssignmentPage(
-                            assignment: AssignmentEntity(
-                              id: assignment.id,
-                              classId: assignment.classId,
-                              title: assignment.title,
-                              description: assignment.description,
-                              dueDate: assignment.dueDate,
-                              rewardPoints: assignment.rewardPoints,
-                              createdAt: assignment.createdAt,
-                            ),
-                          ),
-                        ),
-                      );
-                      if (result == true && context.mounted) {
-                        final authState = context.read<AuthBloc>().state;
-                        if (authState is AuthSuccess &&
-                            authState.user != null) {
-                          context.read<StudentBloc>().add(
-                            GetStudentAssignmentsEvent(authState.user!.id),
-                          );
-                        }
-                      }
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  assignment.title,
-                                  style: TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w600,
-                                    color: textColor,
-                                  ),
-                                ),
-                              ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: statusColor.withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: Text(
-                                  statusText,
-                                  style: TextStyle(
-                                    color: statusColor,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.access_time,
-                                size: 14,
-                                color: subtextColor,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                'Hạn: ${DateFormat('dd/MM/yyyy HH:mm').format(assignment.dueDate)}',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: isLate ? Colors.red : subtextColor,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+              itemCount: moduleNames.length,
+              itemBuilder: (context, idx) {
+                final moduleName = moduleNames[idx];
+                final items = grouped[moduleName]!;
+                return _ModuleSection(
+                  moduleName: moduleName,
+                  assignments: items,
                 );
               },
             );
@@ -228,6 +105,191 @@ class CourseAssignmentsTab extends StatelessWidget {
 
           return const SizedBox.shrink();
         },
+      ),
+    );
+  }
+}
+
+class _ModuleSection extends StatelessWidget {
+  final String moduleName;
+  final List<StudentAssignmentEntity> assignments;
+
+  const _ModuleSection({
+    required this.moduleName,
+    required this.assignments,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          margin: const EdgeInsets.only(bottom: 8),
+          decoration: BoxDecoration(
+            color: isDark
+                ? AppColors.primary.withValues(alpha: 0.15)
+                : AppColors.primary.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.folder_outlined, size: 18, color: AppColors.primary),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  moduleName,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? Colors.white : AppColors.textPrimaryLight,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '${assignments.length}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        ...assignments.map((a) => _AssignmentCard(assignment: a)),
+        const SizedBox(height: 16),
+      ],
+    );
+  }
+}
+
+class _AssignmentCard extends StatelessWidget {
+  final StudentAssignmentEntity assignment;
+
+  const _AssignmentCard({required this.assignment});
+
+  @override
+  Widget build(BuildContext context) {
+    final isLate = DateTime.now().isAfter(assignment.dueDate) && !assignment.isCompleted;
+    final isGraded = assignment.submissionStatus == 'graded' && assignment.grade != null;
+    final statusColor = isGraded
+        ? Colors.green
+        : assignment.isCompleted
+            ? Colors.blue
+            : isLate
+                ? Colors.red
+                : Colors.orange;
+    final statusText = isGraded
+        ? 'Điểm: ${assignment.grade}'
+        : assignment.isCompleted
+            ? 'Chờ chấm điểm'
+            : isLate
+                ? 'Trễ hạn'
+                : 'Chưa nộp';
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark ? AppColors.darkSurface : Colors.white;
+    final textColor = isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight;
+    final subtextColor = isDark ? Colors.grey[400]! : AppColors.textSecondaryLight;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10, left: 8),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isDark ? AppColors.darkSurfaceVariant : AppColors.lightBorder,
+        ),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () async {
+          final result = await Navigator.push<bool>(
+            context,
+            MaterialPageRoute(
+              builder: (_) => SubmitAssignmentPage(
+                assignment: AssignmentEntity(
+                  id: assignment.id,
+                  classId: assignment.classId,
+                  title: assignment.title,
+                  description: assignment.description,
+                  dueDate: assignment.dueDate,
+                  rewardPoints: assignment.rewardPoints,
+                  createdAt: assignment.createdAt,
+                ),
+              ),
+            ),
+          );
+          if (result == true && context.mounted) {
+            final authState = context.read<AuthBloc>().state;
+            if (authState is AuthSuccess && authState.user != null) {
+              context.read<StudentBloc>().add(
+                GetStudentAssignmentsEvent(authState.user!.id),
+              );
+            }
+          }
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      assignment.title,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: textColor,
+                      ),
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: statusColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      statusText,
+                      style: TextStyle(
+                        color: statusColor,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Icon(Icons.access_time, size: 14, color: subtextColor),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Hạn: ${DateFormat('dd/MM/yyyy HH:mm').format(assignment.dueDate)}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isLate ? Colors.red : subtextColor,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

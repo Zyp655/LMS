@@ -34,6 +34,7 @@ class CourseCurriculumTab extends StatefulWidget {
 }
 
 class _CourseCurriculumTabState extends State<CourseCurriculumTab> {
+  int? _expandedIndex;
   final Map<int, List<Map<String, dynamic>>> _moduleQuizzes = {};
   final Set<int> _loadingQuizModules = {};
 
@@ -184,6 +185,13 @@ class _CourseCurriculumTabState extends State<CourseCurriculumTab> {
           child: Theme(
             data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
             child: ExpansionTile(
+              key: ValueKey('module_${module.id}_${_expandedIndex == index}'),
+              initiallyExpanded: _expandedIndex == index,
+              onExpansionChanged: (expanded) {
+                setState(() {
+                  _expandedIndex = expanded ? index : null;
+                });
+              },
               tilePadding: const EdgeInsets.symmetric(horizontal: 16),
               leading: Container(
                 width: 40,

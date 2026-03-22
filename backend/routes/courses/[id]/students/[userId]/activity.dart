@@ -31,7 +31,7 @@ Future<Response> onRequest(
               (e) => e.userId.equals(studentId) & e.courseId.equals(courseId)))
         .getSingleOrNull();
     final modules = await (db.select(db.modules)
-          ..where((m) => m.courseId.equals(courseId)))
+          ..where((m) => m.courseId.equals(courseId) | m.academicCourseId.equals(courseId)))
         .get();
     final moduleIds = modules.map((m) => m.id).toList();
     List<Map<String, dynamic>> lessonProgressList = [];

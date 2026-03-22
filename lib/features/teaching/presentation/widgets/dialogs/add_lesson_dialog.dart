@@ -12,12 +12,70 @@ import '../../../../../core/theme/app_colors.dart';
 class AddLessonDialog {
   static void show(BuildContext mainContext, int moduleId) {
     final titleController = TextEditingController();
-    final urlController = TextEditingController();
     String type = 'video';
-    String videoSource = 'url';
     String? selectedFileName;
-    String? selectedFilePath;
+    String? uploadedUrl;
     bool isUploading = false;
+    bool isPicking = false;
+
+    Future<void> pickAndUpload(
+      StateSetter setState,
+      BuildContext context,
+      String fileType,
+      List<String> extensions,
+    ) async {
+      if (isPicking || isUploading) return;
+      isPicking = true;
+      try {
+        final result = await FilePicker.platform.pickFiles(
+          type: FileType.custom,
+          allowedExtensions: extensions,
+        );
+        if (result == null) {
+          isPicking = false;
+          return;
+        }
+
+        final file = File(result.files.single.path!);
+        setState(() {
+          selectedFileName = result.files.single.name;
+          isUploading = true;
+          uploadedUrl = null;
+        });
+
+        final uploadService = FileUploadService();
+        final uploadResult = await uploadService.uploadFile(
+          file: file,
+          fileType: fileType,
+        );
+
+        if (uploadResult.isSuccess) {
+          setState(() {
+            uploadedUrl = uploadResult.uploadUrl;
+            isUploading = false;
+          });
+        } else {
+          setState(() {
+            isUploading = false;
+            selectedFileName = null;
+          });
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(uploadResult.errorMessage ?? 'Lỗi upload'),
+                backgroundColor: AppColors.error,
+              ),
+            );
+          }
+        }
+      } catch (_) {
+        setState(() {
+          isUploading = false;
+          selectedFileName = null;
+        });
+      }
+      isPicking = false;
+    }
 
     showDialog(
       context: mainContext,
@@ -49,89 +107,50 @@ class AddLessonDialog {
                         child: Text('Tài liệu (.pdf, .doc)'),
                       ),
                     ],
-                    onChanged: (value) => setState(() {
-                      type = value!;
-                      urlController.clear();
-                      selectedFileName = null;
-                      selectedFilePath = null;
-                    }),
+                    onChanged: isUploading
+                        ? null
+                        : (value) => setState(() {
+                              type = value!;
+                              selectedFileName = null;
+                              uploadedUrl = null;
+                            }),
                   ),
                   const SizedBox(height: 16),
 
-                  if (type == 'video') ...[
-                    buildVideoSourceToggle(
-                      videoSource: videoSource,
-                      onSelectUrl: () => setState(() {
-                        videoSource = 'url';
-                        selectedFileName = null;
-                        selectedFilePath = null;
-                      }),
-                      onSelectUpload: () => setState(() {
-                        videoSource = 'upload';
-                        urlController.clear();
-                      }),
+                  if (type == 'video')
+                    FileUploadBox(
+                      selectedFileName: selectedFileName,
+                      fileType: 'video',
+                      onClear: isUploading
+                          ? () {}
+                          : () => setState(() {
+                                selectedFileName = null;
+                                uploadedUrl = null;
+                              }),
+                      onPick: () => pickAndUpload(
+                        setState,
+                        context,
+                        'video',
+                        ['mp4', 'mov', 'avi', 'webm'],
+                      ),
                     ),
-                    const SizedBox(height: 16),
-                    if (videoSource == 'url')
-                      TextField(
-                        controller: urlController,
-                        decoration: InputDecoration(
-                          labelText: 'URL Video (YouTube, Vimeo...)',
-                          hintText: 'https://youtube.com/watch?v=...',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.link),
-                        ),
-                      ),
-                    if (videoSource == 'upload')
-                      FileUploadBox(
-                        selectedFileName: selectedFileName,
-                        fileType: 'video',
-                        onClear: () => setState(() {
-                          selectedFileName = null;
-                          selectedFilePath = null;
-                        }),
-                        onPick: () async {
-                          FilePickerResult? result = await FilePicker.platform
-                              .pickFiles(
-                                type: FileType.custom,
-                                allowedExtensions: [
-                                  'mp4',
-                                  'mov',
-                                  'avi',
-                                  'webm',
-                                ],
-                              );
-                          if (result != null) {
-                            setState(() {
-                              selectedFileName = result.files.single.name;
-                              selectedFilePath = result.files.single.path;
-                            });
-                          }
-                        },
-                      ),
-                  ],
 
                   if (type == 'document')
                     FileUploadBox(
                       selectedFileName: selectedFileName,
                       fileType: 'document',
-                      onClear: () => setState(() {
-                        selectedFileName = null;
-                        selectedFilePath = null;
-                      }),
-                      onPick: () async {
-                        FilePickerResult? result = await FilePicker.platform
-                            .pickFiles(
-                              type: FileType.custom,
-                              allowedExtensions: ['pdf', 'doc', 'docx'],
-                            );
-                        if (result != null) {
-                          setState(() {
-                            selectedFileName = result.files.single.name;
-                            selectedFilePath = result.files.single.path;
-                          });
-                        }
-                      },
+                      onClear: isUploading
+                          ? () {}
+                          : () => setState(() {
+                                selectedFileName = null;
+                                uploadedUrl = null;
+                              }),
+                      onPick: () => pickAndUpload(
+                        setState,
+                        context,
+                        'document',
+                        ['pdf', 'doc', 'docx'],
+                      ),
                     ),
 
                   if (isUploading) ...[
@@ -143,6 +162,24 @@ class AddLessonDialog {
                       style: TextStyle(color: Colors.grey),
                     ),
                   ],
+
+                  if (uploadedUrl != null) ...[
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Icon(Icons.check_circle, color: AppColors.success, size: 18),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Upload thành công!',
+                          style: TextStyle(
+                            color: AppColors.success,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -152,87 +189,28 @@ class AddLessonDialog {
                 child: const Text('Hủy'),
               ),
               ElevatedButton(
-                onPressed: isUploading
+                onPressed: isUploading || uploadedUrl == null
                     ? null
-                    : () async {
+                    : () {
                         if (titleController.text.isEmpty) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                    content: Text('Vui lòng nhập tên bài học'),
-                            ),
+                            SnackBar(content: Text('Vui lòng nhập tên bài học')),
                           );
                           return;
                         }
 
-                        String? contentUrl;
-
-                        if (type == 'video' && videoSource == 'url') {
-                          if (urlController.text.isEmpty) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                    content: Text('Vui lòng nhập URL Video'),
-                              ),
-                            );
-                            return;
-                          }
-                          contentUrl = urlController.text;
-                        }
-
-                        if ((type == 'video' && videoSource == 'upload') ||
-                            type == 'document') {
-                          if (selectedFilePath == null) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  type == 'video'
-                                      ? 'Vui lòng chọn file video'
-                                      : 'Vui lòng chọn tệp tài liệu',
-                                ),
-                              ),
-                            );
-                            return;
-                          }
-
-                          setState(() => isUploading = true);
-                          final file = File(selectedFilePath!);
-                          final uploadService = FileUploadService();
-                          final result = await uploadService.uploadFile(
-                            file: file,
-                            fileType: type == 'video' ? 'video' : 'document',
-                          );
-
-                          if (!result.isSuccess) {
-                            setState(() => isUploading = false);
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    result.errorMessage ?? 'Lỗi upload',
-                                  ),
-                                  backgroundColor: AppColors.error,
-                                ),
-                              );
-                            }
-                            return;
-                          }
-                          contentUrl = result.uploadUrl;
-                          setState(() => isUploading = false);
-                        }
-
-                        final courseId =
-                            (BlocProvider.of<CourseDetailBloc>(
-                                      mainContext,
-                                    ).state
-                                    as CourseDetailLoaded)
-                                .course
-                                .id;
+                        final courseId = (BlocProvider.of<CourseDetailBloc>(
+                                  mainContext,
+                                ).state as CourseDetailLoaded)
+                            .course
+                            .id;
                         BlocProvider.of<CourseDetailBloc>(mainContext).add(
                           CreateLessonEvent(
                             courseId: courseId,
                             moduleId: moduleId,
                             title: titleController.text,
                             type: type,
-                            contentUrl: contentUrl,
+                            contentUrl: uploadedUrl,
                           ),
                         );
                         if (context.mounted) {
@@ -245,93 +223,6 @@ class AddLessonDialog {
           );
         },
       ),
-    );
-  }
-
-  static Widget buildVideoSourceToggle({
-    required String videoSource,
-    required VoidCallback onSelectUrl,
-    required VoidCallback onSelectUpload,
-  }) {
-    return Row(
-      children: [
-        Expanded(
-          child: InkWell(
-            onTap: onSelectUrl,
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              decoration: BoxDecoration(
-                color: videoSource == 'url'
-                    ? AppColors.accent
-                    : Colors.grey[200],
-                borderRadius: const BorderRadius.horizontal(
-                  left: Radius.circular(8),
-                ),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.link,
-                    size: 18,
-                    color: videoSource == 'url'
-                        ? Colors.white
-                        : Colors.grey[600],
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Nhập URL',
-                    style: TextStyle(
-                      color: videoSource == 'url'
-                          ? Colors.white
-                          : Colors.grey[600],
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-        Expanded(
-          child: InkWell(
-            onTap: onSelectUpload,
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              decoration: BoxDecoration(
-                color: videoSource == 'upload'
-                    ? AppColors.accent
-                    : Colors.grey[200],
-                borderRadius: const BorderRadius.horizontal(
-                  right: Radius.circular(8),
-                ),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.upload_file,
-                    size: 18,
-                    color: videoSource == 'upload'
-                        ? Colors.white
-                        : Colors.grey[600],
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Upload từ máy',
-                    style: TextStyle(
-                      color: videoSource == 'upload'
-                          ? Colors.white
-                          : Colors.grey[600],
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

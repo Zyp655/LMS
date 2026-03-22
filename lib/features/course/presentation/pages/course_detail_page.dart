@@ -68,7 +68,7 @@ class _CourseDetailViewState extends State<CourseDetailView>
     _tabController = null;
     old?.dispose();
     _isEnrolled = enrolled;
-    _tabController = TabController(length: enrolled ? 2 : 4, vsync: this);
+    _tabController = TabController(length: enrolled ? 1 : 4, vsync: this);
   }
 
   Future<void> _fetchInstructorFromClass(int courseId) async {
@@ -375,7 +375,6 @@ class _CourseDetailViewState extends State<CourseDetailView>
                             courseId: state.course.id,
                             userId: widget.userId,
                           ),
-                          CourseAssignmentsTab(courseId: state.course.id),
                         ]
                       : [
                           CourseCurriculumTab(
@@ -428,7 +427,6 @@ class _CourseDetailViewState extends State<CourseDetailView>
         tabs: _isEnrolled
             ? const [
                 Tab(text: 'Nội dung'),
-                Tab(text: 'Bài tập'),
               ]
             : const [
                 Tab(text: 'Nội dung'),

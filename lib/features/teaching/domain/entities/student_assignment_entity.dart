@@ -13,6 +13,10 @@ class StudentAssignmentEntity extends Equatable {
   final bool rewardClaimed;
   final String? className;
   final int classId;
+  final int? moduleId;
+  final String? moduleName;
+  final int? courseId;
+  final String? courseName;
   final String? submissionStatus;
   final num? grade;
   final num? maxGrade;
@@ -31,6 +35,10 @@ class StudentAssignmentEntity extends Equatable {
     required this.rewardClaimed,
     this.className,
     required this.classId,
+    this.moduleId,
+    this.moduleName,
+    this.courseId,
+    this.courseName,
     this.submissionStatus,
     this.grade,
     this.maxGrade,
@@ -51,6 +59,10 @@ class StudentAssignmentEntity extends Equatable {
     rewardClaimed,
     className,
     classId,
+    moduleId,
+    moduleName,
+    courseId,
+    courseName,
     submissionStatus,
     grade,
     maxGrade,

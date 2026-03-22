@@ -22,6 +22,14 @@ Future<Response> onRequest(RequestContext context) async {
         db.classes,
         db.classes.id.equalsExp(db.assignments.classId),
       ),
+      leftOuterJoin(
+        db.modules,
+        db.modules.id.equalsExp(db.assignments.moduleId),
+      ),
+      leftOuterJoin(
+        db.academicCourses,
+        db.academicCourses.id.equalsExp(db.modules.academicCourseId),
+      ),
     ])
       ..where(db.studentAssignments.studentId.equals(studentId));
     final results = await query.get();
@@ -31,6 +39,8 @@ Future<Response> onRequest(RequestContext context) async {
       final studentAssignment = row.readTable(db.studentAssignments);
       final assignment = row.readTable(db.assignments);
       final classInfo = row.readTableOrNull(db.classes);
+      final moduleInfo = row.readTableOrNull(db.modules);
+      final courseInfo = row.readTableOrNull(db.academicCourses);
 
       final submission = await (db.select(db.submissions)
             ..where(
@@ -57,6 +67,10 @@ Future<Response> onRequest(RequestContext context) async {
         'rewardClaimed': studentAssignment.rewardClaimed,
         'className': classInfo?.className,
         'classId': assignment.classId,
+        'moduleId': assignment.moduleId,
+        'moduleName': moduleInfo?.title,
+        'courseId': courseInfo?.id,
+        'courseName': courseInfo?.name,
         'submissionStatus': submission?.status,
         'grade': submission?.grade,
         'maxGrade': submission?.maxGrade,

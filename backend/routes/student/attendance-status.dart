@@ -50,9 +50,9 @@ Future<Response> onRequest(RequestContext context) async {
       'absenceReason': log?.absenceReason,
       'finalizedAt': log?.finalizedAt?.toIso8601String(),
       'conditions': {
-        'watchTimeMet': (log?.watchPercentage ?? 0) >= 80.0,
+        'watchTimeMet': (log?.watchPercentage ?? 0) >= 90.0,
         'quizMet': log?.quizCompleted ?? false,
-        'bothMet': (log?.watchPercentage ?? 0) >= 80.0 &&
+        'bothMet': (log?.watchPercentage ?? 0) >= 90.0 &&
             (log?.quizCompleted ?? false),
       },
     });

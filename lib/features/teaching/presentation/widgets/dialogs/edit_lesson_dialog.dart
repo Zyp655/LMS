@@ -8,22 +8,75 @@ import '../../../../course/presentation/bloc/course_detail_bloc.dart';
 import '../../../../course/presentation/bloc/course_detail_event.dart';
 import '../../../../course/presentation/bloc/course_detail_state.dart';
 import '../file_upload_box.dart';
-import 'add_lesson_dialog.dart';
 import '../../../../../core/theme/app_colors.dart';
 
 class EditLessonDialog {
   static void show(BuildContext mainContext, LessonEntity lesson) {
     final titleController = TextEditingController(text: lesson.title);
-    final urlController = TextEditingController(text: lesson.contentUrl ?? '');
     String type = lesson.type == LessonType.video ? 'video' : 'document';
-    String videoSource = 'url';
-    if (lesson.contentUrl != null && !lesson.contentUrl!.startsWith('http')) {
-      videoSource = 'upload';
-    }
-
     String? selectedFileName;
-    String? selectedFilePath;
+    String? uploadedUrl;
     bool isUploading = false;
+    bool isPicking = false;
+
+    Future<void> pickAndUpload(
+      StateSetter setState,
+      BuildContext context,
+      String fileType,
+      List<String> extensions,
+    ) async {
+      if (isPicking || isUploading) return;
+      isPicking = true;
+      try {
+        final result = await FilePicker.platform.pickFiles(
+          type: FileType.custom,
+          allowedExtensions: extensions,
+        );
+        if (result == null) {
+          isPicking = false;
+          return;
+        }
+
+        final file = File(result.files.single.path!);
+        setState(() {
+          selectedFileName = result.files.single.name;
+          isUploading = true;
+          uploadedUrl = null;
+        });
+
+        final uploadService = FileUploadService();
+        final uploadResult = await uploadService.uploadFile(
+          file: file,
+          fileType: fileType,
+        );
+
+        if (uploadResult.isSuccess) {
+          setState(() {
+            uploadedUrl = uploadResult.uploadUrl;
+            isUploading = false;
+          });
+        } else {
+          setState(() {
+            isUploading = false;
+            selectedFileName = null;
+          });
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(uploadResult.errorMessage ?? 'Lỗi upload'),
+                backgroundColor: AppColors.error,
+              ),
+            );
+          }
+        }
+      } catch (_) {
+        setState(() {
+          isUploading = false;
+          selectedFileName = null;
+        });
+      }
+      isPicking = false;
+    }
 
     showDialog(
       context: mainContext,
@@ -55,85 +108,52 @@ class EditLessonDialog {
                         child: Text('Tài liệu (.pdf, .doc)'),
                       ),
                     ],
-                    onChanged: (value) => setState(() {
-                      type = value!;
-                    }),
+                    onChanged: isUploading
+                        ? null
+                        : (value) => setState(() {
+                              type = value!;
+                              selectedFileName = null;
+                              uploadedUrl = null;
+                            }),
                   ),
                   const SizedBox(height: 16),
-                  if (type == 'video') ...[
-                    AddLessonDialog.buildVideoSourceToggle(
-                      videoSource: videoSource,
-                      onSelectUrl: () => setState(() {
-                        videoSource = 'url';
-                        selectedFileName = null;
-                        selectedFilePath = null;
-                      }),
-                      onSelectUpload: () => setState(() {
-                        videoSource = 'upload';
-                        urlController.clear();
-                      }),
+
+                  if (type == 'video')
+                    FileUploadBox(
+                      selectedFileName: selectedFileName,
+                      fileType: 'video',
+                      onClear: isUploading
+                          ? () {}
+                          : () => setState(() {
+                                selectedFileName = null;
+                                uploadedUrl = null;
+                              }),
+                      onPick: () => pickAndUpload(
+                        setState,
+                        context,
+                        'video',
+                        ['mp4', 'mov', 'avi', 'webm'],
+                      ),
                     ),
-                    const SizedBox(height: 16),
-                    if (videoSource == 'url')
-                      TextField(
-                        controller: urlController,
-                        decoration: InputDecoration(
-                          labelText: 'URL Video',
-                          hintText: 'https://youtube.com/watch?v=...',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.link),
-                        ),
-                      ),
-                    if (videoSource == 'upload')
-                      FileUploadBox(
-                        selectedFileName: selectedFileName,
-                        fileType: 'video',
-                        onClear: () => setState(() {
-                          selectedFileName = null;
-                          selectedFilePath = null;
-                        }),
-                        onPick: () async {
-                          FilePickerResult? result = await FilePicker.platform
-                              .pickFiles(
-                                type: FileType.custom,
-                                allowedExtensions: [
-                                  'mp4',
-                                  'mov',
-                                  'avi',
-                                  'webm',
-                                ],
-                              );
-                          if (result != null) {
-                            setState(() {
-                              selectedFileName = result.files.single.name;
-                              selectedFilePath = result.files.single.path;
-                            });
-                          }
-                        },
-                      ),
-                  ],
+
                   if (type == 'document')
                     FileUploadBox(
                       selectedFileName: selectedFileName,
                       fileType: 'document',
-                      onClear: () => setState(() {
-                        selectedFileName = null;
-                        selectedFilePath = null;
-                      }),
-                      onPick: () async {
-                        FilePickerResult? result = await FilePicker.platform
-                            .pickFiles(
-                              type: FileType.custom,
-                              allowedExtensions: ['pdf', 'doc', 'docx'],
-                            );
-                        if (result != null) {
-                          setState(() {
-                            selectedFileName = result.files.single.name;
-                            selectedFilePath = result.files.single.path;
-                          });
-                        }
-                      },
+                      onClear: isUploading
+                          ? () {}
+                          : () => setState(() {
+                                selectedFileName = null;
+                                uploadedUrl = null;
+                              }),
+                      onPick: () => pickAndUpload(
+                        setState,
+                        context,
+                        'document',
+                        ['pdf', 'doc', 'docx'],
+                      ),
                     ),
+
                   if (isUploading) ...[
                     const SizedBox(height: 16),
                     const LinearProgressIndicator(),
@@ -141,6 +161,24 @@ class EditLessonDialog {
                     const Text(
                       'Đang upload...',
                       style: TextStyle(color: Colors.grey),
+                    ),
+                  ],
+
+                  if (uploadedUrl != null) ...[
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Icon(Icons.check_circle, color: AppColors.success, size: 18),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Upload thành công!',
+                          style: TextStyle(
+                            color: AppColors.success,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ],
@@ -154,61 +192,24 @@ class EditLessonDialog {
               ElevatedButton(
                 onPressed: isUploading
                     ? null
-                    : () async {
+                    : () {
                         if (titleController.text.isEmpty) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                    content: Text('Vui lòng nhập tên bài học'),
-                            ),
+                            SnackBar(content: Text('Vui lòng nhập tên bài học')),
                           );
                           return;
                         }
 
-                        String? contentUrl = lesson.contentUrl;
-
-                        if (type == 'video' && videoSource == 'url') {
-                          contentUrl = urlController.text;
-                        } else if ((type == 'video' &&
-                                videoSource == 'upload') ||
-                            type == 'document') {
-                          if (selectedFilePath != null) {
-                            setState(() => isUploading = true);
-                            final file = File(selectedFilePath!);
-                            final uploadService = FileUploadService();
-                            final result = await uploadService.uploadFile(
-                              file: file,
-                              fileType: type == 'video' ? 'video' : 'document',
-                            );
-
-                            if (!result.isSuccess) {
-                              setState(() => isUploading = false);
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      result.errorMessage ?? 'Lỗi upload',
-                                    ),
-                                    backgroundColor: AppColors.error,
-                                  ),
-                                );
-                              }
-                              return;
-                            }
-                            contentUrl = result.uploadUrl;
-                            setState(() => isUploading = false);
-                          }
-                        }
+                        final contentUrl = uploadedUrl ?? lesson.contentUrl;
 
                         if (mainContext.mounted) {
                           BlocProvider.of<CourseDetailBloc>(mainContext).add(
                             UpdateLessonEvent(
-                              courseId:
-                                  (BlocProvider.of<CourseDetailBloc>(
-                                            mainContext,
-                                          ).state
-                                          as CourseDetailLoaded)
-                                      .course
-                                      .id,
+                              courseId: (BlocProvider.of<CourseDetailBloc>(
+                                        mainContext,
+                                      ).state as CourseDetailLoaded)
+                                  .course
+                                  .id,
                               moduleId: lesson.moduleId,
                               lessonId: lesson.id,
                               title: titleController.text,

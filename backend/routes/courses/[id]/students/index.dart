@@ -246,6 +246,15 @@ Future<Response> onRequest(RequestContext context, String id) async {
             lmsEnrollments.firstWhere((e) => e.userId == userId);
         enrolledAt = enrollment.enrolledAt;
         lastAccessedAt = enrollment.lastAccessedAt;
+      } else if (classIds.isNotEmpty) {
+        final ccEnrollment = await (db.select(db.courseClassEnrollments)
+              ..where((e) => e.studentId.equals(userId))
+              ..where((e) => e.courseClassId.isIn(classIds))
+              ..limit(1))
+            .getSingleOrNull();
+        if (ccEnrollment != null) {
+          enrolledAt = ccEnrollment.enrolledAt;
+        }
       }
 
       final lastActivity = await (db.select(db.studentActivityLogs)
@@ -253,6 +262,10 @@ Future<Response> onRequest(RequestContext context, String id) async {
             ..orderBy([(a) => OrderingTerm.desc(a.timestamp)])
             ..limit(1))
           .getSingleOrNull();
+
+      if (lastAccessedAt == null && lastActivity != null) {
+        lastAccessedAt = lastActivity.timestamp;
+      }
 
       int daysInactive = 0;
       bool isAtRisk = riskScore >= 50 || status == 'not_started';

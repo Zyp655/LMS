@@ -19,141 +19,194 @@ Future<Response> onRequest(RequestContext context, String id) async {
   try {
     final db = context.read<AppDatabase>();
 
-    final enrollments = await (db.select(db.enrollments)
+    final lmsEnrollments = await (db.select(db.enrollments)
           ..where((e) => e.courseId.equals(courseId)))
         .get();
 
-    if (enrollments.isEmpty) {
+    final isAcademic = lmsEnrollments.isEmpty;
+    List<int> enrolledUserIds = [];
+    List<int> classIds = [];
+
+    if (isAcademic) {
+      final classes = await (db.select(db.courseClasses)
+            ..where((c) => c.academicCourseId.equals(courseId)))
+          .get();
+      classIds = classes.map((c) => c.id).toList();
+      if (classIds.isNotEmpty) {
+        final ccEnrollments = await (db.select(db.courseClassEnrollments)
+              ..where((e) => e.courseClassId.isIn(classIds)))
+            .get();
+        enrolledUserIds = ccEnrollments.map((e) => e.studentId).toSet().toList();
+      }
+    } else {
+      enrolledUserIds = lmsEnrollments.map((e) => e.userId).toList();
+    }
+
+    if (enrolledUserIds.isEmpty) {
       return Response.json(body: {
         'courseId': courseId,
         'totalStudents': 0,
         'atRiskStudents': <Map<String, dynamic>>[],
-        'summary': {'atRiskCount': 0, 'atRiskPercent': 0.0},
+        'summary': {
+          'atRiskCount': 0,
+          'warningCount': 0,
+          'atRiskPercent': 0.0,
+        },
       });
     }
 
     final modules = await (db.select(db.modules)
-          ..where((m) => m.courseId.equals(courseId))
-          ..orderBy([(m) => OrderingTerm.asc(m.orderIndex)]))
+          ..where((m) => isAcademic
+              ? m.academicCourseId.equals(courseId)
+              : m.courseId.equals(courseId)))
         .get();
+    final moduleIds = modules.map((m) => m.id).toList();
 
-    var totalLessons = 0;
-    for (final m in modules) {
-      final count = await (db.select(db.lessons)
-            ..where((l) => l.moduleId.equals(m.id)))
+    List<int> allLessonIds = [];
+    if (moduleIds.isNotEmpty) {
+      final lessons = await (db.select(db.lessons)
+            ..where((l) => l.moduleId.isIn(moduleIds)))
           .get();
-      totalLessons += count.length;
+      allLessonIds = lessons.map((l) => l.id).toList();
+    }
+    final totalLessons = allLessonIds.length;
+
+    List<int> courseAssignmentIds = [];
+    if (classIds.isNotEmpty) {
+      final assignments = await (db.select(db.assignments)
+            ..where((a) => a.classId.isIn(classIds)))
+          .get();
+      courseAssignmentIds = assignments.map((a) => a.id).toList();
+    } else if (moduleIds.isNotEmpty) {
+      final assignments = await (db.select(db.assignments)
+            ..where((a) => a.moduleId.isIn(moduleIds)))
+          .get();
+      courseAssignmentIds = assignments.map((a) => a.id).toList();
     }
 
-    final now = DateTime.now();
-    final twoWeeksAgo = now.subtract(const Duration(days: 14));
+    List<int> courseQuizIds = [];
+    if (moduleIds.isNotEmpty) {
+      final quizzes = await (db.select(db.quizzes)
+            ..where((q) => q.moduleId.isIn(moduleIds)))
+          .get();
+      courseQuizIds = quizzes.map((q) => q.id).toList();
+    }
+
     final results = <Map<String, dynamic>>[];
 
-    for (final enrollment in enrollments) {
-      final userId = enrollment.userId;
-
+    for (final userId in enrolledUserIds) {
       final user = await (db.select(db.users)
             ..where((u) => u.id.equals(userId)))
           .getSingleOrNull();
       if (user == null) continue;
 
-      final completedLessons = await (db.select(db.lessonProgress)
-            ..where((p) => p.userId.equals(userId))
-            ..where((p) => p.isCompleted.equals(true)))
-          .get();
-
-      final courseCompletedCount = completedLessons.where((p) {
-        return true;
-      }).length;
-
-      final quizStats = await (db.select(db.quizStatistics)
-            ..where((s) => s.userId.equals(userId)))
-          .get();
-
-      final recentActivities = await (db.select(db.learningActivities)
-            ..where((a) => a.userId.equals(userId))
-            ..where((a) => a.createdAt.isBiggerOrEqualValue(twoWeeksAgo))
-            ..orderBy([(a) => OrderingTerm.desc(a.createdAt)]))
-          .get();
-
-      double avgQuizScore = 0;
-      if (quizStats.isNotEmpty) {
-        avgQuizScore = quizStats.fold<double>(0, (sum, s) => sum + s.averageScore) /
-            quizStats.length;
+      int completedLessons = 0;
+      if (allLessonIds.isNotEmpty) {
+        final progress = await (db.select(db.lessonProgress)
+              ..where((p) => p.userId.equals(userId))
+              ..where((p) => p.lessonId.isIn(allLessonIds))
+              ..where((p) => p.isCompleted.equals(true)))
+            .get();
+        completedLessons = progress.length;
       }
 
       final completionRate = totalLessons > 0
-          ? courseCompletedCount / totalLessons
+          ? completedLessons / totalLessons
           : 0.0;
 
-      final daysSinceActivity = recentActivities.isEmpty
-          ? 30
-          : now.difference(recentActivities.first.createdAt).inDays;
+      double? quizAverage;
+      if (courseQuizIds.isNotEmpty) {
+        final attempts = await (db.select(db.quizAttempts)
+              ..where((a) => a.userId.equals(userId))
+              ..where((a) => a.quizId.isIn(courseQuizIds)))
+            .get();
+        if (attempts.isNotEmpty) {
+          quizAverage = attempts.fold<double>(
+                  0, (sum, a) => sum + a.scorePercentage) /
+              attempts.length;
+        }
+      }
 
-      final streak = await (db.select(db.userStreaks)
-            ..where((s) => s.userId.equals(userId)))
-          .getSingleOrNull();
-      final currentStreak = streak?.currentStreak ?? 0;
+      double absenceRate = 0;
+      int absenceCount = 0;
+      if (classIds.isNotEmpty) {
+        final attendances = await (db.select(db.attendances)
+              ..where((a) => a.studentId.equals(userId))
+              ..where((a) => a.classId.isIn(classIds)))
+            .get();
+        final total = attendances.length;
+        absenceCount = attendances.where((a) => a.status != 'present').length;
+        absenceRate = total > 0 ? absenceCount / total * 100 : 0;
+      }
 
-      var riskScore = 0.0;
+      double lateRate = 0;
+      int lateCount = 0;
+      if (courseAssignmentIds.isNotEmpty) {
+        final submissions = await (db.select(db.submissions)
+              ..where((s) => s.studentId.equals(userId))
+              ..where((s) => s.assignmentId.isIn(courseAssignmentIds)))
+            .get();
+        lateCount = submissions.where((s) => s.isLate).length;
+        final notSubmitted = courseAssignmentIds.length - submissions.length;
+        final totalPenalizable = courseAssignmentIds.length;
+        lateRate = totalPenalizable > 0
+            ? (lateCount + notSubmitted) / totalPenalizable * 100
+            : 0;
+      }
+
+      double progressPenalty = totalLessons > 0
+          ? (1 - completionRate) * 25
+          : 0;
+      double quizPenalty = quizAverage != null
+          ? ((100 - quizAverage) / 100) * 25
+          : courseQuizIds.isNotEmpty ? 25 : 0;
+      double absencePenalty = (absenceRate / 100) * 25;
+      double latePenalty = (lateRate / 100) * 25;
+
+      double riskScore = (progressPenalty + quizPenalty + absencePenalty + latePenalty)
+          .clamp(0, 100);
+      riskScore = (riskScore * 10).round() / 10;
+
+      if (riskScore < 35) continue;
+
       final riskFactors = <String>[];
-
-      if (completionRate < 0.3 && totalLessons > 3) {
-        riskScore += 30;
+      if (completionRate < 0.3 && totalLessons > 0) {
         riskFactors.add('Tiến độ thấp (${(completionRate * 100).toStringAsFixed(0)}%)');
-      } else if (completionRate < 0.5) {
-        riskScore += 15;
+      }
+      if (quizAverage != null && quizAverage < 50) {
+        riskFactors.add('Điểm quiz thấp (${quizAverage.toStringAsFixed(0)}%)');
+      }
+      if (absenceCount > 0) {
+        riskFactors.add('Vắng $absenceCount buổi');
+      }
+      if (lateCount > 0) {
+        riskFactors.add('Trễ $lateCount bài tập');
       }
 
-      if (avgQuizScore < 40 && quizStats.isNotEmpty) {
-        riskScore += 25;
-        riskFactors.add('Điểm quiz thấp (${avgQuizScore.toStringAsFixed(0)}%)');
-      } else if (avgQuizScore < 60 && quizStats.isNotEmpty) {
-        riskScore += 10;
-      }
-
+      final lastActivity = await (db.select(db.studentActivityLogs)
+            ..where((a) => a.userId.equals(userId))
+            ..orderBy([(a) => OrderingTerm.desc(a.timestamp)])
+            ..limit(1))
+          .getSingleOrNull();
+      final daysSinceActivity = lastActivity != null
+          ? DateTime.now().difference(lastActivity.timestamp).inDays
+          : 30;
       if (daysSinceActivity > 7) {
-        riskScore += 25;
         riskFactors.add('Không hoạt động $daysSinceActivity ngày');
-      } else if (daysSinceActivity > 3) {
-        riskScore += 10;
       }
 
-      if (currentStreak == 0) {
-        riskScore += 10;
-        riskFactors.add('Streak = 0');
-      }
-
-      if (recentActivities.length < 3) {
-        riskScore += 10;
-        riskFactors.add('Ít hoạt động gần đây');
-      }
-
-      riskScore = riskScore.clamp(0, 100);
-
-      String riskLevel;
-      if (riskScore >= 60) {
-        riskLevel = 'high';
-      } else if (riskScore >= 35) {
-        riskLevel = 'medium';
-      } else {
-        riskLevel = 'low';
-      }
-
-      if (riskScore >= 35) {
-        results.add({
-          'userId': userId,
-          'fullName': user.fullName ?? 'Sinh viên #$userId',
-          'email': user.email,
-          'riskScore': riskScore,
-          'riskLevel': riskLevel,
-          'riskFactors': riskFactors,
-          'completionRate': completionRate,
-          'avgQuizScore': avgQuizScore,
-          'daysSinceActivity': daysSinceActivity,
-          'currentStreak': currentStreak,
-        });
-      }
+      results.add({
+        'userId': userId,
+        'fullName': user.fullName ?? 'Sinh viên #$userId',
+        'email': user.email,
+        'riskScore': riskScore,
+        'riskLevel': riskScore >= 60 ? 'high' : 'medium',
+        'riskFactors': riskFactors,
+        'completionRate': completionRate,
+        'avgQuizScore': quizAverage ?? 0,
+        'daysSinceActivity': daysSinceActivity,
+        'currentStreak': 0,
+      });
     }
 
     results.sort((a, b) =>
@@ -163,13 +216,13 @@ Future<Response> onRequest(RequestContext context, String id) async {
 
     return Response.json(body: {
       'courseId': courseId,
-      'totalStudents': enrollments.length,
+      'totalStudents': enrolledUserIds.length,
       'atRiskStudents': results,
       'summary': {
         'atRiskCount': atRiskCount,
         'warningCount': results.length - atRiskCount,
-        'atRiskPercent': enrollments.isNotEmpty
-            ? (results.length / enrollments.length * 100)
+        'atRiskPercent': enrolledUserIds.isNotEmpty
+            ? (results.length / enrolledUserIds.length * 100)
             : 0.0,
       },
     });

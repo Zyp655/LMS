@@ -107,9 +107,26 @@ Future<Response> onRequest(RequestContext context) async {
     final academicResults = await academicQuery.get();
     final List<Map<String, dynamic>> academicJson = [];
 
+    final absenceCounts = <int, int>{};
+    for (final row in academicResults) {
+      final cc = row.readTable(db.courseClasses);
+      if (absenceCounts.containsKey(cc.id)) continue;
+      final count = await (db.selectOnly(db.attendances)
+            ..addColumns([db.attendances.id.count()])
+            ..where(
+              db.attendances.classId.equals(cc.id) &
+                  db.attendances.studentId.equals(userId) &
+                  db.attendances.status.equals('absent'),
+            ))
+          .map((row) => row.read(db.attendances.id.count()) ?? 0)
+          .getSingle();
+      absenceCounts[cc.id] = count;
+    }
+
     for (final row in academicResults) {
       final cc = row.readTable(db.courseClasses);
       final ac = row.readTable(db.academicCourses);
+      final ccAbsences = absenceCounts[cc.id] ?? 0;
 
       if (cc.dayOfWeek != null && cc.startDate != null && cc.endDate != null) {
         final dow = cc.dayOfWeek!;
@@ -140,7 +157,7 @@ Future<Response> onRequest(RequestContext context) async {
             'note': 'Lớp ${cc.classCode}',
             'classCode': cc.classCode,
             'credits': ac.credits,
-            'currentAbsences': 0,
+            'currentAbsences': ccAbsences,
             'maxAbsences': ac.credits * 3,
             'type': 'classSession',
             'format': 'offline',
@@ -189,7 +206,7 @@ Future<Response> onRequest(RequestContext context) async {
             'note': 'Lớp ${cc.classCode}',
             'classCode': cc.classCode,
             'credits': ac.credits,
-            'currentAbsences': 0,
+            'currentAbsences': ccAbsences,
             'maxAbsences': ac.credits * 3,
             'type': 'classSession',
             'format': 'offline',
@@ -212,7 +229,7 @@ Future<Response> onRequest(RequestContext context) async {
           'note': 'Lớp ${cc.classCode}',
           'classCode': cc.classCode,
           'credits': ac.credits,
-          'currentAbsences': 0,
+          'currentAbsences': ccAbsences,
           'maxAbsences': ac.credits * 3,
           'type': 'classSession',
           'format': 'offline',

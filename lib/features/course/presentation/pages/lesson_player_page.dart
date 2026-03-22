@@ -21,6 +21,7 @@ import '../../../../core/route/app_route.dart';
 import '../widgets/assignment_submission_widget.dart';
 import '../widgets/document_viewer_widget.dart';
 import '../widgets/lesson_overview_tab.dart';
+import '../widgets/lesson_assignments_tab.dart';
 
 import '../widgets/lesson_notes_tab.dart';
 import '../widgets/lesson_list_sheet.dart';
@@ -147,7 +148,7 @@ class _LessonPlayerViewState extends State<LessonPlayerView>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _sessionStart = DateTime.now();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
     _analyticsBloc = context.read<AnalyticsBloc>();
     _learningPlayerBloc = context.read<LearningPlayerBloc>();
     _confusionDetector = ConfusionDetector(
@@ -784,6 +785,10 @@ class _LessonPlayerViewState extends State<LessonPlayerView>
                             isVideoInitialized: _isInitialized,
                             userId: widget.userId,
                           ),
+                          LessonAssignmentsTab(
+                            moduleId: widget.lesson.moduleId,
+                            userId: widget.userId,
+                          ),
                           const LessonNotesTab(),
                         ],
                       ),
@@ -1137,6 +1142,7 @@ class _LessonPlayerViewState extends State<LessonPlayerView>
         labelStyle: const TextStyle(fontWeight: FontWeight.bold),
         tabs: const [
           Tab(text: 'Tổng quan'),
+          Tab(text: 'Bài tập'),
           Tab(text: 'Ghi chú'),
         ],
       ),

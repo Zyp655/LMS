@@ -178,7 +178,7 @@ class _TeacherStudentsPageState extends State<TeacherStudentsPage> {
       floating: false,
       pinned: true,
       elevation: 0,
-      backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
+      backgroundColor: isDark ? AppColors.darkSurface : const Color(0xFF00B894),
       surfaceTintColor: Colors.transparent,
       forceElevated: innerBoxIsScrolled,
       leading: Navigator.canPop(context)
@@ -899,18 +899,24 @@ class _TeacherStudentsPageState extends State<TeacherStudentsPage> {
           student: student,
           formatTime: _formatTime,
           onSendNotification: () => _sendNotificationToStudent(student),
-          onViewHistory: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: const Text('Đang tải lịch sử hoạt động...'),
-                behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-            );
-          },
+          onViewHistory: () => _showActivityHistory(student),
         ),
+      ),
+    );
+  }
+
+  void _showActivityHistory(dynamic student) async {
+    final userId = student['userId'] as int;
+    final name = student['fullName'] ?? 'Sinh viên';
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => _ActivityHistorySheet(
+        courseId: _selectedCourseId!,
+        userId: userId,
+        studentName: name,
       ),
     );
   }
@@ -1333,5 +1339,255 @@ class _TeacherStudentsPageState extends State<TeacherStudentsPage> {
     } catch (e) {
       return 'N/A';
     }
+  }
+}
+
+class _ActivityHistorySheet extends StatefulWidget {
+  final int courseId;
+  final int userId;
+  final String studentName;
+
+  const _ActivityHistorySheet({
+    required this.courseId,
+    required this.userId,
+    required this.studentName,
+  });
+
+  @override
+  State<_ActivityHistorySheet> createState() => _ActivityHistorySheetState();
+}
+
+class _ActivityHistorySheetState extends State<_ActivityHistorySheet> {
+  bool _loading = true;
+  List<dynamic> _lessonProgress = [];
+  List<dynamic> _activityLog = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadHistory();
+  }
+
+  Future<void> _loadHistory() async {
+    try {
+      final api = sl<ApiClient>();
+      final data = await api.get(
+        '/courses/${widget.courseId}/students/${widget.userId}/activity',
+      );
+      if (mounted) {
+        setState(() {
+          _lessonProgress = data['lessonProgress'] ?? [];
+          _activityLog = data['activityLog'] ?? [];
+          _loading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  String _actionLabel(String action) {
+    switch (action) {
+      case 'lesson_start':
+        return '▶️ Bắt đầu bài học';
+      case 'lesson_complete':
+        return '✅ Hoàn thành bài học';
+      case 'video_watch':
+        return '🎬 Xem video';
+      case 'quiz_attempt':
+        return '📝 Làm quiz';
+      case 'quiz_complete':
+        return '🏆 Hoàn thành quiz';
+      case 'assignment_submit':
+        return '📎 Nộp bài tập';
+      case 'login':
+        return '🔐 Đăng nhập';
+      default:
+        return '📌 $action';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : AppColors.textPrimaryLight;
+    final subtextColor = isDark ? Colors.grey[400]! : AppColors.textSecondaryLight;
+
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.8,
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkSurface : Colors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: AppColors.border(context),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Lịch sử hoạt động',
+                  style: TextStyle(
+                    color: textColor,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  widget.studentName,
+                  style: TextStyle(color: subtextColor, fontSize: 14),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          Expanded(
+            child: _loading
+                ? const Center(child: CircularProgressIndicator())
+                : DefaultTabController(
+                    length: 2,
+                    child: Column(
+                      children: [
+                        TabBar(
+                          labelColor: AppColors.primary,
+                          unselectedLabelColor: subtextColor,
+                          indicatorColor: AppColors.primary,
+                          tabs: [
+                            Tab(text: 'Bài học (${_lessonProgress.length})'),
+                            Tab(text: 'Hoạt động (${_activityLog.length})'),
+                          ],
+                        ),
+                        Expanded(
+                          child: TabBarView(
+                            children: [
+                              _buildLessonTab(isDark, textColor, subtextColor),
+                              _buildActivityTab(isDark, textColor, subtextColor),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLessonTab(bool isDark, Color textColor, Color subtextColor) {
+    if (_lessonProgress.isEmpty) {
+      return Center(
+        child: Text('Chưa có dữ liệu bài học', style: TextStyle(color: subtextColor)),
+      );
+    }
+    return ListView.separated(
+      padding: const EdgeInsets.all(16),
+      itemCount: _lessonProgress.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 8),
+      itemBuilder: (context, index) {
+        final lp = _lessonProgress[index];
+        final isCompleted = lp['isCompleted'] == true;
+        final type = lp['lessonType'] ?? 'video';
+        final typeIcon = type == 'video' ? Icons.play_circle_outline : Icons.article_outlined;
+
+        return Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.darkSurfaceVariant : Colors.grey.shade50,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Row(
+            children: [
+              Icon(typeIcon, color: subtextColor, size: 20),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      lp['lessonTitle'] ?? 'Bài học',
+                      style: TextStyle(
+                        color: textColor,
+                        fontWeight: FontWeight.w500,
+                        fontSize: 13,
+                      ),
+                    ),
+                    if (lp['completedAt'] != null)
+                      Text(
+                        DateFormat('dd/MM/yyyy HH:mm').format(
+                          DateTime.parse(lp['completedAt']),
+                        ),
+                        style: TextStyle(color: subtextColor, fontSize: 11),
+                      ),
+                  ],
+                ),
+              ),
+              Icon(
+                isCompleted ? Icons.check_circle : Icons.radio_button_unchecked,
+                color: isCompleted ? AppColors.success : Colors.grey,
+                size: 20,
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildActivityTab(bool isDark, Color textColor, Color subtextColor) {
+    if (_activityLog.isEmpty) {
+      return Center(
+        child: Text('Chưa có hoạt động nào', style: TextStyle(color: subtextColor)),
+      );
+    }
+    return ListView.separated(
+      padding: const EdgeInsets.all(16),
+      itemCount: _activityLog.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 6),
+      itemBuilder: (context, index) {
+        final log = _activityLog[index];
+        final action = log['action'] as String? ?? '';
+        final timestamp = log['timestamp'] as String?;
+        final formattedTime = timestamp != null
+            ? DateFormat('dd/MM HH:mm').format(DateTime.parse(timestamp))
+            : '';
+
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.darkSurfaceVariant : Colors.grey.shade50,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  _actionLabel(action),
+                  style: TextStyle(color: textColor, fontSize: 13),
+                ),
+              ),
+              Text(
+                formattedTime,
+                style: TextStyle(color: subtextColor, fontSize: 12),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 }

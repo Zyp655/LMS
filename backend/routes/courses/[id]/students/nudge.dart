@@ -25,23 +25,52 @@ Future<Response> _generateNudge(RequestContext context, int courseId) async {
     return Response(statusCode: HttpStatus.badRequest, body: 'Missing userId');
   }
   try {
+    final user = await (db.select(db.users)..where((u) => u.id.equals(userId)))
+        .getSingle();
+
+    String courseName = 'khóa học';
+    int daysInactive = 0;
+    int progressPercent = 0;
+
     final enrollment = await (db.select(db.enrollments)
           ..where((e) => e.courseId.equals(courseId))
           ..where((e) => e.userId.equals(userId)))
         .getSingleOrNull();
-    if (enrollment == null) {
-      return Response(
-          statusCode: HttpStatus.notFound, body: 'Enrollment not found');
+
+    if (enrollment != null) {
+      final course = await (db.select(db.courses)
+            ..where((c) => c.id.equals(courseId)))
+          .getSingle();
+      courseName = course.title;
+      final now = DateTime.now();
+      daysInactive = enrollment.lastAccessedAt != null
+          ? now.difference(enrollment.lastAccessedAt!).inDays
+          : 0;
+      progressPercent = enrollment.progressPercent.round();
+    } else {
+      final academicCourse = await (db.select(db.academicCourses)
+            ..where((c) => c.id.equals(courseId)))
+          .getSingleOrNull();
+      if (academicCourse == null) {
+        return Response(
+            statusCode: HttpStatus.notFound, body: 'Course not found');
+      }
+      courseName = academicCourse.name;
+
+      final ccEnrollment = await (db.select(db.courseClassEnrollments).join([
+        innerJoin(db.courseClasses,
+            db.courseClasses.id.equalsExp(db.courseClassEnrollments.courseClassId)),
+      ])
+            ..where(db.courseClasses.academicCourseId.equals(courseId))
+            ..where(db.courseClassEnrollments.studentId.equals(userId)))
+          .getSingleOrNull();
+
+      if (ccEnrollment != null) {
+        final e = ccEnrollment.readTable(db.courseClassEnrollments);
+        progressPercent = e.progressPercent.round();
+      }
     }
-    final user = await (db.select(db.users)..where((u) => u.id.equals(userId)))
-        .getSingle();
-    final course = await (db.select(db.courses)
-          ..where((c) => c.id.equals(courseId)))
-        .getSingle();
-    final now = DateTime.now();
-    final daysInactive = enrollment.lastAccessedAt != null
-        ? now.difference(enrollment.lastAccessedAt!).inDays
-        : -1;
+
     final env = DotEnv(includePlatformEnvironment: true)..load();
     final apiKey = env['OPENAI_API_KEY'];
     if (apiKey == null) {
@@ -50,16 +79,13 @@ Future<Response> _generateNudge(RequestContext context, int courseId) async {
           body: 'OpenAI API Key not configured');
     }
     final aiService = AIService(openaiApiKey: apiKey);
-    final nextLessonTitle = "Bài học tiếp theo";
-    final nextLessonId = 123;
-    final deepLink = "alarmm://lesson/$nextLessonId";
     final message = await aiService.generateNudgeMessage(
       studentName: user.fullName ?? 'Bạn',
-      courseName: course.title,
-      daysInactive: daysInactive == -1 ? 0 : daysInactive,
-      progressPercent: enrollment.progressPercent.round(),
-      nextLessonTitle: nextLessonTitle,
-      nextLessonDeepLink: deepLink,
+      courseName: courseName,
+      daysInactive: daysInactive,
+      progressPercent: progressPercent,
+      nextLessonTitle: "Bài học tiếp theo",
+      nextLessonDeepLink: "alarmm://lesson/0",
     );
     return Response.json(body: {'message': message});
   } catch (e) {

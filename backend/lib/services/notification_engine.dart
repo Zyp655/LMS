@@ -97,8 +97,8 @@ class NotificationEngine {
       if (schedule == null) continue;
 
       final parts = <String>[];
-      if (log.watchPercentage < 80) {
-        parts.add('Video: ${log.watchPercentage.toStringAsFixed(0)}%/80%');
+      if (log.watchPercentage < 90) {
+        parts.add('Video: ${log.watchPercentage.toStringAsFixed(0)}%/90%');
       }
       if (!log.quizCompleted) {
         parts.add('Quiz: chưa hoàn thành');

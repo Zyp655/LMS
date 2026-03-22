@@ -56,7 +56,7 @@ class AttendanceEngine {
       }
 
       final isPresent =
-          log.watchPercentage >= 80.0 && log.quizCompleted && allSegmentsDone;
+          log.watchPercentage >= 90.0 && log.quizCompleted && allSegmentsDone;
       final status = isPresent ? 'present' : 'absent';
       String? reason;
 
@@ -93,7 +93,7 @@ class AttendanceEngine {
           date: dayStart,
           status: 'present',
           note:
-              'Hoàn thành ${log.watchPercentage.toStringAsFixed(0)}% video + quiz + tất cả phân đoạn',
+              'Đã xem đủ ${log.watchPercentage.toStringAsFixed(0)}% video (≥90%) + quiz + tất cả phân đoạn',
         );
       }
     }
@@ -249,7 +249,7 @@ class AttendanceEngine {
       lastAccessAt: Value(DateTime.now()),
     ));
 
-    if (percentage >= 80.0 && log.quizCompleted) {
+    if (percentage >= 90.0 && log.quizCompleted) {
       await (db.update(db.dailyLearningLogs)..where((l) => l.id.equals(logId)))
           .write(const DailyLearningLogsCompanion(
         status: Value('present'),
@@ -274,7 +274,7 @@ class AttendanceEngine {
       lastAccessAt: Value(DateTime.now()),
     ));
 
-    if (log.watchPercentage >= 80.0) {
+    if (log.watchPercentage >= 90.0) {
       await (db.update(db.dailyLearningLogs)..where((l) => l.id.equals(logId)))
           .write(const DailyLearningLogsCompanion(
         status: Value('present'),
@@ -289,9 +289,9 @@ class AttendanceEngine {
     String segmentDetail,
   ) {
     final parts = <String>[];
-    if (watchPct < 80.0) {
+    if (watchPct < 90.0) {
       parts.add(
-          'Chưa hoàn thành ${80 - watchPct.toInt()}% thời lượng video còn thiếu (đạt ${watchPct.toStringAsFixed(0)}%)');
+          'Chưa xem đủ 90% video (chỉ đạt ${watchPct.toStringAsFixed(0)}%)');
     }
     if (!quizDone) {
       parts.add('Chưa hoàn thành bài kiểm tra nhanh');

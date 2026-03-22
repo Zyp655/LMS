@@ -71,8 +71,11 @@ class _AttendanceDashboardPageState extends State<AttendanceDashboardPage> {
         final classCode = courseClass['classCode'] as String? ?? '';
 
         final sched = scheduleMap[name];
-        final absences = sched?['currentAbsences'] as int? ?? 0;
-        final maxAbs = sched?['maxAbsences'] as int? ?? (credits * 3);
+        final absences = e['currentAbsences'] as int? ?? sched?['currentAbsences'] as int? ?? 0;
+        final totalSessions = e['totalSessions'] as int? ?? 0;
+        final maxAbs = totalSessions > 0
+            ? totalSessions
+            : e['maxAbsences'] as int? ?? sched?['maxAbsences'] as int? ?? (credits * 3);
         final midterm = (sched?['midtermScore'] as num?)?.toDouble();
         final finalS = (sched?['finalScore'] as num?)?.toDouble();
         final overall = (sched?['overallScore'] as num?)?.toDouble();

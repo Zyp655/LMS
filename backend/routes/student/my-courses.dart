@@ -38,7 +38,6 @@ Future<Response> _getMyClasses(RequestContext context) async {
 
     final results = <Map<String, dynamic>>[];
     for (final enrollment in enrollments) {
-
       final cls = await (db.select(db.courseClasses)
             ..where((c) => c.id.equals(enrollment.courseClassId)))
           .getSingleOrNull();
@@ -80,6 +79,43 @@ Future<Response> _getMyClasses(RequestContext context) async {
           .map((row) => row.read(db.modules.id.count()) ?? 0)
           .getSingle();
 
+      final modules = await (db.select(db.modules)
+            ..where((m) => m.academicCourseId.equals(course.id))
+            ..orderBy([(m) => OrderingTerm.asc(m.orderIndex)]))
+          .get();
+
+      final courseStart = cls.startDate ?? enrollment.enrolledAt;
+      final now = DateTime.now();
+      final weeksPassed = now.difference(courseStart).inDays ~/ 7 + 1;
+      final unlockedCount = weeksPassed.clamp(0, modules.length);
+
+      int absenceCount = 0;
+      final totalSessions = course.credits * 3;
+
+      for (int i = 0; i < unlockedCount; i++) {
+        final mod = modules[i];
+        final videoLessons = await (db.select(db.lessons)
+              ..where((l) => l.moduleId.equals(mod.id))
+              ..where((l) => l.type.equals('video')))
+            .get();
+
+        if (videoLessons.isEmpty) continue;
+
+        bool allCompleted = true;
+        for (final lesson in videoLessons) {
+          final progress = await (db.select(db.lessonProgress)
+                ..where((p) => p.userId.equals(userId))
+                ..where((p) => p.lessonId.equals(lesson.id))
+                ..where((p) => p.isCompleted.equals(true)))
+              .getSingleOrNull();
+          if (progress == null) {
+            allCompleted = false;
+            break;
+          }
+        }
+        if (!allCompleted) absenceCount += 3;
+      }
+
       results.add({
         'enrollmentId': enrollment.id,
         'status': enrollment.status,
@@ -87,6 +123,9 @@ Future<Response> _getMyClasses(RequestContext context) async {
         'progressPercent': enrollment.progressPercent,
         'enrolledAt': enrollment.enrolledAt.toIso8601String(),
         'completedAt': enrollment.completedAt?.toIso8601String(),
+        'currentAbsences': absenceCount,
+        'totalSessions': totalSessions,
+        'maxAbsences': course.credits * 3,
         'courseClass': {
           'id': cls.id,
           'classCode': cls.classCode,
