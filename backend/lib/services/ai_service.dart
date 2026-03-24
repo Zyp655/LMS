@@ -6,6 +6,34 @@ class AIService {
   final String openaiApiKey;
   AIService({required this.openaiApiKey});
 
+  Future<String> generateExplanation(String prompt) async {
+    const baseUrl = 'https://api.openai.com/v1/chat/completions';
+    final response = await http.post(
+      Uri.parse(baseUrl),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $openaiApiKey',
+      },
+      body: jsonEncode({
+        'model': 'gpt-4o-mini',
+        'messages': [
+          {
+            'role': 'system',
+            'content': 'Bạn là gia sư AI chuyên giải thích các khái niệm phức tạp một cách đơn giản. Trả lời bằng tiếng Việt.',
+          },
+          {'role': 'user', 'content': prompt},
+        ],
+        'temperature': 0.7,
+        'max_tokens': 1024,
+      }),
+    );
+    if (response.statusCode == 200) {
+      return _extractChatContent(response.body);
+    } else {
+      throw Exception('OpenAI API Error: ${response.statusCode}');
+    }
+  }
+
   String _extractChatContent(String responseBody) {
     final data = jsonDecode(responseBody) as Map<String, dynamic>;
     final choices = data['choices'] as List<dynamic>;

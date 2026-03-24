@@ -665,6 +665,19 @@ class BehaviorReports extends Table {
   DateTimeColumn get expiresAt => dateTime()();
 }
 
+class ConfusionLogs extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  @ReferenceName('confusionLogUser')
+  IntColumn get userId => integer().references(Users, #id)();
+  IntColumn get lessonId => integer().references(Lessons, #id)();
+  TextColumn get eventsJson => text()();
+  TextColumn get emotionTimelineJson => text()();
+  TextColumn get selfReportsJson => text()();
+  TextColumn get featuresJson => text()();
+  IntColumn get sessionDuration => integer().withDefault(const Constant(0))();
+  DateTimeColumn get createdAt => dateTime()();
+}
+
 @DriftDatabase(tables: [
   Users,
   StudentProfiles,
@@ -718,6 +731,7 @@ class BehaviorReports extends Table {
   PersonalRoadmaps,
   PersonalRoadmapItems,
   BehaviorReports,
+  ConfusionLogs,
 ])
 class DailyLearningLogs extends Table {
   IntColumn get id => integer().autoIncrement()();
@@ -831,6 +845,7 @@ class SegmentQuizAttempts extends Table {
   VideoSegments,
   SegmentQuizAttempts,
   BehaviorReports,
+  ConfusionLogs,
 ])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_createDatabase());
@@ -851,7 +866,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 38;
+  int get schemaVersion => 39;
 
   @override
   MigrationStrategy get migration {
@@ -1236,6 +1251,25 @@ class AppDatabase extends _$AppDatabase {
         if (from < 38) {
           await m.issueCustomQuery(
             'ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS media_url TEXT',
+          );
+        }
+
+        if (from < 39) {
+          await m.issueCustomQuery('''
+            CREATE TABLE IF NOT EXISTS confusion_logs (
+              id SERIAL PRIMARY KEY,
+              user_id INTEGER NOT NULL REFERENCES users(id),
+              lesson_id INTEGER NOT NULL REFERENCES lessons(id),
+              events_json TEXT NOT NULL,
+              emotion_timeline_json TEXT NOT NULL,
+              self_reports_json TEXT NOT NULL,
+              features_json TEXT NOT NULL,
+              session_duration INTEGER NOT NULL DEFAULT 0,
+              created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )
+          ''');
+          await m.issueCustomQuery(
+            'CREATE INDEX IF NOT EXISTS idx_confusion_logs_lesson ON confusion_logs(lesson_id, user_id)',
           );
         }
       },

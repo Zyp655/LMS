@@ -25664,6 +25664,498 @@ class BehaviorReportsCompanion extends UpdateCompanion<BehaviorReport> {
   }
 }
 
+class $ConfusionLogsTable extends ConfusionLogs
+    with TableInfo<$ConfusionLogsTable, ConfusionLog> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ConfusionLogsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+      'id', aliasedName, false,
+      hasAutoIncrement: true,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<int> userId = GeneratedColumn<int>(
+      'user_id', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: true,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('REFERENCES users (id)'));
+  static const VerificationMeta _lessonIdMeta =
+      const VerificationMeta('lessonId');
+  @override
+  late final GeneratedColumn<int> lessonId = GeneratedColumn<int>(
+      'lesson_id', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: true,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('REFERENCES lessons (id)'));
+  static const VerificationMeta _eventsJsonMeta =
+      const VerificationMeta('eventsJson');
+  @override
+  late final GeneratedColumn<String> eventsJson = GeneratedColumn<String>(
+      'events_json', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _emotionTimelineJsonMeta =
+      const VerificationMeta('emotionTimelineJson');
+  @override
+  late final GeneratedColumn<String> emotionTimelineJson =
+      GeneratedColumn<String>('emotion_timeline_json', aliasedName, false,
+          type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _selfReportsJsonMeta =
+      const VerificationMeta('selfReportsJson');
+  @override
+  late final GeneratedColumn<String> selfReportsJson = GeneratedColumn<String>(
+      'self_reports_json', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _featuresJsonMeta =
+      const VerificationMeta('featuresJson');
+  @override
+  late final GeneratedColumn<String> featuresJson = GeneratedColumn<String>(
+      'features_json', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _sessionDurationMeta =
+      const VerificationMeta('sessionDuration');
+  @override
+  late final GeneratedColumn<int> sessionDuration = GeneratedColumn<int>(
+      'session_duration', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0));
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        userId,
+        lessonId,
+        eventsJson,
+        emotionTimelineJson,
+        selfReportsJson,
+        featuresJson,
+        sessionDuration,
+        createdAt
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'confusion_logs';
+  @override
+  VerificationContext validateIntegrity(Insertable<ConfusionLog> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('user_id')) {
+      context.handle(_userIdMeta,
+          userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta));
+    } else if (isInserting) {
+      context.missing(_userIdMeta);
+    }
+    if (data.containsKey('lesson_id')) {
+      context.handle(_lessonIdMeta,
+          lessonId.isAcceptableOrUnknown(data['lesson_id']!, _lessonIdMeta));
+    } else if (isInserting) {
+      context.missing(_lessonIdMeta);
+    }
+    if (data.containsKey('events_json')) {
+      context.handle(
+          _eventsJsonMeta,
+          eventsJson.isAcceptableOrUnknown(
+              data['events_json']!, _eventsJsonMeta));
+    } else if (isInserting) {
+      context.missing(_eventsJsonMeta);
+    }
+    if (data.containsKey('emotion_timeline_json')) {
+      context.handle(
+          _emotionTimelineJsonMeta,
+          emotionTimelineJson.isAcceptableOrUnknown(
+              data['emotion_timeline_json']!, _emotionTimelineJsonMeta));
+    } else if (isInserting) {
+      context.missing(_emotionTimelineJsonMeta);
+    }
+    if (data.containsKey('self_reports_json')) {
+      context.handle(
+          _selfReportsJsonMeta,
+          selfReportsJson.isAcceptableOrUnknown(
+              data['self_reports_json']!, _selfReportsJsonMeta));
+    } else if (isInserting) {
+      context.missing(_selfReportsJsonMeta);
+    }
+    if (data.containsKey('features_json')) {
+      context.handle(
+          _featuresJsonMeta,
+          featuresJson.isAcceptableOrUnknown(
+              data['features_json']!, _featuresJsonMeta));
+    } else if (isInserting) {
+      context.missing(_featuresJsonMeta);
+    }
+    if (data.containsKey('session_duration')) {
+      context.handle(
+          _sessionDurationMeta,
+          sessionDuration.isAcceptableOrUnknown(
+              data['session_duration']!, _sessionDurationMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ConfusionLog map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ConfusionLog(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      userId: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}user_id'])!,
+      lessonId: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}lesson_id'])!,
+      eventsJson: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}events_json'])!,
+      emotionTimelineJson: attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}emotion_timeline_json'])!,
+      selfReportsJson: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}self_reports_json'])!,
+      featuresJson: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}features_json'])!,
+      sessionDuration: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}session_duration'])!,
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+    );
+  }
+
+  @override
+  $ConfusionLogsTable createAlias(String alias) {
+    return $ConfusionLogsTable(attachedDatabase, alias);
+  }
+}
+
+class ConfusionLog extends DataClass implements Insertable<ConfusionLog> {
+  final int id;
+  final int userId;
+  final int lessonId;
+  final String eventsJson;
+  final String emotionTimelineJson;
+  final String selfReportsJson;
+  final String featuresJson;
+  final int sessionDuration;
+  final DateTime createdAt;
+  const ConfusionLog(
+      {required this.id,
+      required this.userId,
+      required this.lessonId,
+      required this.eventsJson,
+      required this.emotionTimelineJson,
+      required this.selfReportsJson,
+      required this.featuresJson,
+      required this.sessionDuration,
+      required this.createdAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['user_id'] = Variable<int>(userId);
+    map['lesson_id'] = Variable<int>(lessonId);
+    map['events_json'] = Variable<String>(eventsJson);
+    map['emotion_timeline_json'] = Variable<String>(emotionTimelineJson);
+    map['self_reports_json'] = Variable<String>(selfReportsJson);
+    map['features_json'] = Variable<String>(featuresJson);
+    map['session_duration'] = Variable<int>(sessionDuration);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  ConfusionLogsCompanion toCompanion(bool nullToAbsent) {
+    return ConfusionLogsCompanion(
+      id: Value(id),
+      userId: Value(userId),
+      lessonId: Value(lessonId),
+      eventsJson: Value(eventsJson),
+      emotionTimelineJson: Value(emotionTimelineJson),
+      selfReportsJson: Value(selfReportsJson),
+      featuresJson: Value(featuresJson),
+      sessionDuration: Value(sessionDuration),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory ConfusionLog.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ConfusionLog(
+      id: serializer.fromJson<int>(json['id']),
+      userId: serializer.fromJson<int>(json['userId']),
+      lessonId: serializer.fromJson<int>(json['lessonId']),
+      eventsJson: serializer.fromJson<String>(json['eventsJson']),
+      emotionTimelineJson:
+          serializer.fromJson<String>(json['emotionTimelineJson']),
+      selfReportsJson: serializer.fromJson<String>(json['selfReportsJson']),
+      featuresJson: serializer.fromJson<String>(json['featuresJson']),
+      sessionDuration: serializer.fromJson<int>(json['sessionDuration']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'userId': serializer.toJson<int>(userId),
+      'lessonId': serializer.toJson<int>(lessonId),
+      'eventsJson': serializer.toJson<String>(eventsJson),
+      'emotionTimelineJson': serializer.toJson<String>(emotionTimelineJson),
+      'selfReportsJson': serializer.toJson<String>(selfReportsJson),
+      'featuresJson': serializer.toJson<String>(featuresJson),
+      'sessionDuration': serializer.toJson<int>(sessionDuration),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  ConfusionLog copyWith(
+          {int? id,
+          int? userId,
+          int? lessonId,
+          String? eventsJson,
+          String? emotionTimelineJson,
+          String? selfReportsJson,
+          String? featuresJson,
+          int? sessionDuration,
+          DateTime? createdAt}) =>
+      ConfusionLog(
+        id: id ?? this.id,
+        userId: userId ?? this.userId,
+        lessonId: lessonId ?? this.lessonId,
+        eventsJson: eventsJson ?? this.eventsJson,
+        emotionTimelineJson: emotionTimelineJson ?? this.emotionTimelineJson,
+        selfReportsJson: selfReportsJson ?? this.selfReportsJson,
+        featuresJson: featuresJson ?? this.featuresJson,
+        sessionDuration: sessionDuration ?? this.sessionDuration,
+        createdAt: createdAt ?? this.createdAt,
+      );
+  ConfusionLog copyWithCompanion(ConfusionLogsCompanion data) {
+    return ConfusionLog(
+      id: data.id.present ? data.id.value : this.id,
+      userId: data.userId.present ? data.userId.value : this.userId,
+      lessonId: data.lessonId.present ? data.lessonId.value : this.lessonId,
+      eventsJson:
+          data.eventsJson.present ? data.eventsJson.value : this.eventsJson,
+      emotionTimelineJson: data.emotionTimelineJson.present
+          ? data.emotionTimelineJson.value
+          : this.emotionTimelineJson,
+      selfReportsJson: data.selfReportsJson.present
+          ? data.selfReportsJson.value
+          : this.selfReportsJson,
+      featuresJson: data.featuresJson.present
+          ? data.featuresJson.value
+          : this.featuresJson,
+      sessionDuration: data.sessionDuration.present
+          ? data.sessionDuration.value
+          : this.sessionDuration,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ConfusionLog(')
+          ..write('id: $id, ')
+          ..write('userId: $userId, ')
+          ..write('lessonId: $lessonId, ')
+          ..write('eventsJson: $eventsJson, ')
+          ..write('emotionTimelineJson: $emotionTimelineJson, ')
+          ..write('selfReportsJson: $selfReportsJson, ')
+          ..write('featuresJson: $featuresJson, ')
+          ..write('sessionDuration: $sessionDuration, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+      id,
+      userId,
+      lessonId,
+      eventsJson,
+      emotionTimelineJson,
+      selfReportsJson,
+      featuresJson,
+      sessionDuration,
+      createdAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ConfusionLog &&
+          other.id == this.id &&
+          other.userId == this.userId &&
+          other.lessonId == this.lessonId &&
+          other.eventsJson == this.eventsJson &&
+          other.emotionTimelineJson == this.emotionTimelineJson &&
+          other.selfReportsJson == this.selfReportsJson &&
+          other.featuresJson == this.featuresJson &&
+          other.sessionDuration == this.sessionDuration &&
+          other.createdAt == this.createdAt);
+}
+
+class ConfusionLogsCompanion extends UpdateCompanion<ConfusionLog> {
+  final Value<int> id;
+  final Value<int> userId;
+  final Value<int> lessonId;
+  final Value<String> eventsJson;
+  final Value<String> emotionTimelineJson;
+  final Value<String> selfReportsJson;
+  final Value<String> featuresJson;
+  final Value<int> sessionDuration;
+  final Value<DateTime> createdAt;
+  const ConfusionLogsCompanion({
+    this.id = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.lessonId = const Value.absent(),
+    this.eventsJson = const Value.absent(),
+    this.emotionTimelineJson = const Value.absent(),
+    this.selfReportsJson = const Value.absent(),
+    this.featuresJson = const Value.absent(),
+    this.sessionDuration = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  });
+  ConfusionLogsCompanion.insert({
+    this.id = const Value.absent(),
+    required int userId,
+    required int lessonId,
+    required String eventsJson,
+    required String emotionTimelineJson,
+    required String selfReportsJson,
+    required String featuresJson,
+    this.sessionDuration = const Value.absent(),
+    required DateTime createdAt,
+  })  : userId = Value(userId),
+        lessonId = Value(lessonId),
+        eventsJson = Value(eventsJson),
+        emotionTimelineJson = Value(emotionTimelineJson),
+        selfReportsJson = Value(selfReportsJson),
+        featuresJson = Value(featuresJson),
+        createdAt = Value(createdAt);
+  static Insertable<ConfusionLog> custom({
+    Expression<int>? id,
+    Expression<int>? userId,
+    Expression<int>? lessonId,
+    Expression<String>? eventsJson,
+    Expression<String>? emotionTimelineJson,
+    Expression<String>? selfReportsJson,
+    Expression<String>? featuresJson,
+    Expression<int>? sessionDuration,
+    Expression<DateTime>? createdAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (userId != null) 'user_id': userId,
+      if (lessonId != null) 'lesson_id': lessonId,
+      if (eventsJson != null) 'events_json': eventsJson,
+      if (emotionTimelineJson != null)
+        'emotion_timeline_json': emotionTimelineJson,
+      if (selfReportsJson != null) 'self_reports_json': selfReportsJson,
+      if (featuresJson != null) 'features_json': featuresJson,
+      if (sessionDuration != null) 'session_duration': sessionDuration,
+      if (createdAt != null) 'created_at': createdAt,
+    });
+  }
+
+  ConfusionLogsCompanion copyWith(
+      {Value<int>? id,
+      Value<int>? userId,
+      Value<int>? lessonId,
+      Value<String>? eventsJson,
+      Value<String>? emotionTimelineJson,
+      Value<String>? selfReportsJson,
+      Value<String>? featuresJson,
+      Value<int>? sessionDuration,
+      Value<DateTime>? createdAt}) {
+    return ConfusionLogsCompanion(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      lessonId: lessonId ?? this.lessonId,
+      eventsJson: eventsJson ?? this.eventsJson,
+      emotionTimelineJson: emotionTimelineJson ?? this.emotionTimelineJson,
+      selfReportsJson: selfReportsJson ?? this.selfReportsJson,
+      featuresJson: featuresJson ?? this.featuresJson,
+      sessionDuration: sessionDuration ?? this.sessionDuration,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (userId.present) {
+      map['user_id'] = Variable<int>(userId.value);
+    }
+    if (lessonId.present) {
+      map['lesson_id'] = Variable<int>(lessonId.value);
+    }
+    if (eventsJson.present) {
+      map['events_json'] = Variable<String>(eventsJson.value);
+    }
+    if (emotionTimelineJson.present) {
+      map['emotion_timeline_json'] =
+          Variable<String>(emotionTimelineJson.value);
+    }
+    if (selfReportsJson.present) {
+      map['self_reports_json'] = Variable<String>(selfReportsJson.value);
+    }
+    if (featuresJson.present) {
+      map['features_json'] = Variable<String>(featuresJson.value);
+    }
+    if (sessionDuration.present) {
+      map['session_duration'] = Variable<int>(sessionDuration.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ConfusionLogsCompanion(')
+          ..write('id: $id, ')
+          ..write('userId: $userId, ')
+          ..write('lessonId: $lessonId, ')
+          ..write('eventsJson: $eventsJson, ')
+          ..write('emotionTimelineJson: $emotionTimelineJson, ')
+          ..write('selfReportsJson: $selfReportsJson, ')
+          ..write('featuresJson: $featuresJson, ')
+          ..write('sessionDuration: $sessionDuration, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -25741,6 +26233,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $SegmentQuizAttemptsTable(this);
   late final $BehaviorReportsTable behaviorReports =
       $BehaviorReportsTable(this);
+  late final $ConfusionLogsTable confusionLogs = $ConfusionLogsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -25801,7 +26294,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         aiNotificationLogs,
         videoSegments,
         segmentQuizAttempts,
-        behaviorReports
+        behaviorReports,
+        confusionLogs
       ];
 }
 
@@ -26988,6 +27482,21 @@ final class $$UsersTableReferences
     return ProcessedTableManager(
         manager.$state.copyWith(prefetchedData: cache));
   }
+
+  static MultiTypedResultKey<$ConfusionLogsTable, List<ConfusionLog>>
+      _confusionLogUserTable(_$AppDatabase db) =>
+          MultiTypedResultKey.fromTable(db.confusionLogs,
+              aliasName:
+                  $_aliasNameGenerator(db.users.id, db.confusionLogs.userId));
+
+  $$ConfusionLogsTableProcessedTableManager get confusionLogUser {
+    final manager = $$ConfusionLogsTableTableManager($_db, $_db.confusionLogs)
+        .filter((f) => f.userId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_confusionLogUserTable($_db));
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: cache));
+  }
 }
 
 class $$UsersTableFilterComposer extends Composer<_$AppDatabase, $UsersTable> {
@@ -27947,6 +28456,27 @@ class $$UsersTableFilterComposer extends Composer<_$AppDatabase, $UsersTable> {
             $$SegmentQuizAttemptsTableFilterComposer(
               $db: $db,
               $table: $db.segmentQuizAttempts,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
+
+  Expression<bool> confusionLogUser(
+      Expression<bool> Function($$ConfusionLogsTableFilterComposer f) f) {
+    final $$ConfusionLogsTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.confusionLogs,
+        getReferencedColumn: (t) => t.userId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$ConfusionLogsTableFilterComposer(
+              $db: $db,
+              $table: $db.confusionLogs,
               $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
               joinBuilder: joinBuilder,
               $removeJoinBuilderFromRootComposer:
@@ -28995,6 +29525,27 @@ class $$UsersTableAnnotationComposer
                 ));
     return f(composer);
   }
+
+  Expression<T> confusionLogUser<T extends Object>(
+      Expression<T> Function($$ConfusionLogsTableAnnotationComposer a) f) {
+    final $$ConfusionLogsTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.confusionLogs,
+        getReferencedColumn: (t) => t.userId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$ConfusionLogsTableAnnotationComposer(
+              $db: $db,
+              $table: $db.confusionLogs,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
 }
 
 class $$UsersTableTableManager extends RootTableManager<
@@ -29052,7 +29603,8 @@ class $$UsersTableTableManager extends RootTableManager<
         bool personalRoadmapUser,
         bool dailyLogStudent,
         bool aiNotifStudent,
-        bool segmentQuizStudent})> {
+        bool segmentQuizStudent,
+        bool confusionLogUser})> {
   $$UsersTableTableManager(_$AppDatabase db, $UsersTable table)
       : super(TableManagerState(
           db: db,
@@ -29163,7 +29715,8 @@ class $$UsersTableTableManager extends RootTableManager<
               personalRoadmapUser = false,
               dailyLogStudent = false,
               aiNotifStudent = false,
-              segmentQuizStudent = false}) {
+              segmentQuizStudent = false,
+              confusionLogUser = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [
@@ -29209,7 +29762,8 @@ class $$UsersTableTableManager extends RootTableManager<
                 if (personalRoadmapUser) db.personalRoadmaps,
                 if (dailyLogStudent) db.dailyLearningLogs,
                 if (aiNotifStudent) db.aiNotificationLogs,
-                if (segmentQuizStudent) db.segmentQuizAttempts
+                if (segmentQuizStudent) db.segmentQuizAttempts,
+                if (confusionLogUser) db.confusionLogs
               ],
               addJoins: <
                   T extends TableManagerState<
@@ -29759,6 +30313,18 @@ class $$UsersTableTableManager extends RootTableManager<
                         referencedItemsForCurrentItem:
                             (item, referencedItems) => referencedItems
                                 .where((e) => e.studentId == item.id),
+                        typedResults: items),
+                  if (confusionLogUser)
+                    await $_getPrefetchedData<User, $UsersTable, ConfusionLog>(
+                        currentTable: table,
+                        referencedTable:
+                            $$UsersTableReferences._confusionLogUserTable(db),
+                        managerFromTypedResult: (p0) =>
+                            $$UsersTableReferences(db, table, p0)
+                                .confusionLogUser,
+                        referencedItemsForCurrentItem: (item,
+                                referencedItems) =>
+                            referencedItems.where((e) => e.userId == item.id),
                         typedResults: items)
                 ];
               },
@@ -29822,7 +30388,8 @@ typedef $$UsersTableProcessedTableManager = ProcessedTableManager<
         bool personalRoadmapUser,
         bool dailyLogStudent,
         bool aiNotifStudent,
-        bool segmentQuizStudent})>;
+        bool segmentQuizStudent,
+        bool confusionLogUser})>;
 typedef $$StudentProfilesTableCreateCompanionBuilder = StudentProfilesCompanion
     Function({
   Value<int> id,
@@ -41823,6 +42390,21 @@ final class $$LessonsTableReferences
     return ProcessedTableManager(
         manager.$state.copyWith(prefetchedData: cache));
   }
+
+  static MultiTypedResultKey<$ConfusionLogsTable, List<ConfusionLog>>
+      _confusionLogsRefsTable(_$AppDatabase db) =>
+          MultiTypedResultKey.fromTable(db.confusionLogs,
+              aliasName: $_aliasNameGenerator(
+                  db.lessons.id, db.confusionLogs.lessonId));
+
+  $$ConfusionLogsTableProcessedTableManager get confusionLogsRefs {
+    final manager = $$ConfusionLogsTableTableManager($_db, $_db.confusionLogs)
+        .filter((f) => f.lessonId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_confusionLogsRefsTable($_db));
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: cache));
+  }
 }
 
 class $$LessonsTableFilterComposer
@@ -42086,6 +42668,27 @@ class $$LessonsTableFilterComposer
             $$VideoSegmentsTableFilterComposer(
               $db: $db,
               $table: $db.videoSegments,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
+
+  Expression<bool> confusionLogsRefs(
+      Expression<bool> Function($$ConfusionLogsTableFilterComposer f) f) {
+    final $$ConfusionLogsTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.confusionLogs,
+        getReferencedColumn: (t) => t.lessonId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$ConfusionLogsTableFilterComposer(
+              $db: $db,
+              $table: $db.confusionLogs,
               $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
               joinBuilder: joinBuilder,
               $removeJoinBuilderFromRootComposer:
@@ -42467,6 +43070,27 @@ class $$LessonsTableAnnotationComposer
             ));
     return f(composer);
   }
+
+  Expression<T> confusionLogsRefs<T extends Object>(
+      Expression<T> Function($$ConfusionLogsTableAnnotationComposer a) f) {
+    final $$ConfusionLogsTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.confusionLogs,
+        getReferencedColumn: (t) => t.lessonId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$ConfusionLogsTableAnnotationComposer(
+              $db: $db,
+              $table: $db.confusionLogs,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
 }
 
 class $$LessonsTableTableManager extends RootTableManager<
@@ -42491,7 +43115,8 @@ class $$LessonsTableTableManager extends RootTableManager<
         bool studentActivityLogsRefs,
         bool scheduledLessonsRefs,
         bool learningActivitiesRefs,
-        bool segmentLesson})> {
+        bool segmentLesson,
+        bool confusionLogsRefs})> {
   $$LessonsTableTableManager(_$AppDatabase db, $LessonsTable table)
       : super(TableManagerState(
           db: db,
@@ -42577,7 +43202,8 @@ class $$LessonsTableTableManager extends RootTableManager<
               studentActivityLogsRefs = false,
               scheduledLessonsRefs = false,
               learningActivitiesRefs = false,
-              segmentLesson = false}) {
+              segmentLesson = false,
+              confusionLogsRefs = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [
@@ -42588,7 +43214,8 @@ class $$LessonsTableTableManager extends RootTableManager<
                 if (studentActivityLogsRefs) db.studentActivityLogs,
                 if (scheduledLessonsRefs) db.scheduledLessons,
                 if (learningActivitiesRefs) db.learningActivities,
-                if (segmentLesson) db.videoSegments
+                if (segmentLesson) db.videoSegments,
+                if (confusionLogsRefs) db.confusionLogs
               ],
               addJoins: <
                   T extends TableManagerState<
@@ -42739,6 +43366,19 @@ class $$LessonsTableTableManager extends RootTableManager<
                         referencedItemsForCurrentItem: (item,
                                 referencedItems) =>
                             referencedItems.where((e) => e.lessonId == item.id),
+                        typedResults: items),
+                  if (confusionLogsRefs)
+                    await $_getPrefetchedData<Lesson, $LessonsTable,
+                            ConfusionLog>(
+                        currentTable: table,
+                        referencedTable: $$LessonsTableReferences
+                            ._confusionLogsRefsTable(db),
+                        managerFromTypedResult: (p0) =>
+                            $$LessonsTableReferences(db, table, p0)
+                                .confusionLogsRefs,
+                        referencedItemsForCurrentItem: (item,
+                                referencedItems) =>
+                            referencedItems.where((e) => e.lessonId == item.id),
                         typedResults: items)
                 ];
               },
@@ -42769,7 +43409,8 @@ typedef $$LessonsTableProcessedTableManager = ProcessedTableManager<
         bool studentActivityLogsRefs,
         bool scheduledLessonsRefs,
         bool learningActivitiesRefs,
-        bool segmentLesson})>;
+        bool segmentLesson,
+        bool confusionLogsRefs})>;
 typedef $$EnrollmentsTableCreateCompanionBuilder = EnrollmentsCompanion
     Function({
   Value<int> id,
@@ -54651,6 +55292,418 @@ typedef $$BehaviorReportsTableProcessedTableManager = ProcessedTableManager<
     ),
     BehaviorReport,
     PrefetchHooks Function()>;
+typedef $$ConfusionLogsTableCreateCompanionBuilder = ConfusionLogsCompanion
+    Function({
+  Value<int> id,
+  required int userId,
+  required int lessonId,
+  required String eventsJson,
+  required String emotionTimelineJson,
+  required String selfReportsJson,
+  required String featuresJson,
+  Value<int> sessionDuration,
+  required DateTime createdAt,
+});
+typedef $$ConfusionLogsTableUpdateCompanionBuilder = ConfusionLogsCompanion
+    Function({
+  Value<int> id,
+  Value<int> userId,
+  Value<int> lessonId,
+  Value<String> eventsJson,
+  Value<String> emotionTimelineJson,
+  Value<String> selfReportsJson,
+  Value<String> featuresJson,
+  Value<int> sessionDuration,
+  Value<DateTime> createdAt,
+});
+
+final class $$ConfusionLogsTableReferences
+    extends BaseReferences<_$AppDatabase, $ConfusionLogsTable, ConfusionLog> {
+  $$ConfusionLogsTableReferences(
+      super.$_db, super.$_table, super.$_typedResult);
+
+  static $UsersTable _userIdTable(_$AppDatabase db) => db.users
+      .createAlias($_aliasNameGenerator(db.confusionLogs.userId, db.users.id));
+
+  $$UsersTableProcessedTableManager get userId {
+    final $_column = $_itemColumn<int>('user_id')!;
+
+    final manager = $$UsersTableTableManager($_db, $_db.users)
+        .filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_userIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: [item]));
+  }
+
+  static $LessonsTable _lessonIdTable(_$AppDatabase db) =>
+      db.lessons.createAlias(
+          $_aliasNameGenerator(db.confusionLogs.lessonId, db.lessons.id));
+
+  $$LessonsTableProcessedTableManager get lessonId {
+    final $_column = $_itemColumn<int>('lesson_id')!;
+
+    final manager = $$LessonsTableTableManager($_db, $_db.lessons)
+        .filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_lessonIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: [item]));
+  }
+}
+
+class $$ConfusionLogsTableFilterComposer
+    extends Composer<_$AppDatabase, $ConfusionLogsTable> {
+  $$ConfusionLogsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get eventsJson => $composableBuilder(
+      column: $table.eventsJson, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get emotionTimelineJson => $composableBuilder(
+      column: $table.emotionTimelineJson,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get selfReportsJson => $composableBuilder(
+      column: $table.selfReportsJson,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get featuresJson => $composableBuilder(
+      column: $table.featuresJson, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get sessionDuration => $composableBuilder(
+      column: $table.sessionDuration,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  $$UsersTableFilterComposer get userId {
+    final $$UsersTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.userId,
+        referencedTable: $db.users,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$UsersTableFilterComposer(
+              $db: $db,
+              $table: $db.users,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  $$LessonsTableFilterComposer get lessonId {
+    final $$LessonsTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.lessonId,
+        referencedTable: $db.lessons,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$LessonsTableFilterComposer(
+              $db: $db,
+              $table: $db.lessons,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$ConfusionLogsTableOrderingComposer
+    extends Composer<_$AppDatabase, $ConfusionLogsTable> {
+  $$ConfusionLogsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get eventsJson => $composableBuilder(
+      column: $table.eventsJson, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get emotionTimelineJson => $composableBuilder(
+      column: $table.emotionTimelineJson,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get selfReportsJson => $composableBuilder(
+      column: $table.selfReportsJson,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get featuresJson => $composableBuilder(
+      column: $table.featuresJson,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get sessionDuration => $composableBuilder(
+      column: $table.sessionDuration,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  $$UsersTableOrderingComposer get userId {
+    final $$UsersTableOrderingComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.userId,
+        referencedTable: $db.users,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$UsersTableOrderingComposer(
+              $db: $db,
+              $table: $db.users,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  $$LessonsTableOrderingComposer get lessonId {
+    final $$LessonsTableOrderingComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.lessonId,
+        referencedTable: $db.lessons,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$LessonsTableOrderingComposer(
+              $db: $db,
+              $table: $db.lessons,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$ConfusionLogsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ConfusionLogsTable> {
+  $$ConfusionLogsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get eventsJson => $composableBuilder(
+      column: $table.eventsJson, builder: (column) => column);
+
+  GeneratedColumn<String> get emotionTimelineJson => $composableBuilder(
+      column: $table.emotionTimelineJson, builder: (column) => column);
+
+  GeneratedColumn<String> get selfReportsJson => $composableBuilder(
+      column: $table.selfReportsJson, builder: (column) => column);
+
+  GeneratedColumn<String> get featuresJson => $composableBuilder(
+      column: $table.featuresJson, builder: (column) => column);
+
+  GeneratedColumn<int> get sessionDuration => $composableBuilder(
+      column: $table.sessionDuration, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  $$UsersTableAnnotationComposer get userId {
+    final $$UsersTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.userId,
+        referencedTable: $db.users,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$UsersTableAnnotationComposer(
+              $db: $db,
+              $table: $db.users,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  $$LessonsTableAnnotationComposer get lessonId {
+    final $$LessonsTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.lessonId,
+        referencedTable: $db.lessons,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$LessonsTableAnnotationComposer(
+              $db: $db,
+              $table: $db.lessons,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$ConfusionLogsTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $ConfusionLogsTable,
+    ConfusionLog,
+    $$ConfusionLogsTableFilterComposer,
+    $$ConfusionLogsTableOrderingComposer,
+    $$ConfusionLogsTableAnnotationComposer,
+    $$ConfusionLogsTableCreateCompanionBuilder,
+    $$ConfusionLogsTableUpdateCompanionBuilder,
+    (ConfusionLog, $$ConfusionLogsTableReferences),
+    ConfusionLog,
+    PrefetchHooks Function({bool userId, bool lessonId})> {
+  $$ConfusionLogsTableTableManager(_$AppDatabase db, $ConfusionLogsTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ConfusionLogsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ConfusionLogsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ConfusionLogsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            Value<int> userId = const Value.absent(),
+            Value<int> lessonId = const Value.absent(),
+            Value<String> eventsJson = const Value.absent(),
+            Value<String> emotionTimelineJson = const Value.absent(),
+            Value<String> selfReportsJson = const Value.absent(),
+            Value<String> featuresJson = const Value.absent(),
+            Value<int> sessionDuration = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+          }) =>
+              ConfusionLogsCompanion(
+            id: id,
+            userId: userId,
+            lessonId: lessonId,
+            eventsJson: eventsJson,
+            emotionTimelineJson: emotionTimelineJson,
+            selfReportsJson: selfReportsJson,
+            featuresJson: featuresJson,
+            sessionDuration: sessionDuration,
+            createdAt: createdAt,
+          ),
+          createCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            required int userId,
+            required int lessonId,
+            required String eventsJson,
+            required String emotionTimelineJson,
+            required String selfReportsJson,
+            required String featuresJson,
+            Value<int> sessionDuration = const Value.absent(),
+            required DateTime createdAt,
+          }) =>
+              ConfusionLogsCompanion.insert(
+            id: id,
+            userId: userId,
+            lessonId: lessonId,
+            eventsJson: eventsJson,
+            emotionTimelineJson: emotionTimelineJson,
+            selfReportsJson: selfReportsJson,
+            featuresJson: featuresJson,
+            sessionDuration: sessionDuration,
+            createdAt: createdAt,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (
+                    e.readTable(table),
+                    $$ConfusionLogsTableReferences(db, table, e)
+                  ))
+              .toList(),
+          prefetchHooksCallback: ({userId = false, lessonId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins: <
+                  T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic>>(state) {
+                if (userId) {
+                  state = state.withJoin(
+                    currentTable: table,
+                    currentColumn: table.userId,
+                    referencedTable:
+                        $$ConfusionLogsTableReferences._userIdTable(db),
+                    referencedColumn:
+                        $$ConfusionLogsTableReferences._userIdTable(db).id,
+                  ) as T;
+                }
+                if (lessonId) {
+                  state = state.withJoin(
+                    currentTable: table,
+                    currentColumn: table.lessonId,
+                    referencedTable:
+                        $$ConfusionLogsTableReferences._lessonIdTable(db),
+                    referencedColumn:
+                        $$ConfusionLogsTableReferences._lessonIdTable(db).id,
+                  ) as T;
+                }
+
+                return state;
+              },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ));
+}
+
+typedef $$ConfusionLogsTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $ConfusionLogsTable,
+    ConfusionLog,
+    $$ConfusionLogsTableFilterComposer,
+    $$ConfusionLogsTableOrderingComposer,
+    $$ConfusionLogsTableAnnotationComposer,
+    $$ConfusionLogsTableCreateCompanionBuilder,
+    $$ConfusionLogsTableUpdateCompanionBuilder,
+    (ConfusionLog, $$ConfusionLogsTableReferences),
+    ConfusionLog,
+    PrefetchHooks Function({bool userId, bool lessonId})>;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -54768,4 +55821,6 @@ class $AppDatabaseManager {
       $$SegmentQuizAttemptsTableTableManager(_db, _db.segmentQuizAttempts);
   $$BehaviorReportsTableTableManager get behaviorReports =>
       $$BehaviorReportsTableTableManager(_db, _db.behaviorReports);
+  $$ConfusionLogsTableTableManager get confusionLogs =>
+      $$ConfusionLogsTableTableManager(_db, _db.confusionLogs);
 }
