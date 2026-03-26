@@ -1,14 +1,14 @@
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../api/api_constants.dart';
 
 class FileUploadService {
-  Future<FileUploadResult> uploadFile({
-    required File file,
+  Future<FileUploadResult> uploadFileBytes({
+    required Uint8List fileBytes,
+    required String fileName,
     required String fileType,
     int? lessonId,
-    Function(double progress)? onProgress,
   }) async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -19,11 +19,10 @@ class FileUploadService {
         return FileUploadResult.failure('User not logged in');
       }
 
-      final fileSize = await file.length();
       final maxSize = fileType == 'video'
           ? 500 * 1024 * 1024
           : 50 * 1024 * 1024;
-      if (fileSize > maxSize) {
+      if (fileBytes.length > maxSize) {
         final maxMB = maxSize ~/ (1024 * 1024);
         return FileUploadResult.failure('File quá lớn. Tối đa ${maxMB}MB');
       }
@@ -41,12 +40,9 @@ class FileUploadService {
         request.fields['lessonId'] = lessonId.toString();
       }
 
-      final fileName = file.path.split(Platform.pathSeparator).last;
-      final fileStream = http.ByteStream(file.openRead());
-      final multipartFile = http.MultipartFile(
+      final multipartFile = http.MultipartFile.fromBytes(
         'file',
-        fileStream,
-        fileSize,
+        fileBytes,
         filename: fileName,
       );
       request.files.add(multipartFile);
@@ -60,7 +56,6 @@ class FileUploadService {
           r'"uploadUrl":"([^"]+)"',
         ).firstMatch(body);
         final uploadUrl = uploadUrlMatch?.group(1) ?? '';
-
         return FileUploadResult.success(uploadUrl);
       } else {
         return FileUploadResult.failure(

@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:file_picker/file_picker.dart';
@@ -30,22 +29,24 @@ class AddLessonDialog {
         final result = await FilePicker.platform.pickFiles(
           type: FileType.custom,
           allowedExtensions: extensions,
+          withData: true,
         );
-        if (result == null) {
+        if (result == null || result.files.single.bytes == null) {
           isPicking = false;
           return;
         }
 
-        final file = File(result.files.single.path!);
+        final pickedFile = result.files.single;
         setState(() {
-          selectedFileName = result.files.single.name;
+          selectedFileName = pickedFile.name;
           isUploading = true;
           uploadedUrl = null;
         });
 
         final uploadService = FileUploadService();
-        final uploadResult = await uploadService.uploadFile(
-          file: file,
+        final uploadResult = await uploadService.uploadFileBytes(
+          fileBytes: pickedFile.bytes!,
+          fileName: pickedFile.name,
           fileType: fileType,
         );
 
