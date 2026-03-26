@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'dart:convert';
 import 'package:dart_frog/dart_frog.dart';
-import 'package:dotenv/dotenv.dart';
+import 'package:backend/helpers/env_helper.dart';
 import 'package:http/http.dart' as http;
 
 Future<Response> onRequest(RequestContext context) async {
@@ -20,7 +20,7 @@ Future<Response> onRequest(RequestContext context) async {
       );
     }
 
-    final env = DotEnv(includePlatformEnvironment: true)..load();
+    final env = loadEnv();
     final apiKey = env['OPENAI_API_KEY'];
     if (apiKey == null || apiKey.isEmpty) {
       return Response.json(

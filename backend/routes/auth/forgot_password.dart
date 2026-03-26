@@ -1,7 +1,7 @@
 import 'dart:math';
 import 'package:backend/repositories/user_repository.dart';
 import 'package:dart_frog/dart_frog.dart';
-import 'package:dotenv/dotenv.dart';
+import 'package:backend/helpers/env_helper.dart';
 import 'package:mailer/mailer.dart';
 import 'package:mailer/smtp_server.dart';
 
@@ -24,7 +24,7 @@ Future<Response> onRequest(RequestContext context) async {
 }
 
 Future<void> _sendEmail(String recipient, String otp) async {
-  final env = DotEnv(includePlatformEnvironment: true)..load();
+  final env = loadEnv();
   final username = env['SMTP_EMAIL'] ?? '';
   final password = env['SMTP_PASSWORD'] ?? '';
 

@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:redis/redis.dart';
-import 'package:dotenv/dotenv.dart';
+import 'package:backend/helpers/env_helper.dart';
 import 'package:backend/helpers/log.dart';
 
 class RedisService {
@@ -15,7 +15,7 @@ class RedisService {
   Future<void> connect() async {
     if (_connected) return;
     try {
-      final env = DotEnv(includePlatformEnvironment: true)..load();
+      final env = loadEnv();
       final redisUrl = env['REDIS_URL'] ?? 'redis://localhost:6379';
       final uri = Uri.parse(redisUrl);
       final host = uri.host.isEmpty ? 'localhost' : uri.host;

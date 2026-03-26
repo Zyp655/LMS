@@ -4,7 +4,7 @@ import 'package:dart_frog/dart_frog.dart';
 import 'package:drift/drift.dart';
 import 'package:backend/database/database.dart';
 import 'package:backend/helpers/notification_helper.dart';
-import 'package:dotenv/dotenv.dart';
+import 'package:backend/helpers/env_helper.dart';
 import 'package:http/http.dart' as http;
 
 Future<Response> onRequest(RequestContext context) async {
@@ -170,7 +170,7 @@ Future<String> _generateAiMessage({
   required AppDatabase db,
 }) async {
   try {
-    final env = DotEnv(includePlatformEnvironment: true)..load();
+    final env = loadEnv();
     final apiKey = env['OPENAI_API_KEY'];
     if (apiKey == null) return _fallbackMessage(courseName, incompleteLessons);
 

@@ -1,11 +1,11 @@
 import 'dart:convert';
 import 'package:backend/database/database.dart';
 import 'package:drift/drift.dart';
-import 'package:dotenv/dotenv.dart';
+import 'package:backend/helpers/env_helper.dart';
 import 'ai_service.dart';
 
 final _openaiKey = () {
-  final env = DotEnv(includePlatformEnvironment: true)..load();
+  final env = loadEnv();
   return env['OPENAI_API_KEY'] ?? '';
 }();
 

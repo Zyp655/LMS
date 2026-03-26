@@ -4,7 +4,7 @@ import 'package:dart_frog/dart_frog.dart';
 import 'package:drift/drift.dart';
 import 'package:backend/utils/isolate_utils.dart';
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
-import 'package:dotenv/dotenv.dart';
+import 'package:backend/helpers/env_helper.dart';
 import 'package:backend/database/database.dart';
 
 Future<Response> onRequest(RequestContext context) async {
@@ -27,7 +27,7 @@ Future<Response> onRequest(RequestContext context) async {
     final token = authHeader.substring(7);
     final JWT jwt;
     try {
-      final env = DotEnv(includePlatformEnvironment: true)..load();
+      final env = loadEnv();
       final jwtSecret = env['JWT_SECRET'] ?? 'my_secret_key_123';
       jwt = JWT.verify(token, SecretKey(jwtSecret));
     } catch (_) {

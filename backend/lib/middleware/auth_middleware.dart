@@ -1,12 +1,12 @@
 import 'package:dart_frog/dart_frog.dart';
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
-import 'package:dotenv/dotenv.dart';
+import 'package:backend/helpers/env_helper.dart';
 import 'package:backend/database/database.dart';
 
 import 'rbac_middleware.dart';
 
 final _jwtSecret = () {
-  final env = DotEnv(includePlatformEnvironment: true)..load();
+  final env = loadEnv();
   return env['JWT_SECRET'] ?? 'my_secret_key_123';
 }();
 

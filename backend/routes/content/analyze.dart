@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:dart_frog/dart_frog.dart';
 import 'package:backend/services/ai_service.dart';
-import 'package:dotenv/dotenv.dart';
+import 'package:backend/helpers/env_helper.dart';
 Future<Response> onRequest(RequestContext context) async {
   final request = context.request;
   final method = request.method;
@@ -22,7 +22,7 @@ Future<Response> _analyzeContent(RequestContext context) async {
     final fileName = body['fileName'] as String;
     final fileType = body['fileType'] as String;
     final content = body['content'] as String? ?? fileName;
-    final env = DotEnv(includePlatformEnvironment: true)..load();
+    final env = loadEnv();
     final openaiApiKey = env['OPENAI_API_KEY'];
     if (openaiApiKey == null || openaiApiKey.isEmpty) {
       return Response.json(

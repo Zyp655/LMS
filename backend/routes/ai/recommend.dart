@@ -4,7 +4,7 @@ import 'package:dart_frog/dart_frog.dart';
 import 'package:backend/database/database.dart';
 import 'package:backend/services/ai_service.dart';
 import 'package:drift/drift.dart';
-import 'package:dotenv/dotenv.dart';
+import 'package:backend/helpers/env_helper.dart';
 
 Future<Response> onRequest(RequestContext context) async {
   if (context.request.method != HttpMethod.post) {
@@ -77,7 +77,7 @@ Future<Response> onRequest(RequestContext context) async {
     final incompleteLessons =
         allLessons.where((l) => !(l['completed'] as bool)).toList();
 
-    final env = DotEnv(includePlatformEnvironment: true)..load();
+    final env = loadEnv();
     final apiKey = env['OPENAI_API_KEY'];
 
     if (apiKey == null || apiKey.isEmpty) {

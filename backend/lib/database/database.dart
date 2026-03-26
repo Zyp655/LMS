@@ -1,7 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:drift_postgres/drift_postgres.dart';
 import 'package:postgres/postgres.dart';
-import 'package:dotenv/dotenv.dart';
+import 'package:backend/helpers/env_helper.dart';
 import 'package:backend/helpers/log.dart';
 
 part 'database.g.dart';
@@ -851,7 +851,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_createDatabase());
 
   static QueryExecutor _createDatabase() {
-    final env = DotEnv(includePlatformEnvironment: true)..load();
+    final env = loadEnv();
 
     return PgDatabase(
       endpoint: Endpoint(

@@ -3,7 +3,7 @@ import 'package:backend/database/database.dart';
 import 'package:backend/repositories/user_repository.dart';
 import 'package:dart_frog/dart_frog.dart';
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
-import 'package:dotenv/dotenv.dart';
+import 'package:backend/helpers/env_helper.dart';
 import 'package:drift/drift.dart';
 
 Future<Response> onRequest(RequestContext context) async {
@@ -43,7 +43,7 @@ Future<Response> onRequest(RequestContext context) async {
     'role': user.role,
     'sessionToken': sessionToken,
   });
-  final env = DotEnv(includePlatformEnvironment: true)..load();
+  final env = loadEnv();
   final jwtSecret = env['JWT_SECRET'] ?? 'my_secret_key_123';
   final token = jwt.sign(SecretKey(jwtSecret));
   return Response.json(body: {

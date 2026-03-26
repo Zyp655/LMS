@@ -4,7 +4,7 @@ import 'package:dart_frog/dart_frog.dart';
 import 'package:backend/database/database.dart';
 import 'package:backend/services/ai_service.dart';
 import 'package:drift/drift.dart';
-import 'package:dotenv/dotenv.dart';
+import 'package:backend/helpers/env_helper.dart';
 
 Future<Response> onRequest(RequestContext context, String id) async {
   final courseId = int.tryParse(id);
@@ -270,7 +270,7 @@ Future<Response> onRequest(RequestContext context, String id) async {
       'bottleneckDropRate': double.parse(bottleneckDropRate.toStringAsFixed(2)),
     };
 
-    final env = DotEnv(includePlatformEnvironment: true)..load();
+    final env = loadEnv();
     final apiKey = env['OPENAI_API_KEY'];
     Map<String, dynamic> aiInsights;
 

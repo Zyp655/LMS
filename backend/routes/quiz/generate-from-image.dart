@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:dart_frog/dart_frog.dart';
-import 'package:dotenv/dotenv.dart';
+import 'package:backend/helpers/env_helper.dart';
 import 'package:http/http.dart' as http;
 Future<Response> onRequest(RequestContext context) async {
   if (context.request.method != HttpMethod.post) {
@@ -23,7 +23,7 @@ Future<Response> onRequest(RequestContext context) async {
         body: jsonEncode({'error': 'imageBase64 or imageUrl is required'}),
       );
     }
-    final env = DotEnv(includePlatformEnvironment: true)..load();
+    final env = loadEnv();
     final openaiApiKey = env['OPENAI_API_KEY'];
     if (openaiApiKey == null || openaiApiKey.isEmpty) {
       return Response(

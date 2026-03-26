@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:dart_frog/dart_frog.dart';
 import 'package:backend/database/database.dart';
 import 'package:backend/services/ai_service.dart';
-import 'package:dotenv/dotenv.dart';
+import 'package:backend/helpers/env_helper.dart';
 import 'package:drift/drift.dart';
 import 'package:http/http.dart' as http;
 
@@ -39,7 +39,7 @@ Future<Response> onRequest(RequestContext context) async {
       }
     }
 
-    final env = DotEnv(includePlatformEnvironment: true)..load();
+    final env = loadEnv();
     final apiKey = env['OPENAI_API_KEY'];
     if (apiKey == null || apiKey.isEmpty) {
       return Response.json(

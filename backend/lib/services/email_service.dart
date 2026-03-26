@@ -1,18 +1,15 @@
 import 'package:backend/database/database.dart';
-import 'package:dotenv/dotenv.dart';
+import 'package:backend/helpers/env_helper.dart';
 import 'package:mailer/mailer.dart';
 import 'package:mailer/smtp_server.dart';
 
 class EmailService {
-  static DotEnv? _env;
   static String get _smtpEmail {
-    _env ??= DotEnv(includePlatformEnvironment: true)..load();
-    return _env!['SMTP_EMAIL'] ?? '';
+    return loadEnv()['SMTP_EMAIL'] ?? '';
   }
 
   static String get _smtpPassword {
-    _env ??= DotEnv(includePlatformEnvironment: true)..load();
-    return _env!['SMTP_PASSWORD'] ?? '';
+    return loadEnv()['SMTP_PASSWORD'] ?? '';
   }
 
   static Future<void> notifyNewAssignment({
