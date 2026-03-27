@@ -300,7 +300,7 @@ class CourseRemoteDataSourceImpl implements CourseRemoteDataSource {
       headers: headers,
     );
 
-    if (response.statusCode != 200) {
+    if (response.statusCode != 200 && response.statusCode != 404) {
       throw Exception('Không thể xóa bài học. Vui lòng thử lại sau.');
     }
   }
