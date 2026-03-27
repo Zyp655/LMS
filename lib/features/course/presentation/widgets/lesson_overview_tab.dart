@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:video_player/video_player.dart';
@@ -7,7 +6,6 @@ import '../../domain/entities/lesson_entity.dart';
 import '../bloc/ai_assistant_bloc.dart';
 import '../widgets/ai_chat_sheet.dart';
 import '../widgets/ai_concept_map_sheet.dart';
-import '../pages/module_quiz_page.dart';
 import '../../../../core/api/api_client.dart';
 import '../../../../injection_container.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -70,26 +68,6 @@ class LessonOverviewTab extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 24),
-        _buildActionCard(
-          context,
-          cs,
-          'Bài kiểm tra chương',
-          'Làm bài kiểm tra do giáo viên tạo',
-          Icons.quiz,
-          AppColors.accent,
-          () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => ModuleQuizPage(
-                  moduleId: lesson.moduleId,
-                  moduleTitle: lesson.title,
-                ),
-              ),
-            );
-          },
-        ),
-        const SizedBox(height: 16),
 
         _ModuleAssignmentsSection(moduleId: lesson.moduleId, userId: userId),
 
@@ -185,61 +163,7 @@ class LessonOverviewTab extends StatelessWidget {
     );
   }
 
-  Widget _buildActionCard(
-    BuildContext context,
-    ColorScheme cs,
-    String title,
-    String subtitle,
-    IconData icon,
-    Color color,
-    VoidCallback onTap,
-  ) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.05),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withValues(alpha: 0.1)),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, color: color),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      color: cs.onSurface,
-                    ),
-                  ),
-                  Text(
-                    subtitle,
-                    style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
-                  ),
-                ],
-              ),
-            ),
-            Icon(Icons.chevron_right, color: color),
-          ],
-        ),
-      ),
-    ).animate().scale();
-  }
+
 
   Widget _buildAiButton(
     ColorScheme cs, {
