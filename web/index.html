@@ -33,6 +33,70 @@
   <link rel="manifest" href="manifest.json">
 </head>
 <body>
+  <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.14/dist/face-api.js"></script>
+  <script>
+    let _faceApiReady = false;
+    async function initFaceApi() {
+      if (_faceApiReady) return true;
+      try {
+        const modelUrl = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.14/model/';
+        await faceapi.nets.tinyFaceDetector.loadFromUri(modelUrl);
+        await faceapi.nets.faceExpressionNet.loadFromUri(modelUrl);
+        _faceApiReady = true;
+        return true;
+      } catch(e) {
+        console.error('FaceAPI init error:', e);
+        return false;
+      }
+    }
+    async function detectExpression(videoElement) {
+      if (!_faceApiReady || !videoElement) return null;
+      try {
+        const detection = await faceapi
+          .detectSingleFace(videoElement, new faceapi.TinyFaceDetectorOptions({inputSize: 160, scoreThreshold: 0.3}))
+          .withFaceExpressions();
+        if (!detection) return null;
+        const expr = detection.expressions;
+        let maxEmotion = 'neutral';
+        let maxConf = 0;
+        for (const [emotion, confidence] of Object.entries(expr)) {
+          if (confidence > maxConf) { maxConf = confidence; maxEmotion = emotion; }
+        }
+        return JSON.stringify({emotion: maxEmotion, confidence: maxConf});
+      } catch(e) {
+        return null;
+      }
+    }
+    async function captureFrame(videoElement) {
+      if (!videoElement) return null;
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = videoElement.videoWidth;
+        canvas.height = videoElement.videoHeight;
+        canvas.getContext('2d').drawImage(videoElement, 0, 0);
+        return canvas.toDataURL('image/jpeg', 0.7).split(',')[1];
+      } catch(e) {
+        return null;
+      }
+    }
+    function _setVideoPropsHelper(video, stream) {
+      video.srcObject = stream;
+      video.autoplay = true;
+      video.muted = true;
+      video.setAttribute('playsinline', '');
+      video.style.width = '100%';
+      video.style.height = '100%';
+      video.style.objectFit = 'cover';
+      video.style.transform = 'scaleX(-1)';
+    }
+    function _playVideoHelper(video) { video.play(); }
+    function _pauseVideoHelper(video) { video.pause(); video.srcObject = null; }
+    function _stopTracksHelper(stream) {
+      if (stream && stream.getTracks) {
+        stream.getTracks().forEach(function(t) { t.stop(); });
+      }
+    }
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
@@ -5,8 +6,19 @@ import 'package:flutter/material.dart';
 class PlatformCamera {
   CameraController? _controller;
   bool _initialized = false;
+  Timer? _captureTimer;
+
+  String _lastEmotion = 'neutral';
+  double _lastConfidence = 0;
+
+  void Function(String emotion, double confidence)? onLocalDetection;
 
   bool get isInitialized => _initialized;
+  bool get needsOpenAiConfirmation => true;
+  String get lastEmotion => _lastEmotion;
+  double get lastConfidence => _lastConfidence;
+
+  void resetConfirmationFlag() {}
 
   Future<void> initialize() async {
     final cameras = await availableCameras();
@@ -39,6 +51,8 @@ class PlatformCamera {
   }
 
   void dispose() {
+    _captureTimer?.cancel();
+    _captureTimer = null;
     _controller?.dispose();
     _controller = null;
     _initialized = false;

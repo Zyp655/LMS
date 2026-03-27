@@ -20,14 +20,13 @@ class EmotionCameraWidget extends StatefulWidget {
 class _EmotionCameraWidgetState extends State<EmotionCameraWidget> {
   bool _isEnabled = false;
   bool _isInitializing = false;
-  bool _isAnalyzing = false;
   String _currentEmotion = 'neutral';
-  Timer? _captureTimer;
   PlatformCamera? _platformCamera;
+  Timer? _confirmTimer;
 
   @override
   void dispose() {
-    _captureTimer?.cancel();
+    _confirmTimer?.cancel();
     _platformCamera?.dispose();
     super.dispose();
   }
@@ -38,11 +37,19 @@ class _EmotionCameraWidgetState extends State<EmotionCameraWidget> {
 
     try {
       _platformCamera = PlatformCamera();
+
+      _platformCamera!.onLocalDetection = (emotion, confidence) {
+        if (mounted) {
+          setState(() => _currentEmotion = emotion);
+          widget.onEmotionDetected(emotion, confidence);
+        }
+      };
+
       await _platformCamera!.initialize();
 
-      _captureTimer = Timer.periodic(
-        const Duration(seconds: 30),
-        (_) => _captureAndAnalyze(),
+      _confirmTimer = Timer.periodic(
+        const Duration(seconds: 3),
+        (_) => _checkAndConfirm(),
       );
 
       if (mounted) setState(() => _isInitializing = false);
@@ -57,37 +64,13 @@ class _EmotionCameraWidgetState extends State<EmotionCameraWidget> {
     }
   }
 
-  Future<void> _stopCamera() async {
-    _captureTimer?.cancel();
-    _captureTimer = null;
-    _platformCamera?.dispose();
-    _platformCamera = null;
-  }
-
-  Future<void> _toggle() async {
-    if (_isEnabled) {
-      await _stopCamera();
-      setState(() {
-        _isEnabled = false;
-        _currentEmotion = 'neutral';
-      });
-    } else {
-      setState(() => _isEnabled = true);
-      await _initCamera();
-    }
-  }
-
-  Future<void> _captureAndAnalyze() async {
-    if (_platformCamera == null || !_platformCamera!.isInitialized || _isAnalyzing) return;
-
-    _isAnalyzing = true;
+  Future<void> _checkAndConfirm() async {
+    if (_platformCamera == null || !_platformCamera!.needsOpenAiConfirmation) return;
+    _platformCamera!.resetConfirmationFlag();
 
     try {
       final bytes = await _platformCamera!.captureImage();
-      if (bytes == null || bytes.isEmpty) {
-        _isAnalyzing = false;
-        return;
-      }
+      if (bytes == null || bytes.isEmpty) return;
       final base64Image = base64Encode(bytes);
 
       final prefs = await SharedPreferences.getInstance();
@@ -113,10 +96,28 @@ class _EmotionCameraWidgetState extends State<EmotionCameraWidget> {
         }
       }
     } catch (e) {
-      debugPrint('[EmotionCamera] Analyze error: $e');
+      debugPrint('[EmotionCamera] OpenAI confirm error: $e');
     }
+  }
 
-    _isAnalyzing = false;
+  Future<void> _stopCamera() async {
+    _confirmTimer?.cancel();
+    _confirmTimer = null;
+    _platformCamera?.dispose();
+    _platformCamera = null;
+  }
+
+  Future<void> _toggle() async {
+    if (_isEnabled) {
+      await _stopCamera();
+      setState(() {
+        _isEnabled = false;
+        _currentEmotion = 'neutral';
+      });
+    } else {
+      setState(() => _isEnabled = true);
+      await _initCamera();
+    }
   }
 
   @override
