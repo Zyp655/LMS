@@ -328,4 +328,14 @@ class AdminRepositoryImpl implements AdminRepository {
       return Left(ServerFailure('Lỗi: $e'));
     }
   }
+
+  @override
+  Future<Either<Failure, String>> seedProgress() async {
+    try {
+      final response = await apiClient.post('/admin/seed-progress', {});
+      return Right(response['message'] as String? ?? 'Seed progress xong!');
+    } catch (e) {
+      return Left(ServerFailure('Lỗi: $e'));
+    }
+  }
 }

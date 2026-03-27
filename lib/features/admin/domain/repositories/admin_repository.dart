@@ -69,4 +69,6 @@ abstract class AdminRepository {
   Future<Either<Failure, String>> unassignCourseTeacher(int courseClassId);
 
   Future<Either<Failure, String>> deleteCourseClass(int courseClassId);
+
+  Future<Either<Failure, String>> seedProgress();
 }

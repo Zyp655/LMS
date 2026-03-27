@@ -76,6 +76,8 @@ class SeedAchievements extends AdminEvent {}
 
 class SeedRoadmap extends AdminEvent {}
 
+class SeedProgress extends AdminEvent {}
+
 class AssignRoadmapTeacher extends AdminEvent {
   final String email;
   const AssignRoadmapTeacher(this.email);

@@ -32,6 +32,7 @@ void initAdminModule(GetIt sl) {
   sl.registerLazySingleton(() => admin_uc.UnassignCourseTeacherUseCase(sl()));
   sl.registerLazySingleton(() => admin_uc.CreateCourseClassUseCase(sl()));
   sl.registerLazySingleton(() => admin_uc.DeleteCourseClassUseCase(sl()));
+  sl.registerLazySingleton(() => admin_uc.SeedProgressUseCase(sl()));
 
   sl.registerFactory(
     () => AdminBloc(
@@ -56,6 +57,7 @@ void initAdminModule(GetIt sl) {
       assignCourseTeacherUseCase: sl(),
       unassignCourseTeacherUseCase: sl(),
       deleteCourseClassUseCase: sl(),
+      seedProgressUseCase: sl(),
     ),
   );
 }
