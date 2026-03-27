@@ -35,6 +35,12 @@ Future<Response> onRequest(RequestContext context) async {
 
     final studentIds = enrollments.map((e) => e.studentId).toSet().toList();
 
+    for (final sid in studentIds) {
+      await (db.delete(db.lessonProgress)..where((p) => p.userId.equals(sid))).go();
+      await (db.delete(db.quizAttempts)..where((a) => a.userId.equals(sid))).go();
+      await (db.delete(db.userStreaks)..where((s) => s.userId.equals(sid))).go();
+    }
+
     final progressProfiles = <int, Map<String, dynamic>>{};
     final weightedTemplates = [
       {'minProgress': 0.85, 'maxProgress': 1.0, 'label': 'excellent', 'quizMin': 80.0, 'quizMax': 100.0, 'streakMin': 10, 'streakMax': 30},
@@ -115,38 +121,34 @@ Future<Response> onRequest(RequestContext context) async {
           lessonProgressCreated++;
         }
 
-        final quizzes = await (db.select(db.quizzes)
-              ..where((q) => q.moduleId.isIn(moduleIds)))
-            .get();
+        if (completedCount > 0) {
+          final quizzes = await (db.select(db.quizzes)
+                ..where((q) => q.moduleId.isIn(moduleIds)))
+              .get();
 
-        final quizMin = profile['quizMin'] as double;
-        final quizMax = profile['quizMax'] as double;
+          final quizMin = profile['quizMin'] as double;
+          final quizMax = profile['quizMax'] as double;
 
-        for (final quiz in quizzes) {
-          final existingAttempt = await (db.select(db.quizAttempts)
-                ..where((a) => a.userId.equals(studentId))
-                ..where((a) => a.quizId.equals(quiz.id)))
-              .getSingleOrNull();
-          if (existingAttempt != null) continue;
+          for (final quiz in quizzes) {
+            final score = quizMin + random.nextDouble() * (quizMax - quizMin);
+            final totalQ = quiz.questionCount;
+            final correct = (totalQ * score / 100).round().clamp(0, totalQ);
+            final timeSpent = totalQ * (random.nextInt(30) + 15);
 
-          final score = quizMin + random.nextDouble() * (quizMax - quizMin);
-          final totalQ = quiz.questionCount;
-          final correct = (totalQ * score / 100).round().clamp(0, totalQ);
-          final timeSpent = totalQ * (random.nextInt(30) + 15);
-
-          await db.into(db.quizAttempts).insert(
-            QuizAttemptsCompanion.insert(
-              quizId: quiz.id,
-              userId: studentId,
-              correctCount: correct,
-              totalQuestions: totalQ,
-              scorePercentage: (score * 10).round() / 10.0,
-              timeSpentSeconds: timeSpent,
-              answers: '[]',
-              completedAt: now.subtract(Duration(days: random.nextInt(45) + 1)),
-            ),
-          );
-          quizAttemptsCreated++;
+            await db.into(db.quizAttempts).insert(
+              QuizAttemptsCompanion.insert(
+                quizId: quiz.id,
+                userId: studentId,
+                correctCount: correct,
+                totalQuestions: totalQ,
+                scorePercentage: (score * 10).round() / 10.0,
+                timeSpentSeconds: timeSpent,
+                answers: '[]',
+                completedAt: now.subtract(Duration(days: random.nextInt(45) + 1)),
+              ),
+            );
+            quizAttemptsCreated++;
+          }
         }
       }
 
