@@ -12,6 +12,13 @@ Middleware gzipMiddleware() {
       if (!acceptEncoding.contains('gzip')) return response;
 
       final contentType = response.headers['content-type'] ?? '';
+
+      final isBinary = contentType.startsWith('video/') ||
+          contentType.startsWith('audio/') ||
+          contentType.startsWith('image/') ||
+          contentType.contains('octet-stream');
+      if (isBinary) return response;
+
       final isCompressible = contentType.contains('json') ||
           contentType.contains('text') ||
           contentType.contains('javascript') ||
