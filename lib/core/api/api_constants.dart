@@ -26,4 +26,18 @@ class ApiConstants {
         : 'localhost';
     return 'http://$host:$_devPort';
   }
+
+  static String resolveFileUrl(String url) {
+    if (url.isEmpty) return url;
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      return url.startsWith('/') ? '$baseUrl$url' : '$baseUrl/$url';
+    }
+    if (environment == AppEnvironment.production) {
+      url = url.replaceFirst(RegExp(r'http://localhost:\d+'), _productionUrl);
+      url = url.replaceFirst(RegExp(r'http://10\.0\.2\.2:\d+'), _productionUrl);
+    } else if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      url = url.replaceFirst('localhost', '10.0.2.2');
+    }
+    return url;
+  }
 }

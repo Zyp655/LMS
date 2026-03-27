@@ -1,9 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
-import '../../../../core/utils/platform_helper.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:go_router/go_router.dart';
@@ -254,18 +251,9 @@ class _LessonPlayerViewState extends State<LessonPlayerView>
       return;
     }
 
-    var finalUrl = widget.lesson.contentUrl!;
-    if (!finalUrl.startsWith('http://') && !finalUrl.startsWith('https://')) {
-      final baseUrl = ApiConstants.baseUrl;
-      finalUrl = finalUrl.startsWith('/')
-          ? '$baseUrl$finalUrl'
-          : '$baseUrl/$finalUrl';
-    }
+    var finalUrl = ApiConstants.resolveFileUrl(widget.lesson.contentUrl!);
 
     try {
-      if (!kIsWeb && isAndroidDevice && finalUrl.contains('localhost')) {
-        finalUrl = finalUrl.replaceFirst('localhost', '10.0.2.2');
-      }
 
       _videoController = VideoPlayerController.networkUrl(Uri.parse(finalUrl));
       await _videoController!.initialize().timeout(
@@ -307,25 +295,28 @@ class _LessonPlayerViewState extends State<LessonPlayerView>
 
       _startProgressTracking();
       setState(() => _isInitialized = true);
-    } on SocketException {
-      _setError(
-        'Không có kết nối mạng.\nVui lòng kiểm tra WiFi hoặc dữ liệu di động.',
-        canRetry: true,
-      );
     } on TimeoutException {
       _setError(
         'Video tải quá chậm.\nVui lòng kiểm tra kết nối mạng và thử lại.',
         canRetry: true,
       );
-    } on HttpException {
-      _setError(
-        'Không thể tải video từ máy chủ.\nVideo có thể đã bị xóa hoặc di chuyển.',
-        canRetry: true,
-      );
     } on FormatException {
       _setError('Định dạng URL video không hợp lệ.');
     } catch (e) {
-      _setError('Lỗi phát video: ${e.toString()}', canRetry: true);
+      final msg = e.toString().toLowerCase();
+      if (msg.contains('socket') || msg.contains('connection')) {
+        _setError(
+          'Không có kết nối mạng.\nVui lòng kiểm tra WiFi hoặc dữ liệu di động.',
+          canRetry: true,
+        );
+      } else if (msg.contains('404') || msg.contains('http')) {
+        _setError(
+          'Không thể tải video từ máy chủ.\nVideo có thể đã bị xóa hoặc di chuyển.',
+          canRetry: true,
+        );
+      } else {
+        _setError('Lỗi phát video: ${e.toString()}', canRetry: true);
+      }
     }
   }
 

@@ -37,12 +37,8 @@ class _DocumentViewerWidgetState extends State<DocumentViewerWidget> {
       });
       return;
     }
-    if (!url.startsWith('http://') && !url.startsWith('https://')) {
-      final base = ApiConstants.baseUrl;
-      url = url.startsWith('/') ? '$base$url' : '$base/$url';
-    }
     setState(() {
-      _resolvedUrl = url;
+      _resolvedUrl = ApiConstants.resolveFileUrl(url);
       _isLoading = false;
     });
   }

@@ -102,10 +102,7 @@ class _AiChatSheetState extends State<AiChatSheet> {
     });
 
     try {
-      var url = widget.contentUrl!;
-      if (!url.startsWith('http')) {
-        url = '${ApiConstants.baseUrl}/$url';
-      }
+      var url = ApiConstants.resolveFileUrl(widget.contentUrl!);
 
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token');
