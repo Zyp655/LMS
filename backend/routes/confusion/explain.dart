@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:dart_frog/dart_frog.dart';
 import 'package:backend/database/database.dart';
@@ -71,28 +72,56 @@ Dấu hiệu bối rối:
 ${hasTranscript ? '''Nội dung video tại đoạn gây khó khăn (phút $timeStr):
 """
 $segmentContent
-"""
+"""''' : '''Nội dung chi tiết của video chưa có sẵn.
+Dựa vào chủ đề bài học "$lessonTitle" và thời điểm phút $timeStr/${totalDuration ~/ 60} phút tổng.'''}
 
-Hãy:
-1. Giải thích lại nội dung đoạn này một cách đơn giản, dễ hiểu
-2. Cho ví dụ minh họa thực tế
-3. Tóm tắt các ý chính bằng bullet points''' : '''Nội dung chi tiết của video chưa có sẵn.
-Dựa vào chủ đề bài học "$lessonTitle" và thời điểm phút $timeStr/${totalDuration ~/ 60} phút tổng:
+QUAN TRỌNG: Trả lời theo format JSON sau (CHỈ JSON, KHÔNG có text khác):
+{
+  "contentPoints": [
+    "Nội dung chính 1 đang được giảng tại thời điểm này",
+    "Nội dung chính 2 đang được giảng tại thời điểm này",
+    "Nội dung chính 3 (nếu có)"
+  ],
+  "summary": "Tóm tắt ngắn gọn 1-2 câu về nội dung đoạn này"
+}
 
-Hãy:
-1. Suy đoán nội dung có thể được dạy tại thời điểm này
-2. Giải thích các khái niệm quan trọng cho chủ đề này
-3. Cho ví dụ minh họa thực tế'''}
-
-Trả lời bằng tiếng Việt, ngắn gọn, dễ hiểu (tối đa 150 từ).
+Yêu cầu:
+- contentPoints: Liệt kê 2-4 ý chính đang được giảng tại thời điểm này, mỗi ý ngắn gọn (1-2 câu)
+- summary: Tóm tắt ngắn gọn nội dung đoạn video
+- Viết bằng tiếng Việt, dễ hiểu
 ''';
 
     final aiService = AIService(openaiApiKey: apiKey);
-    final explanation = await aiService.generateExplanation(prompt);
+    final raw = await aiService.generateExplanation(prompt);
+
+    List<String> contentPoints = [];
+    String summary = raw;
+
+    try {
+      final jsonMatch = RegExp(r'\{[\s\S]*\}').firstMatch(raw);
+      if (jsonMatch != null) {
+        final parsed =
+            (await Future.value(jsonDecode(jsonMatch.group(0)!)))
+                as Map<String, dynamic>;
+        final pts = parsed['contentPoints'] as List<dynamic>?;
+        if (pts != null) {
+          contentPoints = pts.map((e) => e.toString()).toList();
+        }
+        summary = parsed['summary'] as String? ?? raw;
+      }
+    } catch (_) {
+      final lines = raw.split('\n');
+      for (final line in lines) {
+        final match = RegExp(r'^\d+[\.\)]\s*(.+)').firstMatch(line.trim());
+        if (match != null) contentPoints.add(match.group(1)!);
+      }
+      if (contentPoints.isEmpty) contentPoints = [raw];
+    }
 
     return Response.json(body: {
       'success': true,
-      'explanation': explanation,
+      'explanation': summary,
+      'contentPoints': contentPoints,
       'timestamp': timestamp,
       'timeStr': timeStr,
       'lessonTitle': lessonTitle,

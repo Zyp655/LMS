@@ -36,6 +36,7 @@ import '../widgets/ai_chat_sheet.dart';
 import '../services/confusion_detector.dart';
 import '../services/confusion_data_logger.dart';
 import '../widgets/self_report_widget.dart';
+import '../widgets/confusion_chat_overlay.dart';
 
 class LessonPlayerPage extends StatelessWidget {
   final LessonEntity lesson;
@@ -614,12 +615,16 @@ class _LessonPlayerViewState extends State<LessonPlayerView>
   }
 
   String? _confusionExplanation;
+  List<String> _confusionContentPoints = [];
+  String _confusionTimeStr = '';
   bool _isLoadingExplanation = false;
 
   Future<void> _fetchConfusionExplanation() async {
     setState(() {
       _isLoadingExplanation = true;
       _confusionExplanation = null;
+      _confusionContentPoints = [];
+      _confusionTimeStr = '';
     });
 
     try {
@@ -640,8 +645,11 @@ class _LessonPlayerViewState extends State<LessonPlayerView>
       });
 
       if (mounted && response != null && response['success'] == true) {
+        final pts = response['contentPoints'] as List<dynamic>?;
         setState(() {
           _confusionExplanation = response['explanation'] as String?;
+          _confusionContentPoints = pts?.map((e) => e.toString()).toList() ?? [];
+          _confusionTimeStr = response['timeStr'] as String? ?? '';
           _isLoadingExplanation = false;
         });
       } else {
@@ -677,15 +685,21 @@ class _LessonPlayerViewState extends State<LessonPlayerView>
     setState(() {
       _showConfusionPopup = false;
       _confusionExplanation = null;
+      _confusionContentPoints = [];
+      _confusionTimeStr = '';
     });
     _videoController?.play();
   }
 
-  void _openAiFromConfusion() {
-    final prefilledMessage = _confusionExplanation;
+  void _openAiFromConfusion([String? question]) {
+    final prefilledMessage = question != null && question.isNotEmpty
+        ? question
+        : _confusionExplanation;
     setState(() {
       _showConfusionPopup = false;
       _confusionExplanation = null;
+      _confusionContentPoints = [];
+      _confusionTimeStr = '';
     });
     showModalBottomSheet(
       context: context,
@@ -1167,119 +1181,13 @@ class _LessonPlayerViewState extends State<LessonPlayerView>
         ),
         if (_showConfusionPopup)
           Positioned.fill(
-            child: Container(
-              color: Colors.black.withValues(alpha: 0.5),
-              child: Center(
-                child: Container(
-                  width: 280,
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surface,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text('💭', style: TextStyle(fontSize: 28)),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Có vẻ đoạn này hơi khó?',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: Theme.of(context).colorScheme.onSurface,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      if (_isLoadingExplanation)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              SizedBox(
-                                width: 16, height: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: AppColors.accent,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                'AI đang phân tích...',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                ),
-                              ),
-                            ],
-                          ),
-                        )
-                      else if (_confusionExplanation != null)
-                        Container(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          constraints: const BoxConstraints(maxHeight: 120),
-                          child: SingleChildScrollView(
-                            child: Text(
-                              _confusionExplanation!.length > 200
-                                  ? '${_confusionExplanation!.substring(0, 200)}...'
-                                  : _confusionExplanation!,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                height: 1.4,
-                              ),
-                            ),
-                          ),
-                        )
-                      else
-                        Text(
-                          'AI có thể giải thích lại cho bạn dễ hiểu hơn',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      const SizedBox(height: 20),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton(
-                              onPressed: _dismissConfusionPopup,
-                              style: OutlinedButton.styleFrom(
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                              child: Text('Bỏ qua'),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: FilledButton.icon(
-                              onPressed: _openAiFromConfusion,
-                              icon: Icon(Icons.smart_toy_rounded, size: 18),
-                              label: Text('Hỏi AI'),
-                              style: FilledButton.styleFrom(
-                                backgroundColor: AppColors.primary,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+            child: ConfusionChatOverlay(
+              isLoading: _isLoadingExplanation,
+              explanation: _confusionExplanation,
+              contentPoints: _confusionContentPoints,
+              timeStr: _confusionTimeStr,
+              onDismiss: _dismissConfusionPopup,
+              onAskQuestion: (question) => _openAiFromConfusion(question),
             ),
           ),
         if (_showSelfReport)
