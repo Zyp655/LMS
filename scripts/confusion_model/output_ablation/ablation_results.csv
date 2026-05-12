@@ -1,0 +1,5 @@
+Variant,Accuracy,AUC
+Full Model,0.6497,0.5411
+No Aux Features,0.7113,0.5161
+No Attention,0.7124,0.5631
+No Temporal LSTM,0.6867,0.5685

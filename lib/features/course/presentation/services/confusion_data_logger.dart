@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/api/api_constants.dart';
+import 'confusion_detector.dart';
 
 class ConfusionEvent {
   final String type;
@@ -83,10 +84,23 @@ class ConfusionDataLogger {
   double _currentSpeed = 1.0;
   int _currentPositionSeconds = 0;
 
+  ConfusionDetector? _detector;
+  double _lastQuizScore = 50;
+  double _lastQuizTime = 30;
+
   ConfusionDataLogger({
     required this.userId,
     required this.lessonId,
   });
+
+  void attachDetector(ConfusionDetector detector) {
+    _detector = detector;
+  }
+
+  void updateQuizResult(double score, double timeSeconds) {
+    _lastQuizScore = score;
+    _lastQuizTime = timeSeconds;
+  }
 
   void updatePosition(int positionSeconds) {
     _currentPositionSeconds = positionSeconds;
@@ -106,6 +120,7 @@ class ConfusionDataLogger {
         duration: duration,
         playbackSpeed: _currentSpeed,
       ));
+      _detector?.updateDetailedBehavior(pauseDuration: duration);
       _lastPauseStart = null;
     }
     _currentPositionSeconds = positionSeconds;
@@ -120,6 +135,7 @@ class ConfusionDataLogger {
       distance: distance,
       playbackSpeed: _currentSpeed,
     ));
+    _detector?.updateDetailedBehavior(rewindTarget: toSeconds);
   }
 
   void onSkip(int fromSeconds, int toSeconds) {
@@ -140,6 +156,9 @@ class ConfusionDataLogger {
       playbackSpeed: newSpeed,
       duration: oldSpeed,
     ));
+    if (newSpeed < oldSpeed) {
+      _detector?.updateDetailedBehavior(speedDecreased: true);
+    }
   }
 
   void addEmotionSnapshot(int positionSeconds, String emotion, double confidence) {
@@ -248,6 +267,8 @@ class ConfusionDataLogger {
       'frustrated_ratio': totalEmotions > 0 ? frustratedCount / totalEmotions : 0.0,
       'emotion_transitions': emotionTransitions,
       'neg_emotion_streak': maxNegStreak,
+      'quiz_score': _lastQuizScore,
+      'quiz_time': _lastQuizTime,
       'ground_truth': groundTruthLabel,
     };
   }

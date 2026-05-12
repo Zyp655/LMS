@@ -210,6 +210,7 @@ class _LessonPlayerViewState extends State<LessonPlayerView>
       userId: widget.userId,
       lessonId: widget.lesson.id,
     );
+    _confusionLogger.attachDetector(_confusionDetector);
     _selfReportTimer = Timer.periodic(
       Duration(minutes: _selfReportIntervalMinutes),
       (_) => _triggerSelfReport(),
