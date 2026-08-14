@@ -1,4 +1,4 @@
-FROM dart:stable AS build
+FROM dart:3.6.2 AS build
 
 ENV PATH="$PATH:/root/.pub-cache/bin"
 

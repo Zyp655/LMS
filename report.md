@@ -36,3 +36,11 @@
 - **Lỗi/Bugs:** Warning `Node.js 16 actions are deprecated` từ `FirebaseExtended/action-hosting-deploy@v0`.
 - **Nguyên nhân:** Action version `@v0` sử dụng Node.js 16 đã bị deprecated, sẽ bị loại bỏ khỏi runner.
 - **Giải pháp:** Upgrade lên `FirebaseExtended/action-hosting-deploy@v0.6.0` hỗ trợ Node.js 20.
+
+## 7. Lỗi Docker build thất bại trên Railway (sqlite3 native build hooks)
+- **Lỗi/Bugs:** Tiến trình deploy Docker trên Railway thất bại ở bước `RUN dart compile exe build/bin/server.dart -o build/bin/server` với exit code 255. Log thông báo: `Packages with build hooks: sqlite3. does not support build hooks, use 'dart build' instead. Packages with build hooks: sqlite3.`
+- **Nguyên nhân:** `backend/Dockerfile` sử dụng image `FROM dart:stable AS build`. Khi tag `dart:stable` trên Docker Hub tự động cập nhật lên phiên bản Dart 3.7+, trình biên dịch `dart compile exe` từ chối biên dịch dự án có chứa native build hooks (`hook/build.dart` trong thư viện `sqlite3` của `drift`), khiến tiến trình deploy bị hỏng mà không có sự thay đổi mã nguồn.
+- **Giải pháp:**
+  - Cố định (pin) phiên bản Dart SDK ổn định `FROM dart:3.6.2 AS build` trong `backend/Dockerfile` để đảm bảo tính nhất quán tuyệt đối khi build trên Railway/Docker.
+  - Tạo file `backend/.dockerignore` dọn dẹp và loại bỏ các thư mục tạm (`.dart_tool/`, `build/`, `pgdata/`, `uploads/`) giúp tối ưu thời gian truyền build context và tăng tốc độ deploy.
+
