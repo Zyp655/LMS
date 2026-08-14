@@ -44,11 +44,13 @@
   - Cố định (pin) phiên bản Dart SDK ổn định `FROM dart:3.6.2 AS build` trong `backend/Dockerfile` để đảm bảo tính nhất quán tuyệt đối khi build trên Railway/Docker.
   - Tạo file `backend/.dockerignore` dọn dẹp và loại bỏ các thư mục tạm (`.dart_tool/`, `build/`, `pgdata/`, `uploads/`) giúp tối ưu thời gian truyền build context và tăng tốc độ deploy.
 
-## 8. Lỗi Docker build thất bại do xung đột phiên bản Dart SDK với bcrypt
-- **Lỗi/Bugs:** Tiến trình Docker build thất bại ở bước `RUN dart pub get` với lỗi: `Because backend depends on bcrypt >=1.2.0 which requires SDK version >=3.7.0 <4.0.0, version solving failed.`
-- **Nguyên nhân:** Base image Docker trong `backend/Dockerfile` sử dụng `dart:3.6.2`, trong khi thư viện `bcrypt` phiên bản 1.2.0+ yêu cầu Dart SDK `>=3.7.0 <4.0.0`.
+## 8. Lỗi Docker build thất bại trên Railway do xung đột phiên bản Dart SDK với `postgres` / `bcrypt`
+- **Lỗi/Bugs:** Tiến trình Docker build thất bại ở bước `RUN dart pub get` với lỗi: `Because backend depends on postgres >=3.5.8 which requires SDK version >=3.9.0 <4.0.0, version solving failed.` (The current Dart SDK version is 3.7.3).
+- **Nguyên nhân:** Base image Docker trong `backend/Dockerfile` cài phiên bản `dart:3.7.3`, trong khi file `pubspec.lock` được tạo/khóa từ môi trường local (Dart 3.9.2) sử dụng package `postgres: 3.5.9` (hoặc `postgres >=3.5.8`), package này yêu cầu Dart SDK `>=3.9.0 <4.0.0`.
 - **Giải pháp:**
-  - Cập nhật base image trong `backend/Dockerfile` thành `FROM dart:3.7.3 AS build`.
-  - Cập nhật môi trường Dart SDK trong `backend/pubspec.yaml` thành `sdk: ">=3.7.0 <4.0.0"`.
+  - Cập nhật base image trong `backend/Dockerfile` thành `FROM dart:3.9.2 AS build` đồng bộ với phiên bản Dart SDK 3.9.x.
+  - Cập nhật môi trường Dart SDK trong `backend/pubspec.yaml` thành `sdk: ">=3.9.0 <4.0.0"`.
+  - Biên dịch và kiểm tra thành công `dart_frog build` và `dart compile exe` không còn bất kỳ lỗi nào.
+
 
 
